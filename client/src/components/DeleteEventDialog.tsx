@@ -25,7 +25,10 @@ export function DeleteEventDialog({ eventId, teamId }: DeleteEventDialogProps) {
   const { deleteEvent } = useEvents(teamId);
   const { toast } = useToast();
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     try {
       await deleteEvent(eventId);
       toast({
@@ -34,6 +37,7 @@ export function DeleteEventDialog({ eventId, teamId }: DeleteEventDialogProps) {
       });
       setOpen(false);
     } catch (error: any) {
+      console.error('Delete event error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -45,7 +49,15 @@ export function DeleteEventDialog({ eventId, teamId }: DeleteEventDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       </AlertDialogTrigger>
@@ -58,7 +70,7 @@ export function DeleteEventDialog({ eventId, teamId }: DeleteEventDialogProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          <AlertDialogAction onClick={(e) => handleDelete(e)}>Delete</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
