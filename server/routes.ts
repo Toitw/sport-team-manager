@@ -33,6 +33,9 @@ export function registerRoutes(app: Express) {
   });
 
   app.post("/api/teams", requireRole(["admin"]), async (req, res) => {
+    if (!req.user) {
+      return res.status(401).send("User not authenticated");
+    }
     const newTeam = await db.insert(teams).values({
       ...req.body,
       createdById: req.user.id

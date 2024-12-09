@@ -9,8 +9,9 @@ import { format } from "date-fns";
 
 export default function TeamPage() {
   const { teamId } = useParams();
-  const { players, isLoading: playersLoading } = usePlayers(parseInt(teamId));
-  const { events, isLoading: eventsLoading } = useEvents(parseInt(teamId));
+  const parsedTeamId = teamId ? parseInt(teamId) : 0;
+  const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
+  const { events, isLoading: eventsLoading } = useEvents(parsedTeamId);
 
   if (playersLoading || eventsLoading) {
     return <div>Loading...</div>;
