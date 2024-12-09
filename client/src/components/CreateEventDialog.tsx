@@ -32,25 +32,36 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       title: "",
       description: "",
       type: "match",
-      startDate: new Date().toISOString().slice(0, 16),
-      endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
+      startDate: "",
+      endDate: "",
     }
   });
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const startDateObj = new Date(data.startDate);
-      const endDateObj = new Date(data.endDate);
-
-      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      if (!data.startDate || !data.endDate) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Invalid date format"
+          description: "Please select both start and end dates"
         });
         return;
       }
 
+      const startDateObj = new Date(data.startDate);
+      const endDateObj = new Date(data.endDate);
+
+      // Validate date objects
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Invalid date format. Please use the date picker or enter a valid date"
+        });
+        return;
+      }
+
+      // Validate date order
       if (endDateObj <= startDateObj) {
         toast({
           variant: "destructive",
@@ -60,6 +71,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
         return;
       }
 
+      // Create event with validated dates
       await createEvent({
         title: data.title,
         description: data.description || "",
@@ -76,6 +88,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       setOpen(false);
       form.reset();
     } catch (error: any) {
+      console.error("Create event error:", error);
       toast({
         variant: "destructive",
         title: "Error",
