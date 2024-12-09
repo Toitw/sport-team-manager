@@ -25,15 +25,18 @@ export const players = pgTable("players", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// Define event type enum
+export const eventTypeEnum = pgEnum('event_type', ['match', 'training', 'other']);
+
 export const events = pgTable("events", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   teamId: integer("team_id").notNull().references(() => teams.id),
   title: text("title").notNull(),
   description: text("description"),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  type: text("type").notNull(), // match, training, other
-  createdAt: timestamp("created_at").defaultNow()
+  startDate: timestamp("start_date", { mode: 'string' }).notNull(),
+  endDate: timestamp("end_date", { mode: 'string' }).notNull(),
+  type: eventTypeEnum("type").notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
 // Zod Schemas

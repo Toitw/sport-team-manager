@@ -12,13 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { z } from "zod";
 
-const formSchema = insertEventSchema.pick({
-  title: true,
-  description: true,
-  type: true,
-}).extend({
-  startDate: z.string(),
-  endDate: z.string(),
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional().nullable(),
+  type: z.enum(["match", "training", "other"]),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required")
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -33,45 +32,25 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
     defaultValues: {
       title: "",
       description: "",
+      type: "match",
       startDate: new Date().toISOString().slice(0, 16),
       endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
-      type: "match"
     }
   });
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const startDate = new Date(data.startDate);
-      const endDate = new Date(data.endDate);
+      const startDateObj = new Date(data.startDate);
+      const endDateObj = new Date(data.endDate);
 
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Please enter valid dates and times"
-        });
-        return;
-      }
-
-      if (endDate <= startDate) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "End date must be after start date"
-        });
-        return;
-      }
-
-      const response = await createEvent({
+      await createEvent({
         title: data.title,
         description: data.description || "",
         type: data.type,
         teamId,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString()
       });
-
-      console.log('Event created:', response);
       
       toast({
         title: "Success",
@@ -80,7 +59,6 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       setOpen(false);
       form.reset();
     } catch (error: any) {
-      console.error('Create event error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -126,39 +104,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Event description" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Start Date and Time</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="datetime-local"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>End Date and Time</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="datetime-local"
-                      {...field}
-                    />
+                    <Input {...field} value={field.value || ''} placeholder="Event description" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -182,6 +128,38 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Date and Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="datetime-local" 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End Date and Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="datetime-local" 
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

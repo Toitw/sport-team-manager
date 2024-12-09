@@ -73,10 +73,29 @@ export function registerRoutes(app: Express) {
   });
 
   app.post("/api/teams/:teamId/events", requireRole(["admin", "editor"]), async (req, res) => {
-    const newEvent = await db.insert(events).values({
-      ...req.body,
-      teamId: parseInt(req.params.teamId)
-    }).returning();
-    res.json(newEvent[0]);
+    try {
+      const { startDate, endDate, ...rest } = req.body;
+      
+      // Validate dates
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+
+      const newEvent = await db.insert(events).values({
+        ...rest,
+        teamId: parseInt(req.params.teamId),
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
+        type: rest.type
+      }).returning();
+
+      res.json(newEvent[0]);
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      res.status(500).json({ message: error.message || "Failed to create event" });
+    }
   });
 }
