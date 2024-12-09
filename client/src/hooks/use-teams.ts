@@ -21,11 +21,17 @@ export function useTeams() {
         body: JSON.stringify(newTeam),
         credentials: 'include'
       });
-      if (!response.ok) throw new Error('Failed to create team');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create team');
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
+    },
+    onError: (error) => {
+      console.error('Create team mutation error:', error);
     }
   });
 
