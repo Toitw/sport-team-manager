@@ -10,38 +10,31 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
+import { z } from "zod";
 
-type FormData = {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  type: string;
-  teamId: number;
-};
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  type: z.enum(["match", "training", "other"]),
+  teamId: z.number()
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 export function CreateEventDialog({ teamId }: { teamId: number }) {
   const [open, setOpen] = useState(false);
   const { createEvent } = useEvents(teamId);
   const { toast } = useToast();
 
-  const getDefaultDates = () => {
-    const startDate = new Date();
-    startDate.setMinutes(Math.ceil(startDate.getMinutes() / 15) * 15);
-    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-
-    return {
-      startDate: startDate.toISOString().slice(0, 16),
-      endDate: endDate.toISOString().slice(0, 16)
-    };
-  };
-
   const form = useForm<FormData>({
-    resolver: zodResolver(insertEventSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
-      ...getDefaultDates(),
+      startDate: new Date().toISOString().slice(0, 16),
+      endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
       type: "match",
       teamId
     }
@@ -94,7 +87,8 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       form.reset({
         title: "",
         description: "",
-        ...getDefaultDates(),
+        startDate: new Date().toISOString().slice(0, 16),
+        endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
         type: "match",
         teamId
       });
