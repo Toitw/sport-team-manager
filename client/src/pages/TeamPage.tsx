@@ -13,7 +13,7 @@ import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
 import { CreateEventDialog } from "../components/CreateEventDialog";
 
 export default function TeamPage() {
-  const { teamId } = useParams();
+  const { teamId, "*": section = "players" } = useParams();
   const { user } = useUser();
   const parsedTeamId = teamId ? parseInt(teamId) : 0;
   const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
@@ -31,7 +31,7 @@ export default function TeamPage() {
 
   return (
     <div className="container py-8">
-      <div className="grid gap-6 md:grid-cols-2">
+      {section === "players" ? (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Players</CardTitle>
@@ -66,7 +66,7 @@ export default function TeamPage() {
             </Table>
           </CardContent>
         </Card>
-
+      ) : (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Events</CardTitle>
@@ -108,7 +108,7 @@ export default function TeamPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 }
