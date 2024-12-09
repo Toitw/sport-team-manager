@@ -7,7 +7,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -118,12 +118,17 @@ export function setupAuth(app: Express) {
 
       const hashedPassword = await crypto.hash(password);
 
+      // For the initial user, set role as admin, others as reader
+      const [existingUsers] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(users);
+      
       const [newUser] = await db
         .insert(users)
         .values({
           username,
           password: hashedPassword,
-          role: role || "reader"
+          role: existingUsers.count === 0 ? "admin" : (role || "reader")
         })
         .returning();
 
