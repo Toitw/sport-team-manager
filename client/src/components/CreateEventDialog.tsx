@@ -40,8 +40,26 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      if (!data.startDate || !data.endDate) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Start and end dates are required"
+        });
+        return;
+      }
+
       const startDateObj = new Date(data.startDate);
       const endDateObj = new Date(data.endDate);
+
+      if (endDateObj <= startDateObj) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "End date must be after start date"
+        });
+        return;
+      }
 
       await createEvent({
         title: data.title,
