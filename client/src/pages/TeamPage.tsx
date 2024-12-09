@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
+import { type CalendarProps } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
+import { CreateEventDialog } from "../components/CreateEventDialog";
 
 export default function TeamPage() {
   const { teamId } = useParams();
