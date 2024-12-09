@@ -1,0 +1,36 @@
+You are an expert full-stack engineer tasked with creating a Sport Team Management SaaS application from scratch. Follow these steps:
+
+Overall Goal:
+Create a web-based application that allows multiple sports teams to register, manage their players, maintain a calendar of events, track match results, set up lineups, share news, and monitor team finances. The app should have a modern, sporty design aesthetic.
+
+Initial Requirements (MVP):
+
+User Roles: Admin, Editor, Reader.
+Authentication & Authorization: Users can sign up, log in, and be assigned a role.
+Core MVP Features:
+Team Setup: Admins can create and name their team.
+Player Management: Admins/Editors can add players (name, position, number), edit player info, and list them.
+Events Calendar: Display upcoming matches, training sessions, and team events. Admins/Editors can add and edit events. Readers can view only.
+UI/UX: A clean, sporty, responsive web UI. Start with a basic layout and navigation. Don’t worry about complex styling yet—just ensure a straightforward component structure that can be incrementally improved.
+Tech Stack (You Decide):
+Choose a suitable stack you’re comfortable with (e.g., Next.js/React frontend with Node.js/Express or a Python/FastAPI backend and a modern frontend). Use a relational database (e.g., PostgreSQL) for structured data, with proper migrations and seed data.
+
+Code Structure & Modularization:
+Begin by setting up:
+
+Backend: API endpoints for authentication, team creation, player CRUD, and event CRUD.
+Frontend: Pages for sign up, login, dashboard (teams, players, events). Start with skeleton components and routing.
+Keep code modular and well-documented so it’s easy to add features step-by-step.
+
+Incremental Steps:
+After establishing the MVP, plan to add features in small, incremental steps. For now, just outline placeholders for future features and routes. Keep the code organized, with room for additional models (finances, lineup, news) and UI elements.
+
+Testing & Documentation:
+Include basic unit tests for key backend endpoints and simple integration tests for the frontend routing. Document the setup process and endpoints so it’s easy to extend.
+
+Instructions:
+
+First, set up the foundational code structure (project scaffolding, dependencies, initial routes, basic UI pages).
+Then implement the MVP features and ensure they run locally.
+After confirming the MVP runs, I’ll prompt you again to add more features step-by-step.
+Begin now by scaffolding the application with the chosen stack and implementing the initial MVP requirements. Focus on clean architecture, extensibility, and basic tests.
