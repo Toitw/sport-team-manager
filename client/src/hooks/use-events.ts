@@ -43,9 +43,40 @@ export function useEvents(teamId: number) {
     }
   });
 
+  const updateEvent = useMutation<Event, Error, { id: number } & Omit<InsertEvent, 'id' | 'createdAt'>>({
+    mutationFn: async ({ id, ...data }) => {
+      try {
+        const response = await fetch(`/api/teams/${teamId}/events/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...data,
+            startDate: new Date(data.startDate).toISOString(),
+            endDate: new Date(data.endDate).toISOString()
+          }),
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: 'Failed to update event' }));
+          throw new Error(error.message || 'Failed to update event');
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Update event error:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', teamId] });
+    }
+  });
+
   return {
     events,
     isLoading,
-    createEvent: createEvent.mutateAsync
+    createEvent: createEvent.mutateAsync,
+    updateEvent: updateEvent.mutateAsync
   };
 }

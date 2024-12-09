@@ -98,4 +98,38 @@ export function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message || "Failed to create event" });
     }
   });
+
+  // Update event
+  app.put("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const { startDate, endDate, ...rest } = req.body;
+      
+      // Validate dates
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+
+      const updatedEvent = await db.update(events)
+        .set({
+          ...rest,
+          startDate: startDateObj.toISOString(),
+          endDate: endDateObj.toISOString(),
+          type: rest.type
+        })
+        .where(eq(events.id, parseInt(req.params.eventId)))
+        .returning();
+
+      if (!updatedEvent.length) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      res.json(updatedEvent[0]);
+    } catch (error: any) {
+      console.error('Error updating event:', error);
+      res.status(500).json({ message: error.message || "Failed to update event" });
+    }
+  });
 }
