@@ -132,4 +132,22 @@ export function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message || "Failed to update event" });
     }
   });
+
+  // Delete event
+  app.delete("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const deleted = await db.delete(events)
+        .where(eq(events.id, parseInt(req.params.eventId)))
+        .returning();
+
+      if (!deleted.length) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      res.json({ message: "Event deleted successfully" });
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      res.status(500).json({ message: error.message || "Failed to delete event" });
+    }
+  });
 }

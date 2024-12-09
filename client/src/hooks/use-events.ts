@@ -73,10 +73,33 @@ export function useEvents(teamId: number) {
     }
   });
 
+  const deleteEvent = useMutation<void, Error, number>({
+    mutationFn: async (eventId) => {
+      try {
+        const response = await fetch(`/api/teams/${teamId}/events/${eventId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: 'Failed to delete event' }));
+          throw new Error(error.message || 'Failed to delete event');
+        }
+      } catch (error) {
+        console.error('Delete event error:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', teamId] });
+    }
+  });
+
   return {
     events,
     isLoading,
     createEvent: createEvent.mutateAsync,
-    updateEvent: updateEvent.mutateAsync
+    updateEvent: updateEvent.mutateAsync,
+    deleteEvent: deleteEvent.mutateAsync
   };
 }

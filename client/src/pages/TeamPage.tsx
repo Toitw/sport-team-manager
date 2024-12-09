@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
 import { CreateEventDialog } from "../components/CreateEventDialog";
 import { EditEventDialog } from "../components/EditEventDialog";
+import { DeleteEventDialog } from "../components/DeleteEventDialog";
 
 export default function TeamPage() {
   const { teamId, section = "players" } = useParams();
@@ -101,7 +102,10 @@ export default function TeamPage() {
                           {event.type}
                         </div>
                         {canManageTeam && (
-                          <EditEventDialog event={event} teamId={parsedTeamId} />
+                          <div className="flex items-center gap-2">
+                            <EditEventDialog event={event} teamId={parsedTeamId} />
+                            <DeleteEventDialog eventId={event.id} teamId={parsedTeamId} />
+                          </div>
                         )}
                       </div>
                     </div>
