@@ -25,39 +25,23 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
   const { createEvent } = useEvents(teamId);
   const { toast } = useToast();
 
-  // Helper functions for date handling
-  const formatDateForInput = (date: Date): string => {
-    try {
-      return date.toISOString().slice(0, 16);
-    } catch (error) {
-      return new Date().toISOString().slice(0, 16);
-    }
-  };
-
-  const parseDateString = (dateString: string): Date | null => {
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? null : date;
-  };
-
   const getDefaultDates = () => {
     const startDate = new Date();
     startDate.setMinutes(Math.ceil(startDate.getMinutes() / 15) * 15);
     const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
     return {
-      startDate: formatDateForInput(startDate),
-      endDate: formatDateForInput(endDate)
+      startDate: startDate.toISOString().slice(0, 16),
+      endDate: endDate.toISOString().slice(0, 16)
     };
   };
-
-  const { startDate: defaultStart, endDate: defaultEnd } = getDefaultDates();
 
   const form = useForm<FormData>({
     resolver: zodResolver(insertEventSchema),
     defaultValues: {
       title: "",
       description: "",
-      startDate: defaultStart,
-      endDate: defaultEnd,
+      ...getDefaultDates(),
       type: "match",
       teamId
     }
@@ -69,15 +53,10 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       const endDate = new Date(data.endDate);
       const now = new Date();
 
-      // Reset seconds and milliseconds for accurate comparison
-      now.setSeconds(0, 0);
-      startDate.setSeconds(0, 0);
-      endDate.setSeconds(0, 0);
-
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         toast({
           variant: "destructive",
-          title: "Error",
+          title: "Invalid Date",
           description: "Please enter valid dates and times"
         });
         return;
@@ -86,7 +65,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       if (startDate < now) {
         toast({
           variant: "destructive",
-          title: "Error",
+          title: "Invalid Start Date",
           description: "Start date cannot be in the past"
         });
         return;
@@ -95,7 +74,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       if (endDate <= startDate) {
         toast({
           variant: "destructive",
-          title: "Error",
+          title: "Invalid End Date",
           description: "End date must be after start date"
         });
         return;
@@ -112,13 +91,10 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
         description: "Event created successfully"
       });
       setOpen(false);
-      
-      const { startDate: newStart, endDate: newEnd } = getDefaultDates();
       form.reset({
         title: "",
         description: "",
-        startDate: newStart,
-        endDate: newEnd,
+        ...getDefaultDates(),
         type: "match",
         teamId
       });
@@ -183,9 +159,9 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                   <FormLabel>Start Date and Time</FormLabel>
                   <FormControl>
                     <Input 
-                      type="datetime-local" 
-                      value={field.value}
+                      type="datetime-local"
                       min={new Date().toISOString().slice(0, 16)}
+                      {...field}
                       onChange={(e) => {
                         const newStartDate = e.target.value;
                         field.onChange(newStartDate);
@@ -211,18 +187,9 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                   <FormLabel>End Date and Time</FormLabel>
                   <FormControl>
                     <Input 
-                      type="datetime-local" 
-                      value={field.value}
+                      type="datetime-local"
                       min={form.getValues('startDate')}
-                      onChange={(e) => {
-                        const newEndDate = e.target.value;
-                        const endDateTime = new Date(newEndDate);
-                        const startDateTime = new Date(form.getValues('startDate'));
-                        
-                        if (!isNaN(endDateTime.getTime()) && !isNaN(startDateTime.getTime()) && endDateTime > startDateTime) {
-                          field.onChange(newEndDate);
-                        }
-                      }}
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
