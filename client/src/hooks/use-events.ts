@@ -13,16 +13,30 @@ export function useEvents(teamId: number) {
     }
   });
 
-  const createEvent = useMutation<Event, Error, InsertEvent>({
+  const createEvent = useMutation<Event, Error, Omit<InsertEvent, 'id' | 'createdAt'>>({
     mutationFn: async (newEvent) => {
-      const response = await fetch(`/api/teams/${teamId}/events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEvent),
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to create event');
-      return response.json();
+      try {
+        const response = await fetch(`/api/teams/${teamId}/events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...newEvent,
+            startDate: new Date(newEvent.startDate).toISOString(),
+            endDate: new Date(newEvent.endDate).toISOString()
+          }),
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: 'Failed to create event' }));
+          throw new Error(error.message || 'Failed to create event');
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Create event error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', teamId] });

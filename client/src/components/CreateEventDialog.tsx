@@ -12,54 +12,43 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 import { z } from "zod";
 
-const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string(),
+const formSchema = insertEventSchema.pick({
+  title: true,
+  description: true,
+  type: true,
+}).extend({
   startDate: z.string(),
   endDate: z.string(),
-  type: z.enum(["match", "training", "other"]),
-  teamId: z.number()
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 export function CreateEventDialog({ teamId }: { teamId: number }) {
   const [open, setOpen] = useState(false);
   const { createEvent } = useEvents(teamId);
   const { toast } = useToast();
 
-  const form = useForm<FormData>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
       startDate: new Date().toISOString().slice(0, 16),
       endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
-      type: "match",
-      teamId
+      type: "match"
     }
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       const startDate = new Date(data.startDate);
       const endDate = new Date(data.endDate);
-      const now = new Date();
 
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         toast({
           variant: "destructive",
-          title: "Invalid Date",
+          title: "Error",
           description: "Please enter valid dates and times"
-        });
-        return;
-      }
-
-      if (startDate < now) {
-        toast({
-          variant: "destructive",
-          title: "Invalid Start Date",
-          description: "Start date cannot be in the past"
         });
         return;
       }
@@ -67,31 +56,29 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
       if (endDate <= startDate) {
         toast({
           variant: "destructive",
-          title: "Invalid End Date",
+          title: "Error",
           description: "End date must be after start date"
         });
         return;
       }
 
-      await createEvent({
-        ...data,
-        startDate,
-        endDate
+      const response = await createEvent({
+        title: data.title,
+        description: data.description || "",
+        type: data.type,
+        teamId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       });
+
+      console.log('Event created:', response);
       
       toast({
         title: "Success",
         description: "Event created successfully"
       });
       setOpen(false);
-      form.reset({
-        title: "",
-        description: "",
-        startDate: new Date().toISOString().slice(0, 16),
-        endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
-        type: "match",
-        teamId
-      });
+      form.reset();
     } catch (error: any) {
       console.error('Create event error:', error);
       toast({
@@ -154,19 +141,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                   <FormControl>
                     <Input 
                       type="datetime-local"
-                      min={new Date().toISOString().slice(0, 16)}
                       {...field}
-                      onChange={(e) => {
-                        const newStartDate = e.target.value;
-                        field.onChange(newStartDate);
-                        
-                        // Update end date to be 2 hours after start date
-                        const startDateTime = new Date(newStartDate);
-                        if (!isNaN(startDateTime.getTime())) {
-                          const endDateTime = new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000);
-                          form.setValue('endDate', endDateTime.toISOString().slice(0, 16));
-                        }
-                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -182,7 +157,6 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                   <FormControl>
                     <Input 
                       type="datetime-local"
-                      min={form.getValues('startDate')}
                       {...field}
                     />
                   </FormControl>
