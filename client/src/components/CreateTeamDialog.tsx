@@ -1,43 +1,41 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTeamSchema, type InsertTeam } from "@db/schema";
+import { insertTeamSchema } from "@db/schema";
 import { useTeams } from "../hooks/use-teams";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Plus } from "lucide-react";
 
+type FormData = {
+  name: string;
+};
+
 export function CreateTeamDialog() {
   const [open, setOpen] = useState(false);
   const { createTeam } = useTeams();
   const { toast } = useToast();
 
-  const form = useForm<InsertTeam>({
-    resolver: zodResolver(insertTeamSchema),
+  const form = useForm<FormData>({
+    resolver: zodResolver(insertTeamSchema.pick({ name: true })),
     defaultValues: {
       name: "",
     }
   });
 
-  const onSubmit = async (data: InsertTeam) => {
+  const onSubmit = async (data: FormData) => {
     try {
-      const result = await createTeam({
-        name: data.name
+      await createTeam(data);
+      toast({
+        title: "Success",
+        description: "Team created successfully"
       });
-      
-      if (result) {
-        toast({
-          title: "Success",
-          description: "Team created successfully"
-        });
-        setOpen(false);
-        form.reset();
-      }
+      setOpen(false);
+      form.reset();
     } catch (error: any) {
-      console.error('Create team error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -51,12 +49,15 @@ export function CreateTeamDialog() {
       <DialogTrigger asChild>
         <Button className="w-full">
           <Plus className="mr-2 h-4 w-4" />
-          Add Team
+          Create Team
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Team</DialogTitle>
+          <DialogDescription>
+            Create a new team to manage players and events.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -67,13 +68,15 @@ export function CreateTeamDialog() {
                 <FormItem>
                   <FormLabel>Team Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} placeholder="Enter team name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">Create Team</Button>
+            <Button type="submit" className="w-full">
+              Create Team
+            </Button>
           </form>
         </Form>
       </DialogContent>

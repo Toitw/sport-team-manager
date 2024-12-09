@@ -13,7 +13,7 @@ export function useTeams() {
     }
   });
 
-  const createTeam = useMutation<Team, Error, InsertTeam>({
+  const createTeam = useMutation<Team, Error, { name: string }>({
     mutationFn: async (newTeam) => {
       const response = await fetch('/api/teams', {
         method: 'POST',
@@ -32,6 +32,7 @@ export function useTeams() {
     },
     onError: (error) => {
       console.error('Create team mutation error:', error);
+      throw error;
     }
   });
 
