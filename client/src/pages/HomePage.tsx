@@ -1,8 +1,9 @@
 import { useUser } from "../hooks/use-user";
 import { useTeams } from "../hooks/use-teams";
 import { Button } from "@/components/ui/button";
+import { CreateTeamDialog } from "../components/CreateTeamDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Users, Calendar } from "lucide-react";
+import { Users, Calendar } from "lucide-react";
 import { Link } from "wouter";
 
 export default function HomePage() {
@@ -51,10 +52,7 @@ export default function HomePage() {
               <CardTitle>Create New Team</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Team
-              </Button>
+              <CreateTeamDialog />
             </CardContent>
           </Card>
         )}
