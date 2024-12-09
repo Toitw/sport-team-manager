@@ -152,11 +152,18 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
               name="startDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start Date</FormLabel>
+                  <FormLabel>Start Date and Time</FormLabel>
                   <FormControl>
                     <Input 
                       type="datetime-local" 
-                      {...field}
+                      value={field.value}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        // Update end date to be 2 hours after start date when start date changes
+                        const startDate = new Date(e.target.value);
+                        const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+                        form.setValue('endDate', formatDateForInput(endDate));
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -168,11 +175,13 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
               name="endDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>End Date</FormLabel>
+                  <FormLabel>End Date and Time</FormLabel>
                   <FormControl>
                     <Input 
                       type="datetime-local" 
-                      {...field}
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      min={form.getValues('startDate')}
                     />
                   </FormControl>
                   <FormMessage />
