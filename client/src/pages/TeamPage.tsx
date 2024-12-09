@@ -66,8 +66,9 @@ export default function TeamPage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Events</CardTitle>
+            {canManageTeam && <CreateEventDialog teamId={parsedTeamId} />}
           </CardHeader>
           <CardContent>
             <Calendar
@@ -82,10 +83,22 @@ export default function TeamPage() {
                 </div>
               ) : (
                 events?.map((event) => (
-                  <div key={event.id} className="p-2 border rounded">
-                    <div className="font-medium">{event.title}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {format(new Date(event.startDate), "PPP")}
+                  <div key={event.id} className="p-4 border rounded hover:bg-accent">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">{event.title}</div>
+                        {event.description && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {event.description}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {event.type}
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-2">
+                      {format(new Date(event.startDate), "PPP p")} - {format(new Date(event.endDate), "p")}
                     </div>
                   </div>
                 ))
