@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertEventSchema } from "@db/schema";
 import { useEvents } from "../hooks/use-events";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -40,17 +39,17 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      if (!data.startDate || !data.endDate) {
+      const startDateObj = new Date(data.startDate);
+      const endDateObj = new Date(data.endDate);
+
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Start and end dates are required"
+          description: "Invalid date format"
         });
         return;
       }
-
-      const startDateObj = new Date(data.startDate);
-      const endDateObj = new Date(data.endDate);
 
       if (endDateObj <= startDateObj) {
         toast({
