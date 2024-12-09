@@ -25,13 +25,21 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
   const { createEvent } = useEvents(teamId);
   const { toast } = useToast();
 
+  // Helper function to format date to datetime-local input format
+  const formatDateForInput = (date: Date): string => {
+    return date.toISOString().slice(0, 16);
+  };
+
+  const defaultStartDate = new Date();
+  const defaultEndDate = new Date(defaultStartDate.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+
   const form = useForm<FormData>({
     resolver: zodResolver(insertEventSchema),
     defaultValues: {
       title: "",
       description: "",
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
+      startDate: formatDateForInput(defaultStartDate),
+      endDate: formatDateForInput(defaultEndDate),
       type: "match",
       teamId
     }
@@ -39,10 +47,34 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Parse dates from the form
+      const startDate = new Date(data.startDate);
+      const endDate = new Date(data.endDate);
+
+      // Validate dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Invalid date format"
+        });
+        return;
+      }
+
+      if (endDate <= startDate) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "End date must be after start date"
+        });
+        return;
+      }
+
+      // Submit event with proper date objects
       await createEvent({
         ...data,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate)
+        startDate,
+        endDate
       });
       
       toast({
@@ -50,7 +82,18 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
         description: "Event created successfully"
       });
       setOpen(false);
-      form.reset();
+      
+      // Reset form with new default dates
+      const newStartDate = new Date();
+      const newEndDate = new Date(newStartDate.getTime() + 2 * 60 * 60 * 1000);
+      form.reset({
+        title: "",
+        description: "",
+        startDate: formatDateForInput(newStartDate),
+        endDate: formatDateForInput(newEndDate),
+        type: "match",
+        teamId
+      });
     } catch (error: any) {
       console.error('Create event error:', error);
       toast({
@@ -111,7 +154,10 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                 <FormItem>
                   <FormLabel>Start Date</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} onChange={e => field.onChange(new Date(e.target.value).toISOString())} />
+                    <Input 
+                      type="datetime-local" 
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -124,7 +170,10 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                 <FormItem>
                   <FormLabel>End Date</FormLabel>
                   <FormControl>
-                    <Input type="datetime-local" {...field} onChange={e => field.onChange(new Date(e.target.value).toISOString())} />
+                    <Input 
+                      type="datetime-local" 
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
