@@ -65,10 +65,16 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const startDate = parseDateString(data.startDate);
-      const endDate = parseDateString(data.endDate);
+      const startDate = new Date(data.startDate);
+      const endDate = new Date(data.endDate);
+      const now = new Date();
 
-      if (!startDate || !endDate) {
+      // Reset seconds and milliseconds for accurate comparison
+      now.setSeconds(0, 0);
+      startDate.setSeconds(0, 0);
+      endDate.setSeconds(0, 0);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         toast({
           variant: "destructive",
           title: "Error",
@@ -77,7 +83,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
         return;
       }
 
-      if (startDate < new Date()) {
+      if (startDate < now) {
         toast({
           variant: "destructive",
           title: "Error",
@@ -179,16 +185,16 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                     <Input 
                       type="datetime-local" 
                       value={field.value}
-                      min={formatDateForInput(new Date())}
+                      min={new Date().toISOString().slice(0, 16)}
                       onChange={(e) => {
                         const newStartDate = e.target.value;
                         field.onChange(newStartDate);
                         
-                        // Only update end date if we have a valid start date
-                        const startDate = parseDateString(newStartDate);
-                        if (startDate) {
-                          const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-                          form.setValue('endDate', formatDateForInput(endDate));
+                        // Update end date to be 2 hours after start date
+                        const startDateTime = new Date(newStartDate);
+                        if (!isNaN(startDateTime.getTime())) {
+                          const endDateTime = new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000);
+                          form.setValue('endDate', endDateTime.toISOString().slice(0, 16));
                         }
                       }}
                     />
@@ -210,13 +216,11 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                       min={form.getValues('startDate')}
                       onChange={(e) => {
                         const newEndDate = e.target.value;
-                        const endDate = parseDateString(newEndDate);
-                        const startDate = parseDateString(form.getValues('startDate'));
+                        const endDateTime = new Date(newEndDate);
+                        const startDateTime = new Date(form.getValues('startDate'));
                         
-                        if (endDate && startDate && endDate > startDate) {
+                        if (!isNaN(endDateTime.getTime()) && !isNaN(startDateTime.getTime()) && endDateTime > startDateTime) {
                           field.onChange(newEndDate);
-                        } else {
-                          field.onChange(field.value); // Keep the previous valid value
                         }
                       }}
                     />
