@@ -13,7 +13,7 @@ import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
 import { CreateEventDialog } from "../components/CreateEventDialog";
 
 export default function TeamPage() {
-  const { teamId, "*": section = "players" } = useParams();
+  const { teamId, section = "players" } = useParams();
   const { user } = useUser();
   const parsedTeamId = teamId ? parseInt(teamId) : 0;
   const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
