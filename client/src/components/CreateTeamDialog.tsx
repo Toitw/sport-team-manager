@@ -24,15 +24,18 @@ export function CreateTeamDialog() {
 
   const onSubmit = async (data: InsertTeam) => {
     try {
-      console.log('Submitting team data:', data);
-      const result = await createTeam(data);
-      console.log('Create team result:', result);
-      toast({
-        title: "Success",
-        description: "Team created successfully"
+      const result = await createTeam({
+        name: data.name
       });
-      setOpen(false);
-      form.reset();
+      
+      if (result) {
+        toast({
+          title: "Success",
+          description: "Team created successfully"
+        });
+        setOpen(false);
+        form.reset();
+      }
     } catch (error: any) {
       console.error('Create team error:', error);
       toast({

@@ -33,14 +33,21 @@ export function registerRoutes(app: Express) {
   });
 
   app.post("/api/teams", requireRole(["admin"]), async (req, res) => {
-    if (!req.user) {
-      return res.status(401).send("User not authenticated");
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+      
+      const newTeam = await db.insert(teams).values({
+        name: req.body.name,
+        createdById: req.user.id
+      }).returning();
+      
+      res.json(newTeam[0]);
+    } catch (error: any) {
+      console.error('Error creating team:', error);
+      res.status(500).send(error.message || "Failed to create team");
     }
-    const newTeam = await db.insert(teams).values({
-      ...req.body,
-      createdById: req.user.id
-    }).returning();
-    res.json(newTeam[0]);
   });
 
   // Players
