@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { usePlayers } from "../hooks/use-players";
+import { usePlayers } from "@/hooks/use-players";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPlayerSchema, type InsertPlayer } from "@db/schema";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,9 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Player</DialogTitle>
+          <DialogDescription>
+            Update player information using the form below.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
