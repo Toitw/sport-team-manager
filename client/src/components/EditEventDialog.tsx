@@ -17,7 +17,9 @@ const formSchema = z.object({
   description: z.string().optional().nullable(),
   type: z.enum(["match", "training", "other"]),
   startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required")
+  endDate: z.string().min(1, "End date is required"),
+  homeScore: z.number().nullable(),
+  awayScore: z.number().nullable()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -40,6 +42,8 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
       type: event.type,
       startDate: new Date(event.startDate).toISOString().slice(0, 16),
       endDate: new Date(event.endDate).toISOString().slice(0, 16),
+      homeScore: event.homeScore,
+      awayScore: event.awayScore,
     }
   });
 
@@ -186,6 +190,46 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                 </FormItem>
               )}
             />
+            {form.watch("type") === "match" && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="homeScore"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Home Score</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="awayScore"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Away Score</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
             <Button type="submit" className="w-full">Update Event</Button>
           </form>
         </Form>

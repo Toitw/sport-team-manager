@@ -40,6 +40,8 @@ export const events = pgTable("events", {
   startDate: timestamp("start_date", { mode: 'string' }).notNull(),
   endDate: timestamp("end_date", { mode: 'string' }).notNull(),
   type: eventTypeEnum("type").notNull(),
+  homeScore: integer("home_score"),
+  awayScore: integer("away_score"),
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 

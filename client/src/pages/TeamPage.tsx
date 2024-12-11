@@ -22,6 +22,8 @@ export default function TeamPage() {
   const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
   const { events, isLoading: eventsLoading } = useEvents(parsedTeamId);
   
+  const matches = events?.filter(event => event.type === "match") ?? [];
+  
   const canManageTeam = user?.role === "admin" || user?.role === "editor";
 
   if (playersLoading || eventsLoading) {
@@ -151,9 +153,74 @@ export default function TeamPage() {
     </Card>
   );
 
+  const renderMatches = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Matches</CardTitle>
+        {canManageTeam && <CreateEventDialog teamId={parsedTeamId} />}
+      </CardHeader>
+      <CardContent>
+        <Calendar
+          mode="single"
+          selected={new Date()}
+          className="mb-4"
+        />
+        <div className="space-y-2">
+          {matches.length === 0 ? (
+            <div className="text-center text-muted-foreground">
+              No matches scheduled
+            </div>
+          ) : (
+            matches.map((match) => (
+              <div
+                key={match.id}
+                className="p-4 border rounded hover:bg-accent"
+                onClick={handleEventClick}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">{match.title}</div>
+                    {match.description && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {match.description}
+                      </div>
+                    )}
+                    <div className="text-lg font-semibold mt-2">
+                      {match.homeScore !== null && match.awayScore !== null ? (
+                        <span>{match.homeScore} - {match.awayScore}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Score pending</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-muted-foreground">
+                      Match
+                    </div>
+                    {canManageTeam && (
+                      <div className="flex items-center gap-2">
+                        <EditEventDialog event={match} teamId={parsedTeamId} />
+                        <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  {format(new Date(match.startDate), "PPP p")}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="container py-8">
-      {section === "players" ? renderPlayers() : renderEvents()}
+      {section === "players" ? renderPlayers() : 
+       section === "matches" ? renderMatches() : 
+       renderEvents()}
     </div>
   );
 }

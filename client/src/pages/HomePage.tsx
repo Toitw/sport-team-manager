@@ -35,6 +35,12 @@ export default function HomePage() {
                     Players
                   </Button>
                 </Link>
+                <Link href={`/team/${team.id}/matches`}>
+                  <Button variant="outline" className="w-full">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Matches
+                  </Button>
+                </Link>
                 <Link href={`/team/${team.id}/events`}>
                   <Button variant="outline" className="w-full">
                     <Calendar className="mr-2 h-4 w-4" />
