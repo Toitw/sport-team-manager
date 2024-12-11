@@ -77,7 +77,9 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         type: data.type,
         teamId,
         startDate: startDateObj.toISOString(),
-        endDate: endDateObj.toISOString()
+        endDate: endDateObj.toISOString(),
+        homeScore: data.type === "match" ? data.homeScore : null,
+        awayScore: data.type === "match" ? data.awayScore : null
       });
       
       toast({
