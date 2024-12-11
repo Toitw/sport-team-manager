@@ -21,7 +21,8 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
       teamId,
       name: player.name,
       position: player.position,
-      number: player.number
+      number: player.number,
+      photoUrl: player.photoUrl
     }
   });
 
@@ -29,6 +30,24 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
 
   const onSubmit = async (data: InsertPlayer) => {
     try {
+      const photoInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+      const photo = photoInput?.files?.[0];
+      
+      if (photo) {
+        const formData = new FormData();
+        formData.append('photo', photo);
+        
+        const uploadResponse = await fetch(`/api/upload`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (!uploadResponse.ok) throw new Error('Failed to upload photo');
+        const { photoUrl } = await uploadResponse.json();
+        data.photoUrl = photoUrl;
+      }
+
       await updatePlayer({ id: player.id, ...data });
       toast({
         title: "Success",
@@ -109,6 +128,24 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
                 </FormItem>
               )}
             />
+            <div className="space-y-2 mb-4">
+              <FormLabel>Player Photo</FormLabel>
+              {player.photoUrl && (
+                <div className="mb-2">
+                  <img 
+                    src={player.photoUrl} 
+                    alt={player.name}
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                </div>
+              )}
+              <Input 
+                id="photo" 
+                type="file" 
+                accept="image/*"
+                className="cursor-pointer"
+              />
+            </div>
             <Button type="submit" className="w-full">Update Player</Button>
           </form>
         </Form>
