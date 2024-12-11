@@ -27,13 +27,19 @@ function requireRole(roles: string[]) {
 }
 
 export function registerRoutes(app: Express) {
+  // Set up authentication first
+  setupAuth(app);
+
   // Create uploads directory if it doesn't exist
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)){
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // Configure multer for handling file uploads
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+  // Configure multer after authentication is set up
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, uploadsDir)
@@ -61,9 +67,6 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Serve uploaded files statically
-  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-
   // File upload endpoint
   app.post('/api/upload', requireAuth, upload.single('photo'), (req, res) => {
     if (!req.file) {
@@ -72,8 +75,6 @@ export function registerRoutes(app: Express) {
     const photoUrl = `/uploads/${req.file.filename}`;
     res.json({ photoUrl });
   });
-
-  setupAuth(app);
 
   // Teams
   app.get("/api/teams", requireAuth, async (req, res) => {
