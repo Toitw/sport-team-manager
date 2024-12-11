@@ -120,7 +120,12 @@ export function CreatePlayerDialog({ teamId }: { teamId: number }) {
                 <FormItem>
                   <FormLabel>Jersey Number</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    <Input 
+                      type="number" 
+                      {...field} 
+                      value={field.value?.toString() || ''} 
+                      onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : '')} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
