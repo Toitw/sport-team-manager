@@ -8,15 +8,11 @@ export function DeletePlayerDialog({ playerId, teamId }: { playerId: number; tea
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
+  const { deletePlayer } = usePlayers(teamId);
+
   const handleDelete = async () => {
     try {
-      const response = await fetch(`/api/teams/${teamId}/players/${playerId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (!response.ok) throw new Error('Failed to delete player');
-
+      await deletePlayer(playerId);
       toast({
         title: "Success",
         description: "Player deleted successfully"

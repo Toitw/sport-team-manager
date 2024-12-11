@@ -24,17 +24,11 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
     }
   });
 
+  const { updatePlayer } = usePlayers(teamId);
+
   const onSubmit = async (data: InsertPlayer) => {
     try {
-      const response = await fetch(`/api/teams/${teamId}/players/${player.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        credentials: 'include'
-      });
-
-      if (!response.ok) throw new Error('Failed to update player');
-
+      await updatePlayer({ id: player.id, ...data });
       toast({
         title: "Success",
         description: "Player updated successfully"
