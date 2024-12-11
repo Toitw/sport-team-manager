@@ -25,6 +25,7 @@ export const players = pgTable("players", {
   name: text("name").notNull(),
   position: positionEnum("position").notNull(),
   number: integer("number").notNull(),
+  photoUrl: text("photo_url"),
   createdAt: timestamp("created_at").defaultNow()
 });
 

@@ -47,6 +47,7 @@ export default function TeamPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Photo</TableHead>
               <TableHead>Number</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Position</TableHead>
@@ -63,6 +64,19 @@ export default function TeamPage() {
             ) : (
               players?.map((player) => (
                 <TableRow key={player.id}>
+                  <TableCell>
+                    {player.photoUrl ? (
+                      <img 
+                        src={player.photoUrl} 
+                        alt={player.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-muted-foreground text-sm">{player.name[0]}</span>
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>{player.number}</TableCell>
                   <TableCell>{player.name}</TableCell>
                   <TableCell>{player.position}</TableCell>

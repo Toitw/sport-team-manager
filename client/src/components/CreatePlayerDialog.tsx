@@ -9,7 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 export function CreatePlayerDialog({ teamId }: { teamId: number }) {
   const [open, setOpen] = useState(false);
@@ -28,6 +29,24 @@ export function CreatePlayerDialog({ teamId }: { teamId: number }) {
 
   const onSubmit = async (data: InsertPlayer) => {
     try {
+      const photoInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+      const photo = photoInput?.files?.[0];
+      
+      if (photo) {
+        const formData = new FormData();
+        formData.append('photo', photo);
+        
+        const uploadResponse = await fetch(`/api/upload`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        if (!uploadResponse.ok) throw new Error('Failed to upload photo');
+        const { photoUrl } = await uploadResponse.json();
+        data.photoUrl = photoUrl;
+      }
+
       await createPlayer(data);
       toast({
         title: "Success",
@@ -107,6 +126,15 @@ export function CreatePlayerDialog({ teamId }: { teamId: number }) {
                 </FormItem>
               )}
             />
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="photo">Player Photo</Label>
+              <Input 
+                id="photo" 
+                type="file" 
+                accept="image/*"
+                className="cursor-pointer"
+              />
+            </div>
             <Button type="submit" className="w-full">Add Player</Button>
           </form>
         </Form>

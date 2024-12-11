@@ -1,8 +1,11 @@
-import { type Express } from "express";
+import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
 import { teams, players, events } from "@db/schema";
 import { eq } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
@@ -24,6 +27,52 @@ function requireRole(roles: string[]) {
 }
 
 export function registerRoutes(app: Express) {
+  // Create uploads directory if it doesn't exist
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)){
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  // Configure multer for handling file uploads
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, uploadsDir)
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+      cb(null, uniqueSuffix + path.extname(file.originalname))
+    }
+  });
+
+  const upload = multer({ 
+    storage: storage,
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const filetypes = /jpeg|jpg|png|gif/;
+      const mimetype = filetypes.test(file.mimetype);
+      const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+      if (mimetype && extname) {
+        return cb(null, true);
+      }
+      cb(new Error('Error: Images Only!'));
+    }
+  });
+
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+  // File upload endpoint
+  app.post('/api/upload', requireAuth, upload.single('photo'), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const photoUrl = `/uploads/${req.file.filename}`;
+    res.json({ photoUrl });
+  });
+
   setupAuth(app);
 
   // Teams
