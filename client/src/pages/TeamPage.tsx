@@ -9,6 +9,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
+import { EditPlayerDialog } from "../components/EditPlayerDialog";
+import { DeletePlayerDialog } from "../components/DeletePlayerDialog";
 import { CreateEventDialog } from "../components/CreateEventDialog";
 import { EditEventDialog } from "../components/EditEventDialog";
 import { DeleteEventDialog } from "../components/DeleteEventDialog";
@@ -48,12 +50,13 @@ export default function TeamPage() {
               <TableHead>Number</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Position</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {players?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
                   No players added yet
                 </TableCell>
               </TableRow>
@@ -63,6 +66,12 @@ export default function TeamPage() {
                   <TableCell>{player.number}</TableCell>
                   <TableCell>{player.name}</TableCell>
                   <TableCell>{player.position}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <EditPlayerDialog player={player} teamId={parsedTeamId} />
+                      <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}

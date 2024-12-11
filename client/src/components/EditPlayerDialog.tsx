@@ -2,39 +2,44 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPlayerSchema, type InsertPlayer } from "@db/schema";
-import { usePlayers } from "../hooks/use-players";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus } from "lucide-react";
+import { Pencil } from "lucide-react";
 
-export function CreatePlayerDialog({ teamId }: { teamId: number }) {
+export function EditPlayerDialog({ player, teamId }: { player: any; teamId: number }) {
   const [open, setOpen] = useState(false);
-  const { createPlayer } = usePlayers(teamId);
   const { toast } = useToast();
 
   const form = useForm<InsertPlayer>({
     resolver: zodResolver(insertPlayerSchema),
     defaultValues: {
       teamId,
-      name: "",
-      position: "GK",
-      number: 0
+      name: player.name,
+      position: player.position,
+      number: player.number
     }
   });
 
   const onSubmit = async (data: InsertPlayer) => {
     try {
-      await createPlayer(data);
+      const response = await fetch(`/api/teams/${teamId}/players/${player.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to update player');
+
       toast({
         title: "Success",
-        description: "Player added successfully"
+        description: "Player updated successfully"
       });
       setOpen(false);
-      form.reset();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -47,14 +52,13 @@ export function CreatePlayerDialog({ teamId }: { teamId: number }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Player
+        <Button variant="ghost" size="icon">
+          <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Player</DialogTitle>
+          <DialogTitle>Edit Player</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -107,7 +111,7 @@ export function CreatePlayerDialog({ teamId }: { teamId: number }) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">Add Player</Button>
+            <Button type="submit" className="w-full">Update Player</Button>
           </form>
         </Form>
       </DialogContent>

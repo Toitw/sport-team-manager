@@ -64,6 +64,43 @@ export function registerRoutes(app: Express) {
     }).returning();
     res.json(newPlayer[0]);
   });
+  app.put("/api/teams/:teamId/players/:playerId", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const updatedPlayer = await db.update(players)
+        .set({
+          ...req.body,
+          teamId: parseInt(req.params.teamId)
+        })
+        .where(eq(players.id, parseInt(req.params.playerId)))
+        .returning();
+
+      if (!updatedPlayer.length) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+
+      res.json(updatedPlayer[0]);
+    } catch (error: any) {
+      console.error('Error updating player:', error);
+      res.status(500).json({ message: error.message || "Failed to update player" });
+    }
+  });
+
+  app.delete("/api/teams/:teamId/players/:playerId", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const deleted = await db.delete(players)
+        .where(eq(players.id, parseInt(req.params.playerId)))
+        .returning();
+
+      if (!deleted.length) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+
+      res.json({ message: "Player deleted successfully" });
+    } catch (error: any) {
+      console.error('Error deleting player:', error);
+      res.status(500).json({ message: error.message || "Failed to delete player" });
+    }
+  });
 
   // Events
   app.get("/api/teams/:teamId/events", requireAuth, async (req, res) => {

@@ -2,6 +2,9 @@ import { pgTable, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Define soccer positions enum
+export const positionEnum = pgEnum('position_type', ['GK', 'DEF', 'MID', 'FWD']);
+
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   username: text("username").unique().notNull(),
@@ -20,7 +23,7 @@ export const players = pgTable("players", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   teamId: integer("team_id").notNull().references(() => teams.id),
   name: text("name").notNull(),
-  position: text("position").notNull(),
+  position: positionEnum("position").notNull(),
   number: integer("number").notNull(),
   createdAt: timestamp("created_at").defaultNow()
 });
