@@ -20,9 +20,9 @@ export default function TeamPage() {
   const { user } = useUser();
   const parsedTeamId = teamId ? parseInt(teamId) : 0;
   const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
-  const { events, isLoading: eventsLoading } = useEvents(parsedTeamId);
+  const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
   
-  const matches = events?.filter(event => event.type === "match") ?? [];
+  const matches = events.filter(event => event.type === "match");
   
   const canManageTeam = user?.role === "admin" || user?.role === "editor";
 
