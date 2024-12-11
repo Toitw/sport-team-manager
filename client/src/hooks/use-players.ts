@@ -3,9 +3,10 @@ import type { Player, InsertPlayer } from "@db/schema";
 
 export function usePlayers(teamId: number) {
   const queryClient = useQueryClient();
+  const queryKey = ['players', teamId];
 
   const { data: players, isLoading } = useQuery<Player[]>({
-    queryKey: ['players', teamId],
+    queryKey,
     queryFn: async () => {
       const response = await fetch(`/api/teams/${teamId}/players`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch players');
@@ -24,8 +25,8 @@ export function usePlayers(teamId: number) {
       if (!response.ok) throw new Error('Failed to create player');
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['players', teamId] });
+    onSuccess: (newPlayer) => {
+      queryClient.setQueryData<Player[]>(queryKey, (old = []) => [...old, newPlayer]);
     }
   });
 
@@ -40,8 +41,10 @@ export function usePlayers(teamId: number) {
       if (!response.ok) throw new Error('Failed to update player');
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['players', teamId] });
+    onSuccess: (updatedPlayer) => {
+      queryClient.setQueryData<Player[]>(queryKey, (old = []) => 
+        old.map(player => player.id === updatedPlayer.id ? updatedPlayer : player)
+      );
     }
   });
 
@@ -53,8 +56,10 @@ export function usePlayers(teamId: number) {
       });
       if (!response.ok) throw new Error('Failed to delete player');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['players', teamId] });
+    onSuccess: (_, deletedId) => {
+      queryClient.setQueryData<Player[]>(queryKey, (old = []) => 
+        old.filter(player => player.id !== deletedId)
+      );
     }
   });
 
