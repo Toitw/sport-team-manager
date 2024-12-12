@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, Home } from "lucide-react";
 import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
 import { EditPlayerDialog } from "../components/EditPlayerDialog";
 import { DeletePlayerDialog } from "../components/DeletePlayerDialog";
@@ -265,6 +265,14 @@ export default function TeamPage() {
 
   return (
     <div className="container py-8">
+      <div className="flex justify-between items-center mb-6">
+        <Link href="/">
+          <Button variant="outline" size="sm">
+            <Home className="mr-2 h-4 w-4" />
+            Home
+          </Button>
+        </Link>
+      </div>
       {section === "players" ? renderPlayers() : 
        section === "matches" ? renderMatches() : 
        renderEvents()}

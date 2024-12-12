@@ -113,7 +113,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Edit Event</DialogTitle>
           <DialogDescription>
