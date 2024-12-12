@@ -18,8 +18,8 @@ const formSchema = z.object({
   type: z.enum(["match", "training", "other"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  homeScore: z.number().nullable(),
-  awayScore: z.number().nullable()
+  homeScore: z.number().nullable().optional(),
+  awayScore: z.number().nullable().optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,7 +70,15 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         return;
       }
 
-      await updateEvent({
+      // Ensure scores are properly handled for matches
+      const scores = data.type === "match" 
+        ? {
+            homeScore: data.homeScore === undefined ? null : data.homeScore,
+            awayScore: data.awayScore === undefined ? null : data.awayScore
+          }
+        : { homeScore: null, awayScore: null };
+
+      const updateData = {
         id: event.id,
         title: data.title,
         description: data.description || "",
@@ -78,9 +86,10 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         teamId,
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString(),
-        homeScore: data.type === "match" ? data.homeScore : null,
-        awayScore: data.type === "match" ? data.awayScore : null
-      });
+        ...scores
+      };
+
+      await updateEvent(updateData);
       
       toast({
         title: "Success",
@@ -88,6 +97,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
       });
       setOpen(false);
     } catch (error: any) {
+      console.error('Update event error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -202,13 +212,14 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                       <FormLabel>Home Score</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
+                          type="number"
+                          min="0"
                           {...field}
                           value={field.value === null ? '' : field.value}
-                          onChange={e => {
-            const value = e.target.value;
-            field.onChange(value === '' ? null : parseInt(value));
-          }}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === '' ? null : parseInt(value, 10));
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -223,13 +234,14 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                       <FormLabel>Away Score</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number" 
+                          type="number"
+                          min="0"
                           {...field}
                           value={field.value === null ? '' : field.value}
-                          onChange={e => {
-            const value = e.target.value;
-            field.onChange(value === '' ? null : parseInt(value));
-          }}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            field.onChange(value === '' ? null : parseInt(value, 10));
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
