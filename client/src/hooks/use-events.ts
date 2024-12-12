@@ -52,7 +52,9 @@ export function useEvents(teamId: number) {
           body: JSON.stringify({
             ...data,
             startDate: new Date(data.startDate).toISOString(),
-            endDate: new Date(data.endDate).toISOString()
+            endDate: new Date(data.endDate).toISOString(),
+            homeScore: data.type === 'match' ? data.homeScore : null,
+            awayScore: data.type === 'match' ? data.awayScore : null
           }),
           credentials: 'include'
         });
