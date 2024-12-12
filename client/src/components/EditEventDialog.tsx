@@ -204,8 +204,8 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                         <Input 
                           type="number" 
                           {...field}
-                          value={field.value ?? ''}
-                          onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                          value={field.value === null ? '' : field.value}
+                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -222,8 +222,8 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                         <Input 
                           type="number" 
                           {...field}
-                          value={field.value ?? ''}
-                          onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                          value={field.value === null ? '' : field.value}
+                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
                         />
                       </FormControl>
                       <FormMessage />
