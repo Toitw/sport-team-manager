@@ -70,13 +70,18 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         return;
       }
 
-      // Ensure scores are properly handled for matches
-      const scores = data.type === "match" 
-        ? {
-            homeScore: data.homeScore === undefined ? null : data.homeScore,
-            awayScore: data.awayScore === undefined ? null : data.awayScore
-          }
-        : { homeScore: null, awayScore: null };
+      // Handle scores for match events
+      let scores = {
+        homeScore: null,
+        awayScore: null
+      };
+      
+      if (data.type === "match") {
+        scores = {
+          homeScore: data.homeScore === undefined || data.homeScore === null ? null : Number(data.homeScore),
+          awayScore: data.awayScore === undefined || data.awayScore === null ? null : Number(data.awayScore)
+        };
+      }
 
       const updateData = {
         id: event.id,

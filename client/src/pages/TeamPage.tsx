@@ -1,4 +1,4 @@
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { usePlayers } from "../hooks/use-players";
 import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
