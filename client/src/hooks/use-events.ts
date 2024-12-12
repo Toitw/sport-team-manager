@@ -46,6 +46,15 @@ export function useEvents(teamId: number) {
   const updateEvent = useMutation<Event, Error, { id: number } & Omit<InsertEvent, 'id' | 'createdAt'>>({
     mutationFn: async ({ id, ...data }) => {
       try {
+        // Ensure scores are properly handled
+        const scores = data.type === 'match' ? {
+          homeScore: data.homeScore === undefined || data.homeScore === '' ? null : Number(data.homeScore),
+          awayScore: data.awayScore === undefined || data.awayScore === '' ? null : Number(data.awayScore)
+        } : {
+          homeScore: null,
+          awayScore: null
+        };
+
         const response = await fetch(`/api/teams/${teamId}/events/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -53,8 +62,7 @@ export function useEvents(teamId: number) {
             ...data,
             startDate: new Date(data.startDate).toISOString(),
             endDate: new Date(data.endDate).toISOString(),
-            homeScore: data.type === 'match' && data.homeScore !== undefined ? Number(data.homeScore) : null,
-            awayScore: data.type === 'match' && data.awayScore !== undefined ? Number(data.awayScore) : null
+            ...scores
           }),
           credentials: 'include'
         });
