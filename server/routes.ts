@@ -205,8 +205,8 @@ export function registerRoutes(app: Express) {
           startDate: startDateObj.toISOString(),
           endDate: endDateObj.toISOString(),
           type: rest.type,
-          homeScore: rest.type === 'match' ? rest.homeScore : null,
-          awayScore: rest.type === 'match' ? rest.awayScore : null
+          homeScore: rest.type === 'match' && rest.homeScore !== undefined && rest.homeScore !== '' ? parseInt(rest.homeScore) : null,
+          awayScore: rest.type === 'match' && rest.awayScore !== undefined && rest.awayScore !== '' ? parseInt(rest.awayScore) : null
         })
         .where(eq(events.id, parseInt(req.params.eventId)))
         .returning();

@@ -205,7 +205,10 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                           type="number" 
                           {...field}
                           value={field.value === null ? '' : field.value}
-                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          onChange={e => {
+            const value = e.target.value;
+            field.onChange(value === '' ? null : parseInt(value));
+          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -223,7 +226,10 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                           type="number" 
                           {...field}
                           value={field.value === null ? '' : field.value}
-                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          onChange={e => {
+            const value = e.target.value;
+            field.onChange(value === '' ? null : parseInt(value));
+          }}
                         />
                       </FormControl>
                       <FormMessage />
