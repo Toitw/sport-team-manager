@@ -1,5 +1,7 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Users, Calendar, Trophy, Home } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 import {
   Sidebar,
   SidebarContent,
@@ -8,10 +10,11 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
-  SidebarInset
+  SidebarInset,
+  SidebarSeparator,
+  SidebarGroupLabel,
+  SidebarGroup
 } from "@/components/ui/sidebar";
-import { useLocation } from "wouter";
-import { cn } from "@/lib/utils";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,22 +39,34 @@ export function Layout({ children, teamId }: LayoutProps) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <Link href="/">
-                <SidebarMenuButton isActive={isActiveRoute("/")} tooltip="Home">
-                  <Home className="h-4 w-4" />
-                  <span>Home</span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-            {teamId && (
-              <>
+          <SidebarGroup>
+            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <Link href="/">
+                  <SidebarMenuButton 
+                    isActive={isActiveRoute("/")} 
+                    tooltip="Home"
+                    size="lg"
+                  >
+                    <Home className="h-4 w-4" />
+                    <span>Home</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          {teamId && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Team Management</SidebarGroupLabel>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href={`/team/${teamId}/players`}>
                     <SidebarMenuButton 
                       isActive={isActiveRoute(`/team/${teamId}/players`)}
                       tooltip="Players"
+                      size="lg"
                     >
                       <Users className="h-4 w-4" />
                       <span>Players</span>
@@ -63,6 +78,7 @@ export function Layout({ children, teamId }: LayoutProps) {
                     <SidebarMenuButton 
                       isActive={isActiveRoute(`/team/${teamId}/matches`)}
                       tooltip="Matches"
+                      size="lg"
                     >
                       <Trophy className="h-4 w-4" />
                       <span>Matches</span>
@@ -74,15 +90,16 @@ export function Layout({ children, teamId }: LayoutProps) {
                     <SidebarMenuButton 
                       isActive={isActiveRoute(`/team/${teamId}/events`)}
                       tooltip="Events"
+                      size="lg"
                     >
                       <Calendar className="h-4 w-4" />
                       <span>Events</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-              </>
-            )}
-          </SidebarMenu>
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
