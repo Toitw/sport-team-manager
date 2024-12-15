@@ -30,7 +30,7 @@ export default function TeamPage() {
   
   const matches = events.filter(event => event.type === "match");
   
-  const canManageTeam = user?.role === "admin" || user?.role === "editor";
+  const canManageTeam = user?.role === "admin" || user?.role === "manager";
 
   if (playersLoading || eventsLoading) {
     return (
@@ -59,7 +59,7 @@ export default function TeamPage() {
               <TableHead>Number</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Position</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,12 +88,14 @@ export default function TeamPage() {
                   <TableCell>{player.number}</TableCell>
                   <TableCell>{player.name}</TableCell>
                   <TableCell>{player.position}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <EditPlayerDialog player={player} teamId={parsedTeamId} />
-                      <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
-                    </div>
-                  </TableCell>
+                  {canManageTeam && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <EditPlayerDialog player={player} teamId={parsedTeamId} />
+                        <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
