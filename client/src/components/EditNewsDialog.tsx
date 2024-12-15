@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useNews } from "@/hooks/use-news";
-import { Pencil } from "lucide-react";
+import { Pencil, ImagePlus, Loader2 } from "lucide-react";
 import type { News } from "@db/schema";
 
 const formSchema = z.object({
@@ -40,7 +40,11 @@ interface EditNewsDialogProps {
 
 export function EditNewsDialog({ news, teamId }: EditNewsDialogProps) {
   const [open, setOpen] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [previewUrl, setPreviewUrl] = React.useState<string>(news.imageUrl || "");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { updateNews } = useNews(teamId);
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,13 +54,41 @@ export function EditNewsDialog({ news, teamId }: EditNewsDialogProps) {
     },
   });
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const { photoUrl } = await response.json();
+      form.setValue('imageUrl', photoUrl);
+      setPreviewUrl(photoUrl);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
     try {
       await updateNews({
         id: news.id,
         ...data,
       });
-      form.reset();
       setOpen(false);
     } catch (error) {
       console.error("Failed to update news:", error);
@@ -70,12 +102,12 @@ export function EditNewsDialog({ news, teamId }: EditNewsDialogProps) {
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit News Article</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-1 overflow-y-auto pr-2">
             <FormField
               control={form.control}
               name="title"
@@ -107,15 +139,52 @@ export function EditNewsDialog({ news, teamId }: EditNewsDialogProps) {
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL (optional)</FormLabel>
+                  <FormLabel>Image</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="space-y-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="w-full"
+                      >
+                        {uploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <ImagePlus className="mr-2 h-4 w-4" />
+                            Upload Image
+                          </>
+                        )}
+                      </Button>
+                      {previewUrl && (
+                        <div className="relative max-h-[200px] overflow-hidden rounded-lg">
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <Input type="hidden" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="flex justify-end">
+            <div className="flex justify-end sticky bottom-0 pt-4 mt-4 border-t bg-background">
               <Button type="submit">Update News</Button>
             </div>
           </form>
