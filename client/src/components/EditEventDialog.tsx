@@ -100,9 +100,20 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog 
+      open={open} 
+      onOpenChange={setOpen}
+      modal={true}
+    >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+        >
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
