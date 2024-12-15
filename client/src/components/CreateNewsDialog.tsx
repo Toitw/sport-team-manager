@@ -49,7 +49,10 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await createNews(data);
+      await createNews({
+        ...data,
+        teamId: teamId
+      });
       form.reset();
       setOpen(false);
     } catch (error) {

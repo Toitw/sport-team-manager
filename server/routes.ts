@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
 import { teams, players, events, news } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";

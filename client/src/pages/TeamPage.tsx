@@ -2,6 +2,7 @@ import { useParams, Link } from "wouter";
 import { usePlayers } from "../hooks/use-players";
 import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
+import { useNews } from "../hooks/use-news";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
