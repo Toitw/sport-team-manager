@@ -179,4 +179,55 @@ export function setupAuth(app: Express) {
     }
     res.status(401).send("Not logged in");
   });
+
+  // Get all users (admin only)
+  app.get("/api/users", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(403).send("Unauthorized");
+    }
+    try {
+      const result = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          role: users.role,
+        })
+        .from(users);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).send("Internal server error");
+    }
+  });
+
+  // Update user role (admin only)
+  app.patch("/api/users/:id/role", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(403).send("Unauthorized");
+    }
+
+    const userId = parseInt(req.params.id);
+    const { role } = req.body;
+
+    if (!role || !["admin", "manager", "reader"].includes(role)) {
+      return res.status(400).send("Invalid role");
+    }
+
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({ role })
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser) {
+        return res.status(404).send("User not found");
+      }
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).send("Internal server error");
+    }
+  });
 }

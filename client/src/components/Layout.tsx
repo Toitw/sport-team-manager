@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Users, Calendar, Trophy, Home, Newspaper } from "lucide-react";
+import { useUser } from "../hooks/use-user";
 import { cn } from "@/lib/utils";
 
 import {
@@ -23,6 +24,7 @@ interface LayoutProps {
 
 export function Layout({ children, teamId }: LayoutProps) {
   const [location] = useLocation();
+  const { user } = useUser();
   console.log("Layout props:", { teamId, location });
 
   if (!teamId) {
@@ -66,6 +68,26 @@ export function Layout({ children, teamId }: LayoutProps) {
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarMenu>
+              {user?.role === "admin" && (
+                <SidebarMenuItem>
+                  <Link href="/admin">
+                    <SidebarMenuButton
+                      isActive={isActiveRoute("/admin")}
+                      tooltip="Administration"
+                      size="lg"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>User Management</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroup>
 
