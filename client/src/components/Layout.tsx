@@ -42,7 +42,7 @@ export function Layout({ children, teamId }: LayoutProps) {
 
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar>
+      <Sidebar variant="sidebar" collapsible="icon" className="fixed">
         <SidebarHeader className="border-b">
           <div className="p-4">
             <Link href="/">
@@ -50,7 +50,7 @@ export function Layout({ children, teamId }: LayoutProps) {
             </Link>
           </div>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="h-[calc(100vh-4rem)]">
           <SidebarGroup>
             <SidebarGroupLabel>Navigation</SidebarGroupLabel>
             <SidebarMenu>

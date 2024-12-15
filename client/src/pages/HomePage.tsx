@@ -24,8 +24,8 @@ export default function HomePage() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams?.map((team) => (
-              <Link key={team.id} to={`/team/${team.id}/players`}>
-                <a className="block">
+              <div key={team.id} className="block">
+                <Link to={`/team/${team.id}/players`}>
                   <Card className="transition-colors hover:bg-accent cursor-pointer">
                     <CardHeader>
                       <CardTitle>{team.name}</CardTitle>
@@ -36,8 +36,8 @@ export default function HomePage() {
                       </p>
                     </CardContent>
                   </Card>
-                </a>
-              </Link>
+                </Link>
+              </div>
             ))}
 
           {user?.role === "admin" && (
