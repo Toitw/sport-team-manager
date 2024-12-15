@@ -18,8 +18,8 @@ const formSchema = z.object({
   type: z.enum(["match", "training", "other"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  homeScore: z.union([z.number(), z.null()]).optional(),
-  awayScore: z.union([z.number(), z.null()]).optional()
+  homeScore: z.union([z.number().int().nonnegative(), z.null()]).optional(),
+  awayScore: z.union([z.number().int().nonnegative(), z.null()]).optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,8 +42,8 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
       type: event.type,
       startDate: new Date(event.startDate).toISOString().slice(0, 16),
       endDate: new Date(event.endDate).toISOString().slice(0, 16),
-      homeScore: event.homeScore,
-      awayScore: event.awayScore,
+      homeScore: event.homeScore !== null ? event.homeScore : undefined,
+      awayScore: event.awayScore !== null ? event.awayScore : undefined,
     }
   });
 
@@ -78,8 +78,8 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         teamId,
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString(),
-        homeScore: data.type === "match" ? data.homeScore : null,
-        awayScore: data.type === "match" ? data.awayScore : null
+        homeScore: data.type === "match" && data.homeScore !== undefined ? data.homeScore : null,
+        awayScore: data.type === "match" && data.awayScore !== undefined ? data.awayScore : null
       };
 
       await updateEvent(updateData);
@@ -106,7 +106,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md overflow-y-auto max-h-[90vh]">
+      <DialogContent className="max-w-sm overflow-y-auto max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Edit Event</DialogTitle>
           <DialogDescription>
@@ -208,7 +208,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                           type="number"
                           min="0"
                           {...field}
-                          value={field.value === null ? '' : field.value}
+                          value={field.value ?? ''}
                           onChange={(e) => {
                             const value = e.target.value;
                             field.onChange(value === '' ? null : parseInt(value, 10));
@@ -230,7 +230,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                           type="number"
                           min="0"
                           {...field}
-                          value={field.value === null ? '' : field.value}
+                          value={field.value ?? ''}
                           onChange={(e) => {
                             const value = e.target.value;
                             field.onChange(value === '' ? null : parseInt(value, 10));
