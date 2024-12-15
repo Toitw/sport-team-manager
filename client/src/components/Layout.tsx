@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Users, Calendar, Trophy, Home } from "lucide-react";
+import { Users, Calendar, Trophy, Home, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import {
@@ -94,6 +94,18 @@ export function Layout({ children, teamId }: LayoutProps) {
                     >
                       <Trophy className="h-4 w-4" />
                       <span>Matches</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href={`/team/${teamId}/news`}>
+                    <SidebarMenuButton 
+                      isActive={isActiveRoute(`/team/${teamId}/news`)}
+                      tooltip="News"
+                      size="lg"
+                    >
+                      <Newspaper className="h-4 w-4" />
+                      <span>News</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>

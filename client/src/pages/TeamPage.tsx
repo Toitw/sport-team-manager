@@ -264,11 +264,88 @@ export default function TeamPage() {
     );
   };
 
+  const renderNews = () => {
+    const { news, nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
+    const canManageNews = user?.role === "admin";
+
+    if (newsLoading) {
+      return (
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {nextMatch && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Next Match</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 border rounded-lg">
+                <div className="space-y-2">
+                  <div className="font-semibold text-lg">{nextMatch.title}</div>
+                  {nextMatch.description && (
+                    <div className="text-sm text-muted-foreground">
+                      {nextMatch.description}
+                    </div>
+                  )}
+                  <div className="text-sm font-medium text-primary">
+                    {format(new Date(nextMatch.startDate), "PPP p")}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>News</CardTitle>
+            {canManageNews && <CreateNewsDialog teamId={parsedTeamId} />}
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {!news?.length ? (
+                <div className="text-center text-muted-foreground">
+                  No news articles yet
+                </div>
+              ) : (
+                news.map((article) => (
+                  <div
+                    key={article.id}
+                    className="p-4 border rounded-lg space-y-2"
+                  >
+                    <div className="font-semibold text-lg">{article.title}</div>
+                    {article.imageUrl && (
+                      <img
+                        src={article.imageUrl}
+                        alt={article.title}
+                        className="w-full h-48 object-cover rounded-md"
+                      />
+                    )}
+                    <div className="text-sm">{article.content}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Posted on {format(new Date(article.createdAt), "PPP")}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <Layout teamId={parsedTeamId.toString()}>
       <div className="container py-8">
         {section === "players" ? renderPlayers() : 
          section === "matches" ? renderMatches() : 
+         section === "news" ? renderNews() :
          renderEvents()}
       </div>
     </Layout>
