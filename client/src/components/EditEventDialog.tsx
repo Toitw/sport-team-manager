@@ -18,8 +18,8 @@ const formSchema = z.object({
   type: z.enum(["match", "training", "other"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  homeScore: z.number().nullable().optional(),
-  awayScore: z.number().nullable().optional()
+  homeScore: z.union([z.number(), z.null()]).optional(),
+  awayScore: z.union([z.number(), z.null()]).optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,19 +70,6 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         return;
       }
 
-      // Handle scores for match events
-      let scores = {
-        homeScore: null,
-        awayScore: null
-      };
-      
-      if (data.type === "match") {
-        scores = {
-          homeScore: data.homeScore === undefined || data.homeScore === null ? null : Number(data.homeScore),
-          awayScore: data.awayScore === undefined || data.awayScore === null ? null : Number(data.awayScore)
-        };
-      }
-
       const updateData = {
         id: event.id,
         title: data.title,
@@ -91,7 +78,8 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         teamId,
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString(),
-        ...scores
+        homeScore: data.type === "match" ? data.homeScore : null,
+        awayScore: data.type === "match" ? data.awayScore : null
       };
 
       await updateEvent(updateData);
