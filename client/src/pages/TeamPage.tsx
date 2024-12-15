@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
 import { format } from "date-fns";
-import { Loader2, Home } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Layout } from "../components/Layout";
 import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
 import { EditPlayerDialog } from "../components/EditPlayerDialog";
 import { DeletePlayerDialog } from "../components/DeletePlayerDialog";

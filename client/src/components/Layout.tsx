@@ -25,6 +25,11 @@ export function Layout({ children, teamId }: LayoutProps) {
   const [location] = useLocation();
 
   const isActiveRoute = (route: string) => {
+    // For team routes, check if the current location starts with the route
+    if (route.startsWith("/team/")) {
+      return location.startsWith(route);
+    }
+    // For exact matches (like home page)
     return location === route;
   };
 
