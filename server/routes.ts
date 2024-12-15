@@ -56,24 +56,34 @@ export function registerRoutes(app: Express) {
       fileSize: 5 * 1024 * 1024 // 5MB limit
     },
     fileFilter: (req, file, cb) => {
-      const filetypes = /jpeg|jpg|png|gif/;
-      const mimetype = filetypes.test(file.mimetype);
-      const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-      if (mimetype && extname) {
-        return cb(null, true);
+      // Accept all common image formats
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(null, false);
+        cb(new Error('Only image files are allowed'));
       }
-      cb(new Error('Error: Images Only!'));
     }
   });
 
   // File upload endpoint
-  app.post('/api/upload', requireAuth, upload.single('photo'), (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    const photoUrl = `/uploads/${req.file.filename}`;
-    res.json({ photoUrl });
+  app.post('/api/upload', requireAuth, (req, res) => {
+    upload.single('photo')(req, res, (err) => {
+      if (err) {
+        console.error('File upload error:', err);
+        return res.status(400).json({ 
+          error: err.message || 'Error uploading file',
+          details: err
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const photoUrl = `/uploads/${req.file.filename}`;
+      res.json({ photoUrl });
+    });
   });
 
   // Teams
