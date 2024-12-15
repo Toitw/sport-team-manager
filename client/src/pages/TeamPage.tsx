@@ -265,7 +265,7 @@ export default function TeamPage() {
   };
 
   return (
-    <Layout teamId={teamId}>
+    <Layout teamId={parsedTeamId.toString()}>
       <div className="container py-8">
         {section === "players" ? renderPlayers() : 
          section === "matches" ? renderMatches() : 

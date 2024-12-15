@@ -24,6 +24,8 @@ interface LayoutProps {
 export function Layout({ children, teamId }: LayoutProps) {
   const [location] = useLocation();
 
+  console.log("Layout props:", { teamId, location });
+
   const isActiveRoute = (route: string) => {
     // For team routes, check if the current location starts with the route
     if (route.startsWith("/team/")) {
