@@ -44,6 +44,16 @@ export const events = pgTable("events", {
   awayScore: integer("away_score"),
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
+export const news = pgTable("news", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  createdById: integer("created_by_id").notNull().references(() => users.id)
+});
+
 
 // Zod Schemas
 export const insertUserSchema = createInsertSchema(users);
@@ -55,6 +65,11 @@ export const insertTeamSchema = createInsertSchema(teams);
 export const selectTeamSchema = createSelectSchema(teams);
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Team = z.infer<typeof selectTeamSchema>;
+export const insertNewsSchema = createInsertSchema(news);
+export const selectNewsSchema = createSelectSchema(news);
+export type InsertNews = z.infer<typeof insertNewsSchema>;
+export type News = z.infer<typeof selectNewsSchema>;
+
 
 export const insertPlayerSchema = createInsertSchema(players);
 export const selectPlayerSchema = createSelectSchema(players);

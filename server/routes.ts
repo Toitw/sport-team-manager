@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { teams, players, events } from "@db/schema";
+import { teams, players, events, news } from "@db/schema";
 import { eq } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -240,5 +240,82 @@ export function registerRoutes(app: Express) {
       console.error('Error deleting event:', error);
       res.status(500).json({ message: error.message || "Failed to delete event" });
     }
+  });
+
+  // News
+  app.get("/api/teams/:teamId/news", requireAuth, async (req, res) => {
+    const teamNews = await db.select().from(news)
+      .where(eq(news.teamId, parseInt(req.params.teamId)));
+    res.json(teamNews);
+  });
+
+  app.post("/api/teams/:teamId/news", requireRole(["admin"]), async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+
+      const newNews = await db.insert(news).values({
+        ...req.body,
+        teamId: parseInt(req.params.teamId),
+        createdById: req.user.id
+      }).returning();
+      
+      res.json(newNews[0]);
+    } catch (error: any) {
+      console.error('Error creating news:', error);
+      res.status(500).json({ message: error.message || "Failed to create news" });
+    }
+  });
+
+  app.put("/api/teams/:teamId/news/:newsId", requireRole(["admin"]), async (req, res) => {
+    try {
+      const updatedNews = await db.update(news)
+        .set(req.body)
+        .where(eq(news.id, parseInt(req.params.newsId)))
+        .returning();
+
+      if (!updatedNews.length) {
+        return res.status(404).json({ message: "News not found" });
+      }
+
+      res.json(updatedNews[0]);
+    } catch (error: any) {
+      console.error('Error updating news:', error);
+      res.status(500).json({ message: error.message || "Failed to update news" });
+    }
+  });
+
+  app.delete("/api/teams/:teamId/news/:newsId", requireRole(["admin"]), async (req, res) => {
+    try {
+      const deleted = await db.delete(news)
+        .where(eq(news.id, parseInt(req.params.newsId)))
+        .returning();
+
+      if (!deleted.length) {
+        return res.status(404).json({ message: "News not found" });
+      }
+
+      res.json({ message: "News deleted successfully" });
+    } catch (error: any) {
+      console.error('Error deleting news:', error);
+      res.status(500).json({ message: error.message || "Failed to delete news" });
+    }
+  });
+
+  // Next match endpoint
+  app.get("/api/teams/:teamId/next-match", requireAuth, async (req, res) => {
+    const now = new Date().toISOString();
+    const nextMatch = await db.select()
+      .from(events)
+      .where(
+        sql`${events.teamId} = ${parseInt(req.params.teamId)} AND 
+            ${events.type} = 'match' AND 
+            ${events.startDate} > ${now}`
+      )
+      .orderBy(events.startDate)
+      .limit(1);
+    
+    res.json(nextMatch[0] || null);
   });
 }
