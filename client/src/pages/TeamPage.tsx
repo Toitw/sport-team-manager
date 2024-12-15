@@ -264,18 +264,12 @@ export default function TeamPage() {
   };
 
   return (
-    <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
-        <Link href="/">
-          <Button variant="outline" size="sm">
-            <Home className="mr-2 h-4 w-4" />
-            Home
-          </Button>
-        </Link>
+    <Layout teamId={teamId}>
+      <div className="container py-8">
+        {section === "players" ? renderPlayers() : 
+         section === "matches" ? renderMatches() : 
+         renderEvents()}
       </div>
-      {section === "players" ? renderPlayers() : 
-       section === "matches" ? renderMatches() : 
-       renderEvents()}
-    </div>
+    </Layout>
   );
 }
