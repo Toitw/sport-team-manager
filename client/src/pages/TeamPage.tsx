@@ -23,6 +23,7 @@ export default function TeamPage() {
   const parsedTeamId = teamId ? parseInt(teamId) : 0;
   const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
   const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
+  const { news, nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
   
   const matches = events.filter(event => event.type === "match");
   
@@ -266,7 +267,6 @@ export default function TeamPage() {
   };
 
   const renderNews = () => {
-    const { news, nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
     const canManageNews = user?.role === "admin";
 
     if (newsLoading) {
@@ -329,7 +329,7 @@ export default function TeamPage() {
                     )}
                     <div className="text-sm">{article.content}</div>
                     <div className="text-xs text-muted-foreground">
-                      Posted on {format(new Date(article.createdAt), "PPP")}
+                      Posted on {article.createdAt ? format(new Date(article.createdAt), "PPP") : 'Unknown date'}
                     </div>
                   </div>
                 ))
