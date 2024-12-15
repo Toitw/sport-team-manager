@@ -18,6 +18,7 @@ import { EditEventDialog } from "../components/EditEventDialog";
 import { DeleteEventDialog } from "../components/DeleteEventDialog";
 import { CreateNewsDialog } from "../components/CreateNewsDialog";
 import { EditNewsDialog } from "../components/EditNewsDialog";
+import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
 
 export default function TeamPage() {
   const { teamId = "", section = "players" } = useParams();
@@ -326,6 +327,7 @@ export default function TeamPage() {
                       {canManageNews && (
                         <div className="flex items-center gap-2">
                           <EditNewsDialog news={article} teamId={parsedTeamId} />
+                          <DeleteNewsDialog newsId={article.id} teamId={parsedTeamId} />
                         </div>
                       )}
                     </div>
