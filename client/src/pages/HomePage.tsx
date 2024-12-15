@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CreateTeamDialog } from "../components/CreateTeamDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Layout } from "../components/Layout";
+import { Link } from "wouter";
 
 export default function HomePage() {
   const { user, logout } = useUser();
@@ -23,17 +24,21 @@ export default function HomePage() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams?.map((team) => (
-            <Card key={team.id}>
-              <CardHeader>
-                <CardTitle>{team.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Click on the team name to manage players, matches, and events.
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+              <Link key={team.id} to={`/team/${team.id}/players`}>
+                <a className="block">
+                  <Card className="transition-colors hover:bg-accent cursor-pointer">
+                    <CardHeader>
+                      <CardTitle>{team.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Click to manage players, matches, and events.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
+              </Link>
+            ))}
 
           {user?.role === "admin" && (
             <Card>
