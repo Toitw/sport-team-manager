@@ -17,6 +17,7 @@ import { CreateEventDialog } from "../components/CreateEventDialog";
 import { EditEventDialog } from "../components/EditEventDialog";
 import { DeleteEventDialog } from "../components/DeleteEventDialog";
 import { CreateNewsDialog } from "../components/CreateNewsDialog";
+import { EditNewsDialog } from "../components/EditNewsDialog";
 
 export default function TeamPage() {
   const { teamId = "", section = "players" } = useParams();
