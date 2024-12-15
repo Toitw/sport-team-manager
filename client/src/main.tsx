@@ -30,6 +30,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/team/:teamId/:section?" component={TeamPage} />
+      <Route path="/team/:teamId" component={TeamPage} />
       <Route>404 Page Not Found</Route>
     </Switch>
   );

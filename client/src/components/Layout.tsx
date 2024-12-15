@@ -23,6 +23,11 @@ interface LayoutProps {
 
 export function Layout({ children, teamId }: LayoutProps) {
   const [location] = useLocation();
+  console.log("Layout props:", { teamId, location });
+
+  if (!teamId) {
+    console.log("No teamId provided to Layout");
+  }
 
   console.log("Layout props:", { teamId, location });
 
