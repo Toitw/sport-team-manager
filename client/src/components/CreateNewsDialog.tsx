@@ -100,12 +100,12 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
       <DialogTrigger asChild>
         <Button>Add News</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Create News Article</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 flex-1 overflow-y-auto pr-2">
             <FormField
               control={form.control}
               name="title"
@@ -167,11 +167,11 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
                         )}
                       </Button>
                       {previewUrl && (
-                        <div className="relative aspect-video">
+                        <div className="relative max-h-[200px] overflow-hidden rounded-lg">
                           <img
                             src={previewUrl}
                             alt="Preview"
-                            className="rounded-lg object-cover"
+                            className="w-full h-full object-cover"
                           />
                         </div>
                       )}
@@ -182,7 +182,7 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
                 </FormItem>
               )}
             />
-            <div className="flex justify-end">
+            <div className="flex justify-end sticky bottom-0 pt-4 mt-4 border-t bg-background">
               <Button type="submit">Create News</Button>
             </div>
           </form>
