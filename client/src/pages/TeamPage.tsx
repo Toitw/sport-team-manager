@@ -321,7 +321,14 @@ export default function TeamPage() {
                     key={article.id}
                     className="p-4 border rounded-lg space-y-2"
                   >
-                    <div className="font-semibold text-lg">{article.title}</div>
+                    <div className="flex justify-between items-start">
+                      <div className="font-semibold text-lg">{article.title}</div>
+                      {canManageNews && (
+                        <div className="flex items-center gap-2">
+                          <EditNewsDialog news={article} teamId={parsedTeamId} />
+                        </div>
+                      )}
+                    </div>
                     {article.imageUrl && (
                       <img
                         src={article.imageUrl}
