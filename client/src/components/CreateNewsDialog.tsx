@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useNews } from "@/hooks/use-news";
 import { insertNewsSchema } from "@db/schema";
+import { ImagePlus, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -37,7 +38,11 @@ interface CreateNewsDialogProps {
 
 export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
   const [open, setOpen] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [previewUrl, setPreviewUrl] = React.useState<string>();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { createNews } = useNews(teamId);
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,6 +52,35 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
     },
   });
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const { photoUrl } = await response.json();
+      form.setValue('imageUrl', photoUrl);
+      setPreviewUrl(photoUrl);
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
     try {
       await createNews({
@@ -54,6 +88,7 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
         teamId: teamId
       });
       form.reset();
+      setPreviewUrl(undefined);
       setOpen(false);
     } catch (error) {
       console.error("Failed to create news:", error);
@@ -102,9 +137,46 @@ export function CreateNewsDialog({ teamId }: CreateNewsDialogProps) {
               name="imageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL (optional)</FormLabel>
+                  <FormLabel>Image</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="space-y-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="w-full"
+                      >
+                        {uploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <ImagePlus className="mr-2 h-4 w-4" />
+                            Upload Image
+                          </>
+                        )}
+                      </Button>
+                      {previewUrl && (
+                        <div className="relative aspect-video">
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="rounded-lg object-cover"
+                          />
+                        </div>
+                      )}
+                      <Input type="hidden" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
