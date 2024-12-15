@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "../hooks/use-user";
 
 type User = {
   id: number;
@@ -27,6 +28,7 @@ type User = {
 export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["users"],
@@ -83,7 +85,7 @@ export default function AdminPage() {
               <TableRow>
                 <TableHead>Username</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Actions</TableHead>
+                {user?.role === "admin" && <TableHead>Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -91,23 +93,25 @@ export default function AdminPage() {
                 <TableRow key={user.id}>
                   <TableCell>{user.username}</TableCell>
                   <TableCell>{user.role}</TableCell>
-                  <TableCell>
-                    <Select
-                      value={user.role}
-                      onValueChange={(newRole) =>
-                        updateRole.mutate({ userId: user.id, newRole })
-                      }
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="reader">Reader</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
+                  {user?.role === "admin" && (
+                    <TableCell>
+                      <Select
+                        value={user.role}
+                        onValueChange={(newRole) =>
+                          updateRole.mutate({ userId: user.id, newRole })
+                        }
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="reader">Reader</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
