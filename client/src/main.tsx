@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import TeamPage from "./pages/TeamPage";
+import AdminPage from "./pages/AdminPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
@@ -29,6 +30,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/admin">
+        {user?.role === "admin" ? <AdminPage /> : <Redirect to="/" />}
+      </Route>
       <Route path="/team/:teamId/:section?" component={TeamPage} />
       <Route path="/team/:teamId" component={TeamPage} />
       <Route>404 Page Not Found</Route>
