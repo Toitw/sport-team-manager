@@ -142,7 +142,10 @@ export default function TeamPage() {
                   <PopoverTrigger asChild>
                     <div 
                       className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                      onClick={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                       role="button"
                       tabIndex={0}
                     >
@@ -163,9 +166,10 @@ export default function TeamPage() {
                     </div>
                   </PopoverTrigger>
                   <PopoverContent 
-                    className="w-80" 
+                    className="w-80 z-50" 
                     sideOffset={5}
                     align="start"
+                    side="right"
                   >
                     <div className="space-y-2">
                       {matchingEvents.map((event) => (
@@ -275,7 +279,10 @@ export default function TeamPage() {
                       <PopoverTrigger asChild>
                         <div 
                           className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                          onClick={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
                           role="button"
                           tabIndex={0}
                         >
@@ -291,9 +298,10 @@ export default function TeamPage() {
                         </div>
                       </PopoverTrigger>
                       <PopoverContent 
-                        className="w-80" 
+                        className="w-80 z-50" 
                         sideOffset={5}
                         align="start"
+                        side="right"
                       >
                         <div className="space-y-2">
                           {matchingEvents.map((match) => (
