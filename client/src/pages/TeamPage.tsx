@@ -283,16 +283,22 @@ export default function TeamPage() {
                     return <div className="p-2">{props.date.getDate()}</div>;
                   }
 
+                  const [isOpen, setIsOpen] = React.useState(false);
+                  const [isClicked, setIsClicked] = React.useState(false);
+
                   return (
-                    <div className="relative w-full h-full z-50" onClick={(e) => e.stopPropagation()}>
-                      <Popover>
+                    <div 
+                      className="relative w-full h-full z-50"
+                      onMouseEnter={() => !isClicked && setIsOpen(true)}
+                      onMouseLeave={() => !isClicked && setIsOpen(false)}
+                    >
+                      <Popover open={isOpen}>
                         <PopoverTrigger asChild>
-                          <button
-                            type="button"
+                          <div
                             className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
+                            onClick={() => {
+                              setIsClicked(!isClicked);
+                              setIsOpen(!isClicked);
                             }}
                           >
                             <span>{props.date.getDate()}</span>
@@ -304,7 +310,7 @@ export default function TeamPage() {
                                 />
                               ))}
                             </div>
-                          </button>
+                          </div>
                         </PopoverTrigger>
                         <PopoverContent 
                           className="w-80 z-[100]" 
