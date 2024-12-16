@@ -49,34 +49,35 @@ export default function TeamPage() {
     e.stopPropagation();
   };
 
-  const renderPlayers = () => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Players</CardTitle>
-        {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Photo</TableHead>
-              <TableHead>Number</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Position</TableHead>
-              {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {players?.length === 0 ? (
+  const renderPlayers = () => {
+    const [selectedPlayer, setSelectedPlayer] = React.useState<number | null>(null);
+    
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Players</CardTitle>
+          {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  No players added yet
-                </TableCell>
+                <TableHead>Photo</TableHead>
+                <TableHead>Number</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Position</TableHead>
+                {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
-            ) : (
-              players?.map((player) => {
-                const [selectedPlayer, setSelectedPlayer] = React.useState<number | null>(null);
-                return (
+            </TableHeader>
+            <TableBody>
+              {players?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    No players added yet
+                  </TableCell>
+                </TableRow>
+              ) : (
+                players?.map((player) => (
                   <React.Fragment key={player.id}>
                     <TableRow 
                       className="cursor-pointer hover:bg-accent/50"
@@ -107,20 +108,22 @@ export default function TeamPage() {
                         </TableCell>
                       )}
                     </TableRow>
-                    <PlayerProfileDialog 
-                      player={player}
-                      open={selectedPlayer === player.id}
-                      onOpenChange={(open) => setSelectedPlayer(open ? player.id : null)}
-                    />
+                    {selectedPlayer === player.id && (
+                      <PlayerProfileDialog 
+                        player={player}
+                        open={selectedPlayer === player.id}
+                        onOpenChange={(open) => setSelectedPlayer(open ? player.id : null)}
+                      />
+                    )}
                   </React.Fragment>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderEvents = () => (
     <Card>
