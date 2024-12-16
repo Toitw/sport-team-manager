@@ -1,0 +1,44 @@
+He revisado el código y veo algunos puntos que podrían explicar por qué no se muestra la ventana emergente o no se comporta como esperas (mostrar al pasar el cursor y fijar al hacer clic):
+
+Modo de activación del Popover:
+Estás utilizando @radix-ui/react-popover, que por defecto abre el popover al hacer clic en el PopoverTrigger. Sin embargo, tu intención parece ser que al pasar el cursor (hover) sobre un día con eventos se muestre la ventana, y al hacer clic se quede fija. El componente Popover no funciona con hover por defecto. Para un comportamiento de hover, es más apropiado usar @radix-ui/react-hover-card, o bien implementar tu propia lógica controlando el estado open del popover según eventos onMouseEnter y onMouseLeave.
+
+Es decir, si tu objetivo es que se muestre solo con hover, Popover no es el más adecuado. Si quieres mantener Popover, deberías al menos asegurarte de que en el PopoverTrigger no se interfiere con el evento click.
+
+Uso de stopPropagation() y preventDefault() en el Trigger:
+En el código proporcionado, dentro de la función DayContent para cada evento del calendario, tienes un Popover con un PopoverTrigger asChild que engloba a un button. Ese button tiene un onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}. Esto podría ser un problema.
+
+PopoverTrigger funciona al detectar el click en su hijo. Si en el button estás deteniendo la propagación del evento (stopPropagation()), puede que el Popover nunca reciba el evento de click correctamente y por tanto no abra el contenido.
+
+Prueba: Quita e.stopPropagation() y e.preventDefault() del botón o PopoverTrigger. Deja que el evento fluya para que PopoverTrigger pueda hacer su trabajo.
+
+Si necesitas manejar la lógica de no activar otras cosas del calendario, puedes intentar colocar el stopPropagation() en un contenedor diferente, o asegurarte de que el PopoverTrigger siga recibiendo el click.
+
+Revisión del z-index y estilos:
+Ya has agregado z-[100] al PopoverContent. Asegúrate de que no tengas contenedores padres con overflow: hidden; que puedan estar cortando la visibilidad del popover. El popover se renderiza en un Portal, así que normalmente no debería quedar oculto, pero es algo que vale la pena verificar.
+
+Hover vs Click:
+Si tu objetivo es que el popover aparezca al pasar el ratón por encima (hover), revisa estos puntos:
+
+Popover no muestra contenido automáticamente al hover, necesitarás controlar el estado open del Popover manualmente. Por ejemplo, puedes usar el patrón controlado:
+
+jsx
+Copiar código
+const [open, setOpen] = React.useState(false)
+<Popover open={open} onOpenChange={setOpen}>
+  <PopoverTrigger asChild>
+    <button 
+      onMouseEnter={() => setOpen(true)} 
+      onMouseLeave={() => setOpen(false)}
+    >Día</button>
+  </PopoverTrigger>
+  <PopoverContent>Contenido</PopoverContent>
+</Popover>
+Así puedes simular el comportamiento de hover. Y si quieres que al hacer click se quede fijo, entonces ajusta la lógica para no cerrar con onMouseLeave si hubo un click previo.
+
+O directamente usa @radix-ui/react-hover-card que está diseñado para mostrarse y ocultarse en hover, y luego ajustas la lógica para el click.
+
+En conclusión, las causas más probables de que no funcione como esperas son:
+
+Estás usando Popover (que abre por click) con la intención de mostrar en hover.
+Estás bloqueando el evento de click con stopPropagation() en el trigger, impidiendo que el Popover se abra.

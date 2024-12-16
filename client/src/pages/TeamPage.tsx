@@ -15,6 +15,7 @@ import { Layout } from "../components/Layout";
 import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
 import { EditPlayerDialog } from "../components/EditPlayerDialog";
 import { DeletePlayerDialog } from "../components/DeletePlayerDialog";
+import { PlayerProfileDialog } from "../components/PlayerProfileDialog";
 import { CreateEventDialog } from "../components/CreateEventDialog";
 import { EditEventDialog } from "../components/EditEventDialog";
 import { DeleteEventDialog } from "../components/DeleteEventDialog";
@@ -73,34 +74,47 @@ export default function TeamPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              players?.map((player) => (
-                <TableRow key={player.id}>
-                  <TableCell>
-                    {player.photoUrl ? (
-                      <img 
-                        src={player.photoUrl} 
-                        alt={player.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-muted-foreground text-sm">{player.name[0]}</span>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{player.number}</TableCell>
-                  <TableCell>{player.name}</TableCell>
-                  <TableCell>{player.position}</TableCell>
-                  {canManageTeam && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <EditPlayerDialog player={player} teamId={parsedTeamId} />
-                        <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
+              players?.map((player) => {
+                const [showProfile, setShowProfile] = React.useState(false);
+                return (
+                  <React.Fragment key={player.id}>
+                    <TableRow 
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => setShowProfile(true)}
+                    >
+                      <TableCell>
+                        {player.photoUrl ? (
+                          <img 
+                            src={player.photoUrl} 
+                            alt={player.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-muted-foreground text-sm">{player.name[0]}</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{player.number}</TableCell>
+                      <TableCell>{player.name}</TableCell>
+                      <TableCell>{player.position}</TableCell>
+                      {canManageTeam && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <EditPlayerDialog player={player} teamId={parsedTeamId} />
+                            <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    <PlayerProfileDialog 
+                      player={player}
+                      open={showProfile}
+                      onOpenChange={setShowProfile}
+                    />
+                  </React.Fragment>
+                );
+              })
             )}
           </TableBody>
         </Table>
