@@ -147,10 +147,9 @@ export default function TeamPage() {
                   onMouseEnter={() => !isClicked && setIsOpen(true)}
                   onMouseLeave={() => !isClicked && setIsOpen(false)}
                 >
-                  <Popover open={isOpen} onOpenChange={setIsOpen}>
+                  <Popover open={isOpen}>
                     <PopoverTrigger asChild>
-                      <button
-                        type="button"
+                      <div
                         className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
                         onClick={() => {
                           setIsClicked(!isClicked);
