@@ -51,15 +51,16 @@ export default function AdminPage() {
         body: JSON.stringify({ role: newRole }),
       });
       if (!response.ok) {
-        throw new Error("Failed to update role");
+        const errorData = await response.text();
+        throw new Error(errorData || "Failed to update role");
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
-        description: "User role updated successfully",
+        description: `User role updated to ${variables.newRole} successfully`,
       });
     },
     onError: (error: Error) => {
@@ -75,45 +76,79 @@ export default function AdminPage() {
     return <div>Loading...</div>;
   }
 
+  if (!user || user.role !== "admin") {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <h1 className="text-3xl font-bold mb-8">Access Denied</h1>
+          <p>You don't have permission to access this page.</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container py-8">
-        <h1 className="text-3xl font-bold mb-8">User Management</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">User Management</h1>
+        </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Username</TableHead>
-                <TableHead>Role</TableHead>
-                {user?.role === "admin" && <TableHead>Actions</TableHead>}
+                <TableHead>Current Role</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users?.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  {user?.role === "admin" && (
-                    <TableCell>
-                      <Select
-                        value={user.role}
-                        onValueChange={(newRole) =>
-                          updateRole.mutate({ userId: user.id, newRole })
-                        }
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="reader">Reader</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                  )}
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">
+                    Loading users...
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : !users?.length ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">
+                    No users found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                users.map((currentUser) => (
+                  <TableRow key={currentUser.id}>
+                    <TableCell>{currentUser.username}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                        {currentUser.role}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {currentUser.id === user.id ? (
+                        <span className="text-sm text-muted-foreground">Cannot modify own role</span>
+                      ) : (
+                        <Select
+                          value={currentUser.role}
+                          onValueChange={(newRole) =>
+                            updateRole.mutate({ userId: currentUser.id, newRole })
+                          }
+                          disabled={updateRole.isPending}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Change role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="reader">Reader</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
