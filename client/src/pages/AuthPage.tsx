@@ -49,8 +49,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="container flex items-center justify-center min-h-screen">
-      <Card className="w-[400px]">
+    <div className="min-h-screen bg-[url('https://images.unsplash.com/photo-1556056504-5c7696c4c28d')] bg-cover bg-center bg-no-repeat flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50"></div>
+      <Card className="w-[400px] relative bg-white/95 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Sports Team Manager</CardTitle>
         </CardHeader>
