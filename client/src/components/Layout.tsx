@@ -96,6 +96,18 @@ export function Layout({ children, teamId }: LayoutProps) {
               <SidebarGroupLabel>Team Management</SidebarGroupLabel>
               <SidebarMenu>
                 <SidebarMenuItem>
+                  <Link href={`/team/${teamId}/news`}>
+                    <SidebarMenuButton 
+                      isActive={isActiveRoute(`/team/${teamId}/news`)}
+                      tooltip="News"
+                      size="lg"
+                    >
+                      <Newspaper className="h-4 w-4" />
+                      <span>News</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   <Link href={`/team/${teamId}/players`}>
                     <SidebarMenuButton 
                       isActive={isActiveRoute(`/team/${teamId}/players`)}
@@ -120,7 +132,7 @@ export function Layout({ children, teamId }: LayoutProps) {
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <Link href={`/team/${teamId}/news`}>
+                  <Link href={`/team/${teamId}/events`}>
                     <SidebarMenuButton 
                       isActive={isActiveRoute(`/team/${teamId}/news`)}
                       tooltip="News"
