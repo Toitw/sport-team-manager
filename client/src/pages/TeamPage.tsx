@@ -188,12 +188,9 @@ export default function TeamPage() {
           }}
           components={{
             DayContent: function DayContent(props) {
-              const matchingEvents = React.useMemo(() => 
-                events.filter(
-                  event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
-                           format(props.date, 'yyyy-MM-dd')
-                ), 
-                [events, props.date]
+              const matchingEvents = events.filter(
+                event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
+                         format(props.date, 'yyyy-MM-dd')
               );
 
               if (matchingEvents.length === 0) {
@@ -273,7 +270,7 @@ export default function TeamPage() {
                   </Popover>
                 </div>
               );
-            })
+            }
           }}
         />
         <div className="space-y-2">
