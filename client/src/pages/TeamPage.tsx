@@ -25,20 +25,36 @@ import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
 import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
-  // All hooks called at the top level
+  // Route params
   const { teamId = "", section = "news" } = useParams();
+  const parsedTeamId = React.useMemo(() => teamId ? parseInt(teamId) : 0, [teamId]);
+  
+  // User and permissions
   const { user } = useUser();
-  const parsedTeamId = teamId ? parseInt(teamId) : 0;
-  const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
+  const canManageTeam = React.useMemo(() => 
+    user?.role === "admin" || user?.role === "manager", 
+    [user?.role]
+  );
+
+  // Data fetching hooks
+  const { players = [], isLoading: playersLoading } = usePlayers(parsedTeamId);
   const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
-  const { news, nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
+  const { news = [], nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
+
+  // Local state
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
   const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
   
-  // Derived state
-  const matches = React.useMemo(() => events.filter(event => event.type === "match"), [events]);
-  const canManageTeam = React.useMemo(() => user?.role === "admin" || user?.role === "manager", [user?.role]);
-  const selectedPlayer = React.useMemo(() => players?.find(p => p.id === selectedPlayerId), [players, selectedPlayerId]);
+  // Derived state with useMemo
+  const matches = React.useMemo(() => 
+    events.filter(event => event.type === "match"), 
+    [events]
+  );
+  
+  const selectedPlayer = React.useMemo(() => 
+    players.find(p => p.id === selectedPlayerId),
+    [players, selectedPlayerId]
+  );
 
   if (playersLoading || eventsLoading) {
     return (
@@ -48,7 +64,7 @@ export default function TeamPage() {
     );
   }
 
-  // Event handlers
+  // Memoized handlers
   const handleEventClick = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -59,8 +75,19 @@ export default function TeamPage() {
   }, []);
 
   const handlePlayerDialogChange = React.useCallback((open: boolean) => {
-    setSelectedPlayerId(open ? selectedPlayerId : null);
-  }, [selectedPlayerId]);
+    if (!open) {
+      setSelectedPlayerId(null);
+    }
+  }, []);
+
+  // Loading state
+  if (playersLoading || eventsLoading || newsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
 
   // Render functions that don't use hooks
   const renderPlayers = () => {
