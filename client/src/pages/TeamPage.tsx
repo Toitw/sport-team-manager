@@ -138,65 +138,61 @@ export default function TeamPage() {
               }
 
               return (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <div 
-                      className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      aria-haspopup="true"
-                      aria-expanded="false"
+                <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <span>{props.date.getDate()}</span>
+                        <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                          {matchingEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                "h-1 rounded-full flex-1",
+                                event.type === 'match' ? "bg-red-500" :
+                                event.type === 'training' ? "bg-green-500" :
+                                "bg-blue-500"
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      className="w-80 z-[100]" 
+                      sideOffset={5}
+                      align="start"
+                      side="right"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {props.date.getDate()}
-                      <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                      <div className="space-y-2">
                         {matchingEvents.map((event) => (
-                          <div
-                            key={event.id}
-                            className={cn(
-                              "h-1 rounded-full flex-1",
-                              event.type === 'match' ? "bg-red-500" :
-                              event.type === 'training' ? "bg-green-500" :
-                              "bg-blue-500"
+                          <div key={event.id} className="border-b last:border-0 pb-2 last:pb-0">
+                            <div className="font-medium">{event.title}</div>
+                            {event.description && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {event.description}
+                              </div>
                             )}
-                          />
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {format(new Date(event.startDate), "p")} - {format(new Date(event.endDate), "p")}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Type: {event.type}
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-80 z-[100]" 
-                    sideOffset={5}
-                    align="start"
-                    side="right"
-                    onOpenAutoFocus={(e) => e.preventDefault()}
-                    onCloseAutoFocus={(e) => e.preventDefault()}
-                    onInteractOutside={(e) => e.preventDefault()}
-                    onPointerDownOutside={(e) => e.preventDefault()}
-                  >
-                    <div className="space-y-2">
-                      {matchingEvents.map((event) => (
-                        <div key={event.id} className="border-b last:border-0 pb-2 last:pb-0">
-                          <div className="font-medium">{event.title}</div>
-                          {event.description && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {event.description}
-                            </div>
-                          )}
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {format(new Date(event.startDate), "p")} - {format(new Date(event.endDate), "p")}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Type: {event.type}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               );
             }
           }}
@@ -281,62 +277,58 @@ export default function TeamPage() {
                   }
 
                   return (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <div 
-                          className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          aria-haspopup="true"
-                          aria-expanded="false"
+                    <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <span>{props.date.getDate()}</span>
+                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                              {matchingEvents.map((match) => (
+                                <div
+                                  key={match.id}
+                                  className="h-1 rounded-full flex-1 bg-red-500"
+                                />
+                              ))}
+                            </div>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent 
+                          className="w-80 z-[100]" 
+                          sideOffset={5}
+                          align="start"
+                          side="right"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {props.date.getDate()}
-                          <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                          <div className="space-y-2">
                             {matchingEvents.map((match) => (
-                              <div
-                                key={match.id}
-                                className="h-1 rounded-full flex-1 bg-red-500"
-                              />
+                              <div key={match.id} className="border-b last:border-0 pb-2 last:pb-0">
+                                <div className="font-medium">{match.title}</div>
+                                {match.description && (
+                                  <div className="text-sm text-muted-foreground mt-1">
+                                    {match.description}
+                                  </div>
+                                )}
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {format(new Date(match.startDate), "p")} - {format(new Date(match.endDate), "p")}
+                                </div>
+                                {match.homeScore !== null && match.awayScore !== null && (
+                                  <div className="text-sm font-medium mt-1">
+                                    Score: {match.homeScore} - {match.awayScore}
+                                  </div>
+                                )}
+                              </div>
                             ))}
                           </div>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent 
-                        className="w-80 z-[100]" 
-                        sideOffset={5}
-                        align="start"
-                        side="right"
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                        onCloseAutoFocus={(e) => e.preventDefault()}
-                        onInteractOutside={(e) => e.preventDefault()}
-                        onPointerDownOutside={(e) => e.preventDefault()}
-                      >
-                        <div className="space-y-2">
-                          {matchingEvents.map((match) => (
-                            <div key={match.id} className="border-b last:border-0 pb-2 last:pb-0">
-                              <div className="font-medium">{match.title}</div>
-                              {match.description && (
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  {match.description}
-                                </div>
-                              )}
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {format(new Date(match.startDate), "p")} - {format(new Date(match.endDate), "p")}
-                              </div>
-                              {match.homeScore !== null && match.awayScore !== null && (
-                                <div className="text-sm font-medium mt-1">
-                                  Score: {match.homeScore} - {match.awayScore}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   );
                 }
               }}
