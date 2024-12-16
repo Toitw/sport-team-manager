@@ -108,19 +108,20 @@ export default function TeamPage() {
                         </TableCell>
                       )}
                     </TableRow>
-                    {selectedPlayerId === player.id && (
-                      <PlayerProfileDialog 
-                        player={player}
-                        open={selectedPlayerId === player.id}
-                        onOpenChange={(open) => setSelectedPlayerId(open ? player.id : null)}
-                      />
-                    )}
+                    
                   </React.Fragment>
                 ))
               )}
             </TableBody>
           </Table>
         </CardContent>
+        {selectedPlayerId && players && (
+          <PlayerProfileDialog 
+            player={players.find(p => p.id === selectedPlayerId)!}
+            open={!!selectedPlayerId}
+            onOpenChange={(open) => setSelectedPlayerId(open ? selectedPlayerId : null)}
+          />
+        )}
       </Card>
     );
   };
