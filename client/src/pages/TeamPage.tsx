@@ -273,7 +273,7 @@ export default function TeamPage() {
                   </Popover>
                 </div>
               );
-            }
+            })
           }}
         />
         <div className="space-y-2">
