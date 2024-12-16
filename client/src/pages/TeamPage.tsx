@@ -345,11 +345,11 @@ export default function TeamPage() {
                 }
               }}
               components={{
-                DayContent: (props) => {
-                  const matchingEvents = matches.filter(
+                DayContent: React.memo(function DayContent(props) {
+                  const matchingEvents = React.useMemo(() => matches.filter(
                     match => format(new Date(match.startDate), 'yyyy-MM-dd') === 
                              format(props.date, 'yyyy-MM-dd')
-                  );
+                  ), [matches, props.date]);
 
                   if (matchingEvents.length === 0) {
                     return <div className="p-2">{props.date.getDate()}</div>;
