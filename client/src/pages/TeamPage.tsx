@@ -140,7 +140,10 @@ export default function TeamPage() {
               return (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <div className="relative w-full h-full p-2 cursor-pointer">
+                    <button 
+                      className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+                      onClick={(e) => e.preventDefault()}
+                    >
                       <div>{props.date.getDate()}</div>
                       <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
                         {matchingEvents.map((event) => (
@@ -155,9 +158,13 @@ export default function TeamPage() {
                           />
                         ))}
                       </div>
-                    </div>
+                    </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80">
+                  <PopoverContent 
+                    className="w-80" 
+                    sideOffset={5}
+                    align="start"
+                  >
                     <div className="space-y-2">
                       {matchingEvents.map((event) => (
                         <div key={event.id} className="border-b last:border-0 pb-2 last:pb-0">
@@ -264,7 +271,10 @@ export default function TeamPage() {
                   return (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <div className="relative w-full h-full p-2 cursor-pointer">
+                        <button 
+                          className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+                          onClick={(e) => e.preventDefault()}
+                        >
                           <div>{props.date.getDate()}</div>
                           <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
                             {matchingEvents.map((match) => (
@@ -274,9 +284,13 @@ export default function TeamPage() {
                               />
                             ))}
                           </div>
-                        </div>
+                        </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-80">
+                      <PopoverContent 
+                        className="w-80" 
+                        sideOffset={5}
+                        align="start"
+                      >
                         <div className="space-y-2">
                           {matchingEvents.map((match) => (
                             <div key={match.id} className="border-b last:border-0 pb-2 last:pb-0">
