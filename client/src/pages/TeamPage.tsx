@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
@@ -132,24 +133,51 @@ export default function TeamPage() {
                          format(props.date, 'yyyy-MM-dd')
               );
 
+              if (matchingEvents.length === 0) {
+                return <div className="p-2">{props.date.getDate()}</div>;
+              }
+
               return (
-                <div className="relative w-full h-full p-2">
-                  <div>{props.date.getDate()}</div>
-                  <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                    {matchingEvents.map((event, index) => (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "h-1 rounded-full flex-1",
-                          event.type === 'match' ? "bg-red-500" :
-                          event.type === 'training' ? "bg-green-500" :
-                          "bg-blue-500"
-                        )}
-                        title={event.title}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div className="relative w-full h-full p-2 cursor-pointer">
+                      <div>{props.date.getDate()}</div>
+                      <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                        {matchingEvents.map((event) => (
+                          <div
+                            key={event.id}
+                            className={cn(
+                              "h-1 rounded-full flex-1",
+                              event.type === 'match' ? "bg-red-500" :
+                              event.type === 'training' ? "bg-green-500" :
+                              "bg-blue-500"
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      {matchingEvents.map((event) => (
+                        <div key={event.id} className="border-b last:border-0 pb-2 last:pb-0">
+                          <div className="font-medium">{event.title}</div>
+                          {event.description && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {event.description}
+                            </div>
+                          )}
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {format(new Date(event.startDate), "p")} - {format(new Date(event.endDate), "p")}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Type: {event.type}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               );
             }
           }}
@@ -229,19 +257,48 @@ export default function TeamPage() {
                              format(props.date, 'yyyy-MM-dd')
                   );
 
+                  if (matchingEvents.length === 0) {
+                    return <div className="p-2">{props.date.getDate()}</div>;
+                  }
+
                   return (
-                    <div className="relative w-full h-full p-2">
-                      <div>{props.date.getDate()}</div>
-                      <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                        {matchingEvents.map((match, index) => (
-                          <div
-                            key={match.id}
-                            className="h-1 rounded-full flex-1 bg-red-500"
-                            title={match.title}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div className="relative w-full h-full p-2 cursor-pointer">
+                          <div>{props.date.getDate()}</div>
+                          <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                            {matchingEvents.map((match) => (
+                              <div
+                                key={match.id}
+                                className="h-1 rounded-full flex-1 bg-red-500"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                          {matchingEvents.map((match) => (
+                            <div key={match.id} className="border-b last:border-0 pb-2 last:pb-0">
+                              <div className="font-medium">{match.title}</div>
+                              {match.description && (
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {match.description}
+                                </div>
+                              )}
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {format(new Date(match.startDate), "p")} - {format(new Date(match.endDate), "p")}
+                              </div>
+                              {match.homeScore !== null && match.awayScore !== null && (
+                                <div className="text-sm font-medium mt-1">
+                                  Score: {match.homeScore} - {match.awayScore}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   );
                 }
               }}
