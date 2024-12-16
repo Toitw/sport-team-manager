@@ -187,7 +187,7 @@ export default function TeamPage() {
             }
           }}
           components={{
-            DayContent: React.memo(function DayContent(props) {
+            DayContent: function DayContent(props) {
               const matchingEvents = React.useMemo(() => 
                 events.filter(
                   event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
