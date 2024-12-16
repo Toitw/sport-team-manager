@@ -19,6 +19,7 @@ import { DeleteEventDialog } from "../components/DeleteEventDialog";
 import { CreateNewsDialog } from "../components/CreateNewsDialog";
 import { EditNewsDialog } from "../components/EditNewsDialog";
 import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
+import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
   const { teamId = "", section = "players" } = useParams();
@@ -116,6 +117,42 @@ export default function TeamPage() {
           mode="single"
           selected={new Date()}
           className="mb-4"
+          modifiers={{
+            event: events.map(event => new Date(event.startDate)),
+          }}
+          modifiersStyles={{
+            event: {
+              border: '2px solid var(--primary)',
+            }
+          }}
+          components={{
+            DayContent: (props) => {
+              const matchingEvents = events.filter(
+                event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
+                         format(props.date, 'yyyy-MM-dd')
+              );
+
+              return (
+                <div className="relative w-full h-full p-2">
+                  <div>{props.date.getDate()}</div>
+                  <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                    {matchingEvents.map((event, index) => (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          "h-1 rounded-full flex-1",
+                          event.type === 'match' ? "bg-red-500" :
+                          event.type === 'training' ? "bg-green-500" :
+                          "bg-blue-500"
+                        )}
+                        title={event.title}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+          }}
         />
         <div className="space-y-2">
           {events?.length === 0 ? (
@@ -177,6 +214,37 @@ export default function TeamPage() {
               mode="single"
               selected={new Date()}
               className="mb-4"
+              modifiers={{
+                event: matches.map(match => new Date(match.startDate)),
+              }}
+              modifiersStyles={{
+                event: {
+                  border: '2px solid var(--primary)',
+                }
+              }}
+              components={{
+                DayContent: (props) => {
+                  const matchingEvents = matches.filter(
+                    match => format(new Date(match.startDate), 'yyyy-MM-dd') === 
+                             format(props.date, 'yyyy-MM-dd')
+                  );
+
+                  return (
+                    <div className="relative w-full h-full p-2">
+                      <div>{props.date.getDate()}</div>
+                      <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                        {matchingEvents.map((match, index) => (
+                          <div
+                            key={match.id}
+                            className="h-1 rounded-full flex-1 bg-red-500"
+                            title={match.title}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+              }}
             />
             <div className="space-y-4">
               {upcomingMatches.length === 0 ? (
