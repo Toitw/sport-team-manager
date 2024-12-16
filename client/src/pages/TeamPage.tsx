@@ -187,10 +187,13 @@ export default function TeamPage() {
             }
           }}
           components={{
-            DayContent: (props) => {
-              const matchingEvents = events.filter(
-                event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
-                         format(props.date, 'yyyy-MM-dd')
+            DayContent: React.memo(function DayContent(props) {
+              const matchingEvents = React.useMemo(() => 
+                events.filter(
+                  event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
+                           format(props.date, 'yyyy-MM-dd')
+                ), 
+                [events, props.date]
               );
 
               if (matchingEvents.length === 0) {
@@ -200,20 +203,30 @@ export default function TeamPage() {
               const [isOpen, setIsOpen] = React.useState(false);
               const [isClicked, setIsClicked] = React.useState(false);
 
+              const handleMouseEnter = React.useCallback(() => {
+                if (!isClicked) setIsOpen(true);
+              }, [isClicked]);
+
+              const handleMouseLeave = React.useCallback(() => {
+                if (!isClicked) setIsOpen(false);
+              }, [isClicked]);
+
+              const handleClick = React.useCallback(() => {
+                setIsClicked(!isClicked);
+                setIsOpen(!isClicked);
+              }, [isClicked]);
+
               return (
                 <div 
                   className="relative w-full h-full z-50"
-                  onMouseEnter={() => !isClicked && setIsOpen(true)}
-                  onMouseLeave={() => !isClicked && setIsOpen(false)}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <Popover open={isOpen}>
                     <PopoverTrigger asChild>
                       <div
                         className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                        onClick={() => {
-                          setIsClicked(!isClicked);
-                          setIsOpen(!isClicked);
-                        }}
+                        onClick={handleClick}
                       >
                         <span>{props.date.getDate()}</span>
                         <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
