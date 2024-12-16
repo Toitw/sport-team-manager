@@ -49,9 +49,9 @@ export default function TeamPage() {
     e.stopPropagation();
   };
 
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
+  
   const renderPlayers = () => {
-    const [selectedPlayer, setSelectedPlayer] = React.useState<number | null>(null);
-    
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -81,7 +81,7 @@ export default function TeamPage() {
                   <React.Fragment key={player.id}>
                     <TableRow 
                       className="cursor-pointer hover:bg-accent/50"
-                      onClick={() => setSelectedPlayer(player.id)}
+                      onClick={() => setSelectedPlayerId(player.id)}
                     >
                       <TableCell>
                         {player.photoUrl ? (
@@ -108,11 +108,11 @@ export default function TeamPage() {
                         </TableCell>
                       )}
                     </TableRow>
-                    {selectedPlayer === player.id && (
+                    {selectedPlayerId === player.id && (
                       <PlayerProfileDialog 
                         player={player}
-                        open={selectedPlayer === player.id}
-                        onOpenChange={(open) => setSelectedPlayer(open ? player.id : null)}
+                        open={selectedPlayerId === player.id}
+                        onOpenChange={(open) => setSelectedPlayerId(open ? player.id : null)}
                       />
                     )}
                   </React.Fragment>
