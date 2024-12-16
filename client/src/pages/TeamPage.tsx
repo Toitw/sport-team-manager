@@ -174,6 +174,8 @@ export default function TeamPage() {
                     side="right"
                     onOpenAutoFocus={(e) => e.preventDefault()}
                     onCloseAutoFocus={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => e.preventDefault()}
+                    onPointerDownOutside={(e) => e.preventDefault()}
                   >
                     <div className="space-y-2">
                       {matchingEvents.map((event) => (
@@ -310,6 +312,8 @@ export default function TeamPage() {
                         side="right"
                         onOpenAutoFocus={(e) => e.preventDefault()}
                         onCloseAutoFocus={(e) => e.preventDefault()}
+                        onInteractOutside={(e) => e.preventDefault()}
+                        onPointerDownOutside={(e) => e.preventDefault()}
                       >
                         <div className="space-y-2">
                           {matchingEvents.map((match) => (
