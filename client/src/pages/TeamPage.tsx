@@ -170,7 +170,7 @@ export default function TeamPage() {
                             />
                           ))}
                         </div>
-                      </button>
+                      </div>
                     </PopoverTrigger>
                     <PopoverContent 
                       className="w-80 z-[100]" 
