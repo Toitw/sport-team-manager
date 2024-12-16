@@ -148,8 +148,10 @@ export default function TeamPage() {
                       }}
                       role="button"
                       tabIndex={0}
+                      aria-haspopup="true"
+                      aria-expanded="false"
                     >
-                      <div>{props.date.getDate()}</div>
+                      {props.date.getDate()}
                       <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
                         {matchingEvents.map((event) => (
                           <div
@@ -166,10 +168,12 @@ export default function TeamPage() {
                     </div>
                   </PopoverTrigger>
                   <PopoverContent 
-                    className="w-80 z-50" 
+                    className="w-80 z-[100]" 
                     sideOffset={5}
                     align="start"
                     side="right"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                    onCloseAutoFocus={(e) => e.preventDefault()}
                   >
                     <div className="space-y-2">
                       {matchingEvents.map((event) => (
@@ -285,8 +289,10 @@ export default function TeamPage() {
                           }}
                           role="button"
                           tabIndex={0}
+                          aria-haspopup="true"
+                          aria-expanded="false"
                         >
-                          <div>{props.date.getDate()}</div>
+                          {props.date.getDate()}
                           <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
                             {matchingEvents.map((match) => (
                               <div
@@ -298,10 +304,12 @@ export default function TeamPage() {
                         </div>
                       </PopoverTrigger>
                       <PopoverContent 
-                        className="w-80 z-50" 
+                        className="w-80 z-[100]" 
                         sideOffset={5}
                         align="start"
                         side="right"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
                       >
                         <div className="space-y-2">
                           {matchingEvents.map((match) => (
