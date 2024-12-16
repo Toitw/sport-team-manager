@@ -25,16 +25,20 @@ import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
 import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
+  // All hooks called at the top level
   const { teamId = "", section = "news" } = useParams();
   const { user } = useUser();
   const parsedTeamId = teamId ? parseInt(teamId) : 0;
   const { players, isLoading: playersLoading } = usePlayers(parsedTeamId);
   const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
   const { news, nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
+  const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
   
-  const matches = events.filter(event => event.type === "match");
-  
-  const canManageTeam = user?.role === "admin" || user?.role === "manager";
+  // Derived state
+  const matches = React.useMemo(() => events.filter(event => event.type === "match"), [events]);
+  const canManageTeam = React.useMemo(() => user?.role === "admin" || user?.role === "manager", [user?.role]);
+  const selectedPlayer = React.useMemo(() => players?.find(p => p.id === selectedPlayerId), [players, selectedPlayerId]);
 
   if (playersLoading || eventsLoading) {
     return (
@@ -44,14 +48,24 @@ export default function TeamPage() {
     );
   }
 
-  const handleEventClick = (e: React.MouseEvent) => {
+  // Event handlers
+  const handleEventClick = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  };
+  }, []);
 
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
-  
+  const handlePlayerClick = React.useCallback((playerId: number) => {
+    setSelectedPlayerId(playerId);
+  }, []);
+
+  const handlePlayerDialogChange = React.useCallback((open: boolean) => {
+    setSelectedPlayerId(open ? selectedPlayerId : null);
+  }, [selectedPlayerId]);
+
+  // Render functions that don't use hooks
   const renderPlayers = () => {
+    if (!players) return null;
+    
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -81,7 +95,7 @@ export default function TeamPage() {
                   <React.Fragment key={player.id}>
                     <TableRow 
                       className="cursor-pointer hover:bg-accent/50"
-                      onClick={() => setSelectedPlayerId(player.id)}
+                      onClick={() => handlePlayerClick(player.id)}
                     >
                       <TableCell>
                         {player.photoUrl ? (
@@ -115,11 +129,11 @@ export default function TeamPage() {
             </TableBody>
           </Table>
         </CardContent>
-        {selectedPlayerId && players && (
+        {selectedPlayer && (
           <PlayerProfileDialog 
-            player={players.find(p => p.id === selectedPlayerId)!}
+            player={selectedPlayer}
             open={!!selectedPlayerId}
-            onOpenChange={(open) => setSelectedPlayerId(open ? selectedPlayerId : null)}
+            onOpenChange={handlePlayerDialogChange}
           />
         )}
       </Card>
