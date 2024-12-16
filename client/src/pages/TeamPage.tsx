@@ -138,7 +138,7 @@ export default function TeamPage() {
               }
 
               return (
-                <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+                <div className="relative w-full h-full z-50" onClick={(e) => e.stopPropagation()}>
                   <Popover>
                     <PopoverTrigger asChild>
                       <button
@@ -277,7 +277,7 @@ export default function TeamPage() {
                   }
 
                   return (
-                    <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative w-full h-full z-50" onClick={(e) => e.stopPropagation()}>
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
