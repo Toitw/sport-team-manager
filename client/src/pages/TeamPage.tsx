@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useParams, Link } from "wouter";
 import { usePlayers } from "../hooks/use-players";
 import { useEvents } from "../hooks/use-events";
