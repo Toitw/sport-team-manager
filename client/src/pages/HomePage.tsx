@@ -25,7 +25,7 @@ export default function HomePage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams?.map((team) => (
               <div key={team.id} className="block">
-                <Link to={`/team/${team.id}/players`}>
+                <Link to={`/team/${team.id}/news`}>
                   <Card className="transition-colors hover:bg-accent cursor-pointer">
                     <CardHeader>
                       <CardTitle>{team.name}</CardTitle>

@@ -131,18 +131,7 @@ export function Layout({ children, teamId }: LayoutProps) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <Link href={`/team/${teamId}/events`}>
-                    <SidebarMenuButton 
-                      isActive={isActiveRoute(`/team/${teamId}/news`)}
-                      tooltip="News"
-                      size="lg"
-                    >
-                      <Newspaper className="h-4 w-4" />
-                      <span>News</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
+                
                 <SidebarMenuItem>
                   <Link href={`/team/${teamId}/events`}>
                     <SidebarMenuButton 
