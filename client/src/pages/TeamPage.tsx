@@ -25,13 +25,13 @@ import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
 import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
-  // Route params
+  // Route params and state
   const { teamId = "", section = "news" } = useParams();
-  const parsedTeamId = React.useMemo(() => teamId ? parseInt(teamId) : 0, [teamId]);
-  
-  // Local state
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
   const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
+  
+  // Memoized values
+  const parsedTeamId = React.useMemo(() => teamId ? parseInt(teamId) : 0, [teamId]);
   
   // User and permissions
   const { user } = useUser();
