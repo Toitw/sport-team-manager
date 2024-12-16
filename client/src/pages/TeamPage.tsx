@@ -29,6 +29,10 @@ export default function TeamPage() {
   const { teamId = "", section = "news" } = useParams();
   const parsedTeamId = React.useMemo(() => teamId ? parseInt(teamId) : 0, [teamId]);
   
+  // Local state
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
+  const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
+  
   // User and permissions
   const { user } = useUser();
   const canManageTeam = React.useMemo(() => 
@@ -40,10 +44,6 @@ export default function TeamPage() {
   const { players = [], isLoading: playersLoading } = usePlayers(parsedTeamId);
   const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
   const { news = [], nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
-
-  // Local state
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
-  const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
   
   // Derived state with useMemo
   const matches = React.useMemo(() => 
