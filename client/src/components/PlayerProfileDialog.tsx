@@ -58,7 +58,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfil
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Member Since</dt>
-                  <dd>{format(new Date(player.createdAt), "PPP")}</dd>
+                  <dd>{player.createdAt ? format(new Date(player.createdAt), "PPP") : "Unknown"}</dd>
                 </div>
               </dl>
             </div>

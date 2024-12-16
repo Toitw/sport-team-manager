@@ -75,12 +75,12 @@ export default function TeamPage() {
               </TableRow>
             ) : (
               players?.map((player) => {
-                const [showProfile, setShowProfile] = React.useState(false);
+                const [selectedPlayer, setSelectedPlayer] = React.useState<number | null>(null);
                 return (
                   <React.Fragment key={player.id}>
                     <TableRow 
                       className="cursor-pointer hover:bg-accent/50"
-                      onClick={() => setShowProfile(true)}
+                      onClick={() => setSelectedPlayer(player.id)}
                     >
                       <TableCell>
                         {player.photoUrl ? (
@@ -109,8 +109,8 @@ export default function TeamPage() {
                     </TableRow>
                     <PlayerProfileDialog 
                       player={player}
-                      open={showProfile}
-                      onOpenChange={setShowProfile}
+                      open={selectedPlayer === player.id}
+                      onOpenChange={(open) => setSelectedPlayer(open ? player.id : null)}
                     />
                   </React.Fragment>
                 );
