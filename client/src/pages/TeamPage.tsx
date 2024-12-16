@@ -140,9 +140,11 @@ export default function TeamPage() {
               return (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button 
+                    <div 
                       className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
                       onClick={(e) => e.preventDefault()}
+                      role="button"
+                      tabIndex={0}
                     >
                       <div>{props.date.getDate()}</div>
                       <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
@@ -158,7 +160,7 @@ export default function TeamPage() {
                           />
                         ))}
                       </div>
-                    </button>
+                    </div>
                   </PopoverTrigger>
                   <PopoverContent 
                     className="w-80" 
@@ -271,9 +273,11 @@ export default function TeamPage() {
                   return (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button 
+                        <div 
                           className="relative w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
                           onClick={(e) => e.preventDefault()}
+                          role="button"
+                          tabIndex={0}
                         >
                           <div>{props.date.getDate()}</div>
                           <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
@@ -284,7 +288,7 @@ export default function TeamPage() {
                               />
                             ))}
                           </div>
-                        </button>
+                        </div>
                       </PopoverTrigger>
                       <PopoverContent 
                         className="w-80" 
