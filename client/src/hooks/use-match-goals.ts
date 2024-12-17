@@ -11,7 +11,11 @@ interface Goal {
 export function useMatchGoals(matchId: number) {
   const queryClient = useQueryClient();
 
-  const { data: goals, isLoading } = useQuery<Goal[]>({
+  const {
+    data: goals,
+    isLoading,
+    error,
+  } = useQuery<Goal[]>({
     queryKey: ["match", matchId, "goals"],
     queryFn: async () => {
       const response = await fetch(`/api/matches/${matchId}/goals`);
@@ -20,9 +24,14 @@ export function useMatchGoals(matchId: number) {
       }
       return response.json();
     },
+    enabled: !!matchId,
   });
 
-  const { mutate: addGoal } = useMutation({
+  const {
+    mutate: addGoal,
+    isLoading: isAdding,
+    error: addError,
+  } = useMutation({
     mutationFn: async ({ playerId, minute }: { playerId: number; minute: number }) => {
       const response = await fetch(`/api/matches/${matchId}/goals`, {
         method: "POST",
@@ -46,6 +55,9 @@ export function useMatchGoals(matchId: number) {
   return {
     goals,
     isLoading,
+    error,
     addGoal,
+    isAdding,
+    addError,
   };
 }

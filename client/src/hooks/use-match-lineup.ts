@@ -15,7 +15,11 @@ interface LineupPlayer extends Player {
 export function useMatchLineup(matchId: number) {
   const queryClient = useQueryClient();
 
-  const { data: lineup, isLoading } = useQuery<LineupPlayer[]>({
+  const {
+    data: lineup,
+    isLoading,
+    error,
+  } = useQuery<LineupPlayer[]>({
     queryKey: ["match", matchId, "lineup"],
     queryFn: async () => {
       const response = await fetch(`/api/matches/${matchId}/lineup`);
@@ -24,9 +28,14 @@ export function useMatchLineup(matchId: number) {
       }
       return response.json();
     },
+    enabled: !!matchId,
   });
 
-  const { mutate: updateLineup } = useMutation({
+  const {
+    mutate: updateLineup,
+    isLoading: isUpdating,
+    error: updateError,
+  } = useMutation({
     mutationFn: async (players: { playerId: number; isStarter: boolean; positionInMatch: string }[]) => {
       const response = await fetch(`/api/matches/${matchId}/lineup`, {
         method: "POST",
@@ -50,6 +59,9 @@ export function useMatchLineup(matchId: number) {
   return {
     lineup,
     isLoading,
+    error,
     updateLineup,
+    isUpdating,
+    updateError,
   };
 }
