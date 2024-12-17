@@ -5,10 +5,26 @@ import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
 import { useNews } from "../hooks/use-news";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
@@ -27,36 +43,45 @@ import { cn } from "@/lib/utils";
 export default function TeamPage() {
   // Route params and state
   const { teamId = "", section = "news" } = useParams();
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
-  const [selectedEventId, setSelectedEventId] = React.useState<number | null>(null);
-  
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(
+    null,
+  );
+
   // Memoized values
-  const parsedTeamId = React.useMemo(() => teamId ? parseInt(teamId) : 0, [teamId]);
-  
+  const parsedTeamId = React.useMemo(
+    () => (teamId ? parseInt(teamId) : 0),
+    [teamId],
+  );
+
   // User and permissions
   const { user } = useUser();
-  const canManageTeam = React.useMemo(() => 
-    user?.role === "admin" || user?.role === "manager", 
-    [user?.role]
+  const canManageTeam = React.useMemo(
+    () => user?.role === "admin" || user?.role === "manager",
+    [user?.role],
   );
 
   // Data fetching hooks
   const { players = [], isLoading: playersLoading } = usePlayers(parsedTeamId);
   const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
-  const { news = [], nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
-  
+  const {
+    news = [],
+    nextMatch,
+    isLoading: newsLoading,
+  } = useNews(parsedTeamId);
+
   // Derived state with useMemo
-  const matches = React.useMemo(() => 
-    events.filter(event => event.type === "match"), 
-    [events]
-  );
-  
-  const selectedPlayer = React.useMemo(() => 
-    players.find(p => p.id === selectedPlayerId),
-    [players, selectedPlayerId]
+  const matches = React.useMemo(
+    () => events.filter((event) => event.type === "match"),
+    [events],
   );
 
-  if (playersLoading || eventsLoading) {
+  const selectedPlayer = React.useMemo(
+    () => players.find((p) => p.id === selectedPlayerId),
+    [players, selectedPlayerId],
+  );
+
+  // Loading state
+  if (playersLoading || eventsLoading || newsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-border" />
@@ -64,7 +89,7 @@ export default function TeamPage() {
     );
   }
 
-  // Memoized handlers
+  // Handlers
   const handleEventClick = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -80,19 +105,10 @@ export default function TeamPage() {
     }
   }, []);
 
-  // Loading state
-  if (playersLoading || eventsLoading || newsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
-  }
-
-  // Render functions that don't use hooks
+  // Render functions
   const renderPlayers = () => {
     if (!players) return null;
-    
+
     return (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -107,33 +123,40 @@ export default function TeamPage() {
                 <TableHead>Number</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Position</TableHead>
-                {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
+                {canManageTeam && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {players?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={4}
+                    className="text-center text-muted-foreground"
+                  >
                     No players added yet
                   </TableCell>
                 </TableRow>
               ) : (
                 players?.map((player) => (
                   <React.Fragment key={player.id}>
-                    <TableRow 
+                    <TableRow
                       className="cursor-pointer hover:bg-accent/50"
                       onClick={() => handlePlayerClick(player.id)}
                     >
                       <TableCell>
                         {player.photoUrl ? (
-                          <img 
-                            src={player.photoUrl} 
+                          <img
+                            src={player.photoUrl}
                             alt={player.name}
                             className="w-10 h-10 rounded-full object-cover"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                            <span className="text-muted-foreground text-sm">{player.name[0]}</span>
+                            <span className="text-muted-foreground text-sm">
+                              {player.name[0]}
+                            </span>
                           </div>
                         )}
                       </TableCell>
@@ -143,13 +166,18 @@ export default function TeamPage() {
                       {canManageTeam && (
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
-                            <EditPlayerDialog player={player} teamId={parsedTeamId} />
-                            <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
+                            <EditPlayerDialog
+                              player={player}
+                              teamId={parsedTeamId}
+                            />
+                            <DeletePlayerDialog
+                              playerId={player.id}
+                              teamId={parsedTeamId}
+                            />
                           </div>
                         </TableCell>
                       )}
                     </TableRow>
-                    
                   </React.Fragment>
                 ))
               )}
@@ -157,7 +185,7 @@ export default function TeamPage() {
           </Table>
         </CardContent>
         {selectedPlayer && (
-          <PlayerProfileDialog 
+          <PlayerProfileDialog
             player={selectedPlayer}
             open={!!selectedPlayerId}
             onOpenChange={handlePlayerDialogChange}
@@ -179,12 +207,12 @@ export default function TeamPage() {
           selected={new Date()}
           className="mb-4"
           modifiers={{
-            event: events.map(event => new Date(event.startDate)),
+            event: events.map((event) => new Date(event.startDate)),
           }}
           modifiersStyles={{
             event: {
-              border: '2px solid var(--primary)',
-            }
+              border: "2px solid var(--primary)",
+            },
           }}
           components={{
             DayContent: (props) => {
@@ -192,21 +220,20 @@ export default function TeamPage() {
               const [isClicked, setIsClicked] = React.useState(false);
 
               const handleClick = () => {
-                setIsClicked(!isClicked);
-                setIsOpen(!isClicked);
+                setIsClicked((prev) => !prev);
+                setIsOpen((prev) => !prev);
               };
 
               const matchingEvents = events.filter(
-                event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
-                         format(props.date, 'yyyy-MM-dd')
+                (event) =>
+                  format(new Date(event.startDate), "yyyy-MM-dd") ===
+                  format(props.date, "yyyy-MM-dd"),
               );
 
-              if (matchingEvents.length === 0) {
-                return <div className="p-2">{props.date.getDate()}</div>;
-              }
-
-              return (
-                <div 
+              return matchingEvents.length === 0 ? (
+                <div className="p-2">{props.date.getDate()}</div>
+              ) : (
+                <div
                   className="relative w-full h-full z-50"
                   onMouseEnter={() => !isClicked && setIsOpen(true)}
                   onMouseLeave={() => !isClicked && setIsOpen(false)}
@@ -224,17 +251,19 @@ export default function TeamPage() {
                               key={event.id}
                               className={cn(
                                 "h-1 rounded-full flex-1",
-                                event.type === 'match' ? "bg-red-500" :
-                                event.type === 'training' ? "bg-green-500" :
-                                "bg-blue-500"
+                                event.type === "match"
+                                  ? "bg-red-500"
+                                  : event.type === "training"
+                                    ? "bg-green-500"
+                                    : "bg-blue-500",
                               )}
                             />
                           ))}
                         </div>
                       </div>
                     </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-80 z-[100]" 
+                    <PopoverContent
+                      className="w-80 z-[100]"
                       sideOffset={5}
                       align="start"
                       side="right"
@@ -242,7 +271,10 @@ export default function TeamPage() {
                     >
                       <div className="space-y-2">
                         {matchingEvents.map((event) => (
-                          <div key={event.id} className="border-b last:border-0 pb-2 last:pb-0">
+                          <div
+                            key={event.id}
+                            className="border-b last:border-0 pb-2 last:pb-0"
+                          >
                             <div className="font-medium">{event.title}</div>
                             {event.description && (
                               <div className="text-sm text-muted-foreground mt-1">
@@ -250,7 +282,8 @@ export default function TeamPage() {
                               </div>
                             )}
                             <div className="text-sm text-muted-foreground mt-1">
-                              {format(new Date(event.startDate), "p")} - {format(new Date(event.endDate), "p")}
+                              {format(new Date(event.startDate), "p")} -{" "}
+                              {format(new Date(event.endDate), "p")}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               Type: {event.type}
@@ -262,7 +295,7 @@ export default function TeamPage() {
                   </Popover>
                 </div>
               );
-            }
+            },
           }}
         />
         <div className="space-y-2">
@@ -293,13 +326,17 @@ export default function TeamPage() {
                     {canManageTeam && (
                       <div className="flex items-center gap-2">
                         <EditEventDialog event={event} teamId={parsedTeamId} />
-                        <DeleteEventDialog eventId={event.id} teamId={parsedTeamId} />
+                        <DeleteEventDialog
+                          eventId={event.id}
+                          teamId={parsedTeamId}
+                        />
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground mt-2">
-                  {format(new Date(event.startDate), "PPP p")} - {format(new Date(event.endDate), "p")}
+                  {format(new Date(event.startDate), "PPP p")} -{" "}
+                  {format(new Date(event.endDate), "p")}
                 </div>
               </div>
             ))
@@ -311,8 +348,12 @@ export default function TeamPage() {
 
   const renderMatches = () => {
     const now = new Date();
-    const upcomingMatches = matches.filter(match => new Date(match.startDate) > now);
-    const pastMatches = matches.filter(match => new Date(match.startDate) <= now);
+    const upcomingMatches = matches.filter(
+      (match) => new Date(match.startDate) > now,
+    );
+    const pastMatches = matches.filter(
+      (match) => new Date(match.startDate) <= now,
+    );
 
     return (
       <div className="space-y-6">
@@ -326,12 +367,12 @@ export default function TeamPage() {
               selected={new Date()}
               className="mb-4"
               modifiers={{
-                event: matches.map(match => new Date(match.startDate)),
+                event: matches.map((match) => new Date(match.startDate)),
               }}
               modifiersStyles={{
                 event: {
-                  border: '2px solid var(--primary)',
-                }
+                  border: "2px solid var(--primary)",
+                },
               }}
               components={{
                 DayContent: (props) => {
@@ -339,16 +380,15 @@ export default function TeamPage() {
                   const [isClicked, setIsClicked] = React.useState(false);
 
                   const matchingEvents = matches.filter(
-                    match => format(new Date(match.startDate), 'yyyy-MM-dd') === 
-                             format(props.date, 'yyyy-MM-dd')
+                    (match) =>
+                      format(new Date(match.startDate), "yyyy-MM-dd") ===
+                      format(props.date, "yyyy-MM-dd"),
                   );
 
-                  if (matchingEvents.length === 0) {
-                    return <div className="p-2">{props.date.getDate()}</div>;
-                  }
-
-                  return (
-                    <div 
+                  return matchingEvents.length === 0 ? (
+                    <div className="p-2">{props.date.getDate()}</div>
+                  ) : (
+                    <div
                       className="relative w-full h-full z-50"
                       onMouseEnter={() => !isClicked && setIsOpen(true)}
                       onMouseLeave={() => !isClicked && setIsOpen(false)}
@@ -358,8 +398,8 @@ export default function TeamPage() {
                           <div
                             className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
                             onClick={() => {
-                              setIsClicked(!isClicked);
-                              setIsOpen(!isClicked);
+                              setIsClicked((prev) => !prev);
+                              setIsOpen((prev) => !prev);
                             }}
                           >
                             <span>{props.date.getDate()}</span>
@@ -373,8 +413,8 @@ export default function TeamPage() {
                             </div>
                           </div>
                         </PopoverTrigger>
-                        <PopoverContent 
-                          className="w-80 z-[100]" 
+                        <PopoverContent
+                          className="w-80 z-[100]"
                           sideOffset={5}
                           align="start"
                           side="right"
@@ -382,7 +422,10 @@ export default function TeamPage() {
                         >
                           <div className="space-y-2">
                             {matchingEvents.map((match) => (
-                              <div key={match.id} className="border-b last:border-0 pb-2 last:pb-0">
+                              <div
+                                key={match.id}
+                                className="border-b last:border-0 pb-2 last:pb-0"
+                              >
                                 <div className="font-medium">{match.title}</div>
                                 {match.description && (
                                   <div className="text-sm text-muted-foreground mt-1">
@@ -390,13 +433,16 @@ export default function TeamPage() {
                                   </div>
                                 )}
                                 <div className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(match.startDate), "p")} - {format(new Date(match.endDate), "p")}
+                                  {format(new Date(match.startDate), "p")} -{" "}
+                                  {format(new Date(match.endDate), "p")}
                                 </div>
-                                {match.homeScore !== null && match.awayScore !== null && (
-                                  <div className="text-sm font-medium mt-1">
-                                    Score: {match.homeScore} - {match.awayScore}
-                                  </div>
-                                )}
+                                {match.homeScore !== null &&
+                                  match.awayScore !== null && (
+                                    <div className="text-sm font-medium mt-1">
+                                      Score: {match.homeScore} -{" "}
+                                      {match.awayScore}
+                                    </div>
+                                  )}
                               </div>
                             ))}
                           </div>
@@ -404,7 +450,7 @@ export default function TeamPage() {
                       </Popover>
                     </div>
                   );
-                }
+                },
               }}
             />
             <div className="space-y-4">
@@ -421,7 +467,9 @@ export default function TeamPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
-                        <div className="font-semibold text-lg">{match.title}</div>
+                        <div className="font-semibold text-lg">
+                          {match.title}
+                        </div>
                         {match.description && (
                           <div className="text-sm text-muted-foreground">
                             {match.description}
@@ -433,8 +481,14 @@ export default function TeamPage() {
                       </div>
                       {canManageTeam && (
                         <div className="flex items-center gap-2">
-                          <EditEventDialog event={match} teamId={parsedTeamId} />
-                          <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                          <EditEventDialog
+                            event={match}
+                            teamId={parsedTeamId}
+                          />
+                          <DeleteEventDialog
+                            eventId={match.id}
+                            teamId={parsedTeamId}
+                          />
                         </div>
                       )}
                     </div>
@@ -464,7 +518,9 @@ export default function TeamPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
-                        <div className="font-semibold text-lg">{match.title}</div>
+                        <div className="font-semibold text-lg">
+                          {match.title}
+                        </div>
                         {match.description && (
                           <div className="text-sm text-muted-foreground">
                             {match.description}
@@ -472,10 +528,15 @@ export default function TeamPage() {
                         )}
                         <div className="flex items-center gap-4">
                           <div className="text-2xl font-bold">
-                            {match.homeScore !== null && match.awayScore !== null ? (
-                              <span className="text-primary">{match.homeScore} - {match.awayScore}</span>
+                            {match.homeScore !== null &&
+                            match.awayScore !== null ? (
+                              <span className="text-primary">
+                                {match.homeScore} - {match.awayScore}
+                              </span>
                             ) : (
-                              <span className="text-muted-foreground text-base">Score pending</span>
+                              <span className="text-muted-foreground text-base">
+                                Score pending
+                              </span>
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -485,8 +546,14 @@ export default function TeamPage() {
                       </div>
                       {canManageTeam && (
                         <div className="flex items-center gap-2">
-                          <EditEventDialog event={match} teamId={parsedTeamId} />
-                          <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                          <EditEventDialog
+                            event={match}
+                            teamId={parsedTeamId}
+                          />
+                          <DeleteEventDialog
+                            eventId={match.id}
+                            teamId={parsedTeamId}
+                          />
                         </div>
                       )}
                     </div>
@@ -554,11 +621,19 @@ export default function TeamPage() {
                     className="p-4 border rounded-lg space-y-2"
                   >
                     <div className="flex justify-between items-start">
-                      <div className="font-semibold text-lg">{article.title}</div>
+                      <div className="font-semibold text-lg">
+                        {article.title}
+                      </div>
                       {canManageNews && (
                         <div className="flex items-center gap-2">
-                          <EditNewsDialog news={article} teamId={parsedTeamId} />
-                          <DeleteNewsDialog newsId={article.id} teamId={parsedTeamId} />
+                          <EditNewsDialog
+                            news={article}
+                            teamId={parsedTeamId}
+                          />
+                          <DeleteNewsDialog
+                            newsId={article.id}
+                            teamId={parsedTeamId}
+                          />
                         </div>
                       )}
                     </div>
@@ -571,7 +646,10 @@ export default function TeamPage() {
                     )}
                     <div className="text-sm">{article.content}</div>
                     <div className="text-xs text-muted-foreground">
-                      Posted on {article.createdAt ? format(new Date(article.createdAt), "PPP") : 'Unknown date'}
+                      Posted on{" "}
+                      {article.createdAt
+                        ? format(new Date(article.createdAt), "PPP")
+                        : "Unknown date"}
                     </div>
                   </div>
                 ))
@@ -586,10 +664,13 @@ export default function TeamPage() {
   return (
     <Layout teamId={parsedTeamId.toString()}>
       <div className="container py-8">
-        {section === "players" ? renderPlayers() : 
-         section === "matches" ? renderMatches() : 
-         section === "news" ? renderNews() :
-         renderEvents()}
+        {section === "players"
+          ? renderPlayers()
+          : section === "matches"
+            ? renderMatches()
+            : section === "news"
+              ? renderNews()
+              : renderEvents()}
       </div>
     </Layout>
   );
