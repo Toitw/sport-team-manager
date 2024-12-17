@@ -431,15 +431,18 @@ export default function TeamPage() {
     </Card>
   );
 
-  const renderMatches = () => {
-    const now = new Date();
-    const upcomingMatches = matches.filter(
-      (match) => new Date(match.startDate) > now,
-    );
-    const pastMatches = matches.filter(
-      (match) => new Date(match.startDate) <= now,
-    );
+  // Move date calculations to the top level
+  const now = new Date();
+  const upcomingMatches = React.useMemo(
+    () => matches.filter((match) => new Date(match.startDate) > now),
+    [matches]
+  );
+  const pastMatches = React.useMemo(
+    () => matches.filter((match) => new Date(match.startDate) <= now),
+    [matches]
+  );
 
+  const renderMatches = () => {
     return (
       <div className="space-y-6">
         <Card>
@@ -590,9 +593,10 @@ export default function TeamPage() {
     );
   };
 
-  const renderNews = () => {
-    const canManageNews = user?.role === "admin";
+  // Move permission check to top level
+  const canManageNews = React.useMemo(() => user?.role === "admin", [user?.role]);
 
+  const renderNews = () => {
     if (newsLoading) {
       return (
         <div className="flex items-center justify-center">
