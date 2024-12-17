@@ -22,6 +22,30 @@ interface Scorer {
 export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDialogProps) {
   const { players = [] } = usePlayers(teamId);
   const [scorers, setScorers] = React.useState<Scorer[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open && matchId) {
+      setIsLoading(true);
+      fetch(`/api/matches/${matchId}/details`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.scorers) {
+            setScorers(data.scorers.map((scorer: any) => ({
+              playerId: scorer.playerId,
+              minute: scorer.minute,
+              eventType: scorer.eventType
+            })));
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading scorers:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [matchId, open]);
 
   const handleSave = async () => {
     try {

@@ -15,6 +15,26 @@ interface ReservesDialogProps {
 export function ReservesDialog({ matchId, teamId, open, onOpenChange }: ReservesDialogProps) {
   const { players = [] } = usePlayers(teamId);
   const [reserves, setReserves] = React.useState<number[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open && matchId) {
+      setIsLoading(true);
+      fetch(`/api/matches/${matchId}/details`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.reserves) {
+            setReserves(data.reserves.map((reserve: any) => reserve.playerId));
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading reserves:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [matchId, open]);
 
   const handleSave = async () => {
     try {

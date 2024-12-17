@@ -15,6 +15,29 @@ interface LineupDialogProps {
 export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDialogProps) {
   const { players = [] } = usePlayers(teamId);
   const [lineup, setLineup] = React.useState<Array<{ playerId: number; position: string }>>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (open && matchId) {
+      setIsLoading(true);
+      fetch(`/api/matches/${matchId}/details`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.lineup) {
+            setLineup(data.lineup.map((item: any) => ({
+              playerId: item.playerId,
+              position: item.position
+            })));
+          }
+        })
+        .catch((error) => {
+          console.error("Error loading lineup:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [matchId, open]);
 
   const handleSave = async () => {
     try {
@@ -43,89 +66,97 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
           <DialogTitle>Manage Match Lineup</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Position</TableHead>
-                <TableHead>Player</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lineup.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Select
-                      value={item.position}
-                      onValueChange={(value) => {
-                        const newLineup = [...lineup];
-                        newLineup[index].position = value;
-                        setLineup(newLineup);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GK">Goalkeeper</SelectItem>
-                        <SelectItem value="DEF">Defender</SelectItem>
-                        <SelectItem value="MID">Midfielder</SelectItem>
-                        <SelectItem value="FWD">Forward</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={item.playerId.toString()}
-                      onValueChange={(value) => {
-                        const newLineup = [...lineup];
-                        newLineup[index].playerId = parseInt(value);
-                        setLineup(newLineup);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select player" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {players.map((player) => (
-                          <SelectItem key={player.id} value={player.id.toString()}>
-                            {player.name} ({player.position} - #{player.number})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        setLineup(lineup.filter((_, i) => i !== index));
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="mt-4 flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setLineup([...lineup, { playerId: 0, position: "" }]);
-              }}
-            >
-              Add Player
-            </Button>
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Save Lineup</Button>
+          {isLoading ? (
+            <div className="flex justify-center items-center p-4">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
             </div>
-          </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Player</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineup.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <Select
+                          value={item.position}
+                          onValueChange={(value) => {
+                            const newLineup = [...lineup];
+                            newLineup[index].position = value;
+                            setLineup(newLineup);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="GK">Goalkeeper</SelectItem>
+                            <SelectItem value="DEF">Defender</SelectItem>
+                            <SelectItem value="MID">Midfielder</SelectItem>
+                            <SelectItem value="FWD">Forward</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={item.playerId.toString()}
+                          onValueChange={(value) => {
+                            const newLineup = [...lineup];
+                            newLineup[index].playerId = parseInt(value);
+                            setLineup(newLineup);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select player" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {players.map((player) => (
+                              <SelectItem key={player.id} value={player.id.toString()}>
+                                {player.name} ({player.position} - #{player.number})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setLineup(lineup.filter((_, i) => i !== index));
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setLineup([...lineup, { playerId: 0, position: "" }]);
+                  }}
+                >
+                  Add Player
+                </Button>
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave}>Save Lineup</Button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
