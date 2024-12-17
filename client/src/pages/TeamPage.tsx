@@ -38,6 +38,8 @@ import { DeleteEventDialog } from "../components/DeleteEventDialog";
 import { CreateNewsDialog } from "../components/CreateNewsDialog";
 import { EditNewsDialog } from "../components/EditNewsDialog";
 import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
+import { MatchLineupDialog } from "../components/MatchLineupDialog";
+import { MatchGoalsDialog } from "../components/MatchGoalsDialog";
 import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
@@ -543,6 +545,18 @@ export default function TeamPage() {
                             {format(new Date(match.startDate), "PPP")}
                           </div>
                         </div>
+                        {canManageTeam && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <MatchLineupDialog
+                              matchId={match.id}
+                              teamId={parsedTeamId}
+                            />
+                            <MatchGoalsDialog
+                              matchId={match.id}
+                              teamId={parsedTeamId}
+                            />
+                          </div>
+                        )}
                       </div>
                       {canManageTeam && (
                         <div className="flex items-center gap-2">
