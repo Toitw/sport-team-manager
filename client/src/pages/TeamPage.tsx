@@ -38,14 +38,19 @@ import { DeleteEventDialog } from "../components/DeleteEventDialog";
 import { CreateNewsDialog } from "../components/CreateNewsDialog";
 import { EditNewsDialog } from "../components/EditNewsDialog";
 import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
+import { LineupDialog } from "../components/match/LineupDialog";
+import { ReservesDialog } from "../components/match/ReservesDialog";
+import { ScorersDialog } from "../components/match/ScorersDialog";
 import { cn } from "@/lib/utils";
 
 export default function TeamPage() {
   // Route params and state
   const { teamId = "", section = "news" } = useParams();
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(
-    null,
-  );
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = React.useState<number | null>(null);
+  const [lineupDialogOpen, setLineupDialogOpen] = React.useState(false);
+  const [reservesDialogOpen, setReservesDialogOpen] = React.useState(false);
+  const [scorersDialogOpen, setScorersDialogOpen] = React.useState(false);
 
   // Memoized values
   const parsedTeamId = React.useMemo(
@@ -443,6 +448,43 @@ export default function TeamPage() {
                                       {match.awayScore}
                                     </div>
                                   )}
+                                {canManageTeam && (
+                                  <div className="flex gap-2 mt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedMatchId(match.id);
+                                        setLineupDialogOpen(true);
+                                      }}
+                                    >
+                                      Manage Lineup
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedMatchId(match.id);
+                                        setReservesDialogOpen(true);
+                                      }}
+                                    >
+                                      Manage Reserves
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedMatchId(match.id);
+                                        setScorersDialogOpen(true);
+                                      }}
+                                    >
+                                      Manage Scorers
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -672,6 +714,28 @@ export default function TeamPage() {
               ? renderNews()
               : renderEvents()}
       </div>
+      {selectedMatchId && (
+        <>
+          <LineupDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={lineupDialogOpen}
+            onOpenChange={setLineupDialogOpen}
+          />
+          <ReservesDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={reservesDialogOpen}
+            onOpenChange={setReservesDialogOpen}
+          />
+          <ScorersDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={scorersDialogOpen}
+            onOpenChange={setScorersDialogOpen}
+          />
+        </>
+      )}
     </Layout>
   );
 }

@@ -5,6 +5,9 @@ import { z } from "zod";
 // Define soccer positions enum
 export const positionEnum = pgEnum('position_type', ['GK', 'DEF', 'MID', 'FWD']);
 
+// Define match event type enum
+export const matchEventTypeEnum = pgEnum('match_event_type', ['goal', 'own_goal', 'penalty']);
+
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   username: text("username").unique().notNull(),
@@ -80,3 +83,44 @@ export const insertEventSchema = createInsertSchema(events);
 export const selectEventSchema = createSelectSchema(events);
 export type InsertEvent = z.infer<typeof insertEventSchema>;
 export type Event = z.infer<typeof selectEventSchema>;
+
+// Match Details Tables
+export const matchLineups = pgTable("match_lineups", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  matchId: integer("match_id").notNull().references(() => events.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  position: text("position").notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
+export const matchReserves = pgTable("match_reserves", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  matchId: integer("match_id").notNull().references(() => events.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
+export const matchScorers = pgTable("match_scorers", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  matchId: integer("match_id").notNull().references(() => events.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  minute: integer("minute").notNull(),
+  eventType: matchEventTypeEnum("event_type").notNull().default('goal'),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
+// Create schemas for the new tables
+export const insertMatchLineupSchema = createInsertSchema(matchLineups);
+export const selectMatchLineupSchema = createSelectSchema(matchLineups);
+export type InsertMatchLineup = z.infer<typeof insertMatchLineupSchema>;
+export type MatchLineup = z.infer<typeof selectMatchLineupSchema>;
+
+export const insertMatchReserveSchema = createInsertSchema(matchReserves);
+export const selectMatchReserveSchema = createSelectSchema(matchReserves);
+export type InsertMatchReserve = z.infer<typeof insertMatchReserveSchema>;
+export type MatchReserve = z.infer<typeof selectMatchReserveSchema>;
+
+export const insertMatchScorerSchema = createInsertSchema(matchScorers);
+export const selectMatchScorerSchema = createSelectSchema(matchScorers);
+export type InsertMatchScorer = z.infer<typeof insertMatchScorerSchema>;
+export type MatchScorer = z.infer<typeof selectMatchScorerSchema>;

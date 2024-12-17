@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { teams, players, events, news } from "@db/schema";
+import { teams, players, events, news, matchLineups, matchReserves, matchScorers } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -310,6 +310,127 @@ export function registerRoutes(app: Express) {
     } catch (error: any) {
       console.error('Error deleting news:', error);
       res.status(500).json({ message: error.message || "Failed to delete news" });
+    }
+  });
+
+  // Match Details endpoints
+  // Get match details (lineup, reserves, scorers)
+  app.get("/api/matches/:matchId/details", requireAuth, async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      
+      // Get lineup
+      const lineup = await db.select()
+        .from(matchLineups)
+        .where(eq(matchLineups.matchId, matchId));
+      
+      // Get reserves
+      const reserves = await db.select()
+        .from(matchReserves)
+        .where(eq(matchReserves.matchId, matchId));
+      
+      // Get scorers
+      const scorers = await db.select()
+        .from(matchScorers)
+        .where(eq(matchScorers.matchId, matchId));
+      
+      res.json({ lineup, reserves, scorers });
+    } catch (error: any) {
+      console.error('Error fetching match details:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch match details" });
+    }
+  });
+
+  // Update match lineup
+  app.post("/api/matches/:matchId/lineup", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const { players } = req.body; // Array of { playerId, position }
+      
+      // First, remove existing lineup
+      await db.delete(matchLineups)
+        .where(eq(matchLineups.matchId, matchId));
+      
+      // Then insert new lineup
+      const lineup = await db.insert(matchLineups)
+        .values(players.map((p: any) => ({
+          matchId,
+          playerId: p.playerId,
+          position: p.position
+        })))
+        .returning();
+      
+      res.json(lineup);
+    } catch (error: any) {
+      console.error('Error updating match lineup:', error);
+      res.status(500).json({ message: error.message || "Failed to update match lineup" });
+    }
+  });
+
+  // Update match reserves
+  app.post("/api/matches/:matchId/reserves", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const { players } = req.body; // Array of playerIds
+      
+      // First, remove existing reserves
+      await db.delete(matchReserves)
+        .where(eq(matchReserves.matchId, matchId));
+      
+      // Then insert new reserves
+      const reserves = await db.insert(matchReserves)
+        .values(players.map((playerId: number) => ({
+          matchId,
+          playerId
+        })))
+        .returning();
+      
+      res.json(reserves);
+    } catch (error: any) {
+      console.error('Error updating match reserves:', error);
+      res.status(500).json({ message: error.message || "Failed to update match reserves" });
+    }
+  });
+
+  // Add match scorer
+  app.post("/api/matches/:matchId/scorers", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const { playerId, minute, eventType = 'goal' } = req.body;
+      
+      const scorer = await db.insert(matchScorers)
+        .values({
+          matchId,
+          playerId,
+          minute,
+          eventType
+        })
+        .returning();
+      
+      res.json(scorer[0]);
+    } catch (error: any) {
+      console.error('Error adding match scorer:', error);
+      res.status(500).json({ message: error.message || "Failed to add match scorer" });
+    }
+  });
+
+  // Delete match scorer
+  app.delete("/api/matches/:matchId/scorers/:scorerId", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const { matchId, scorerId } = req.params;
+      
+      const deleted = await db.delete(matchScorers)
+        .where(sql`${matchScorers.id} = ${parseInt(scorerId)} AND ${matchScorers.matchId} = ${parseInt(matchId)}`)
+        .returning();
+
+      if (!deleted.length) {
+        return res.status(404).json({ message: "Scorer not found" });
+      }
+      
+      res.json({ message: "Scorer deleted successfully" });
+    } catch (error: any) {
+      console.error('Error deleting match scorer:', error);
+      res.status(500).json({ message: error.message || "Failed to delete match scorer" });
     }
   });
 
