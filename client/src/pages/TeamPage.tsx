@@ -230,7 +230,9 @@ export default function TeamPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {news.map((item) => (
+                    {news
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((item) => (
                       <div key={item.id} className="border-b last:border-0 pb-4 last:pb-0">
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="font-medium">{item.title}</h3>
@@ -349,8 +351,7 @@ export default function TeamPage() {
                       <h3 className="font-medium mb-4">Upcoming Matches</h3>
                       <div className="space-y-4">
                         {matches
-                          .filter(match => new Date(match.startDate) >= new Date())
-                          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                          .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
                           .map(match => (
                             <div key={match.id} className="flex items-center justify-between border-b pb-4">
                               <div>
