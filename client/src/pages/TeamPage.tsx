@@ -187,27 +187,19 @@ export default function TeamPage() {
             }
           }}
           components={{
-            DayContent: React.memo(function DayContent(props) {
+            DayContent: (props) => {
               const [isOpen, setIsOpen] = React.useState(false);
               const [isClicked, setIsClicked] = React.useState(false);
 
-              const handleMouseEnter = React.useCallback(() => {
-                if (!isClicked) setIsOpen(true);
-              }, [isClicked]);
-
-              const handleMouseLeave = React.useCallback(() => {
-                if (!isClicked) setIsOpen(false);
-              }, [isClicked]);
-
-              const handleClick = React.useCallback(() => {
+              const handleClick = () => {
                 setIsClicked(!isClicked);
                 setIsOpen(!isClicked);
-              }, [isClicked]);
+              };
 
-              const matchingEvents = React.useMemo(() => events.filter(
+              const matchingEvents = events.filter(
                 event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
                          format(props.date, 'yyyy-MM-dd')
-              ), [events, props.date]);
+              );
 
               if (matchingEvents.length === 0) {
                 return <div className="p-2">{props.date.getDate()}</div>;
@@ -216,8 +208,8 @@ export default function TeamPage() {
               return (
                 <div 
                   className="relative w-full h-full z-50"
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
+                  onMouseEnter={() => !isClicked && setIsOpen(true)}
+                  onMouseLeave={() => !isClicked && setIsOpen(false)}
                 >
                   <Popover open={isOpen}>
                     <PopoverTrigger asChild>
@@ -342,14 +334,14 @@ export default function TeamPage() {
                 }
               }}
               components={{
-                DayContent: React.memo(function DayContent(props) {
+                DayContent: (props) => {
                   const [isOpen, setIsOpen] = React.useState(false);
                   const [isClicked, setIsClicked] = React.useState(false);
 
-                  const matchingEvents = React.useMemo(() => matches.filter(
+                  const matchingEvents = matches.filter(
                     match => format(new Date(match.startDate), 'yyyy-MM-dd') === 
                              format(props.date, 'yyyy-MM-dd')
-                  ), [matches, props.date]);
+                  );
 
                   if (matchingEvents.length === 0) {
                     return <div className="p-2">{props.date.getDate()}</div>;
