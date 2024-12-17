@@ -184,6 +184,7 @@ export default function TeamPage() {
   const { events = [], isLoading: eventsLoading } = useEvents(teamId);
   const { news = [], nextMatch, isLoading: newsLoading } = useNews(teamId);
   const canManageTeam = user?.role === "admin";
+  const [selectedPlayer, setSelectedPlayer] = React.useState<number | null>(null);
   
   const currentSection = location.split('/').pop() || 'news';
 
@@ -213,8 +214,8 @@ export default function TeamPage() {
                           <h3 className="font-medium">{item.title}</h3>
                           {canManageTeam && (
                             <div className="flex gap-2">
-                              <EditNewsDialog news={item} teamId={teamId} />
-                              <DeleteNewsDialog news={item} teamId={teamId} />
+                                <EditNewsDialog news={item} teamId={teamId} />
+                                <DeleteNewsDialog newsId={item.id} teamId={teamId} />
                             </div>
                           )}
                         </div>
@@ -317,11 +318,15 @@ export default function TeamPage() {
                           <TableCell>{player.position}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <PlayerProfileDialog player={player} />
+                              <PlayerProfileDialog 
+                                player={player} 
+                                open={selectedPlayer === player.id} 
+                                onOpenChange={(open) => setSelectedPlayer(open ? player.id : null)}
+                              />
                               {canManageTeam && (
                                 <>
                                   <EditPlayerDialog player={player} teamId={teamId} />
-                                  <DeletePlayerDialog player={player} teamId={teamId} />
+                                  <DeletePlayerDialog playerId={player.id} teamId={teamId} />
                                 </>
                               )}
                             </div>
