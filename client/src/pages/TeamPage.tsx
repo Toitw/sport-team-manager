@@ -6,6 +6,7 @@ import { useUser } from "../hooks/use-user";
 import { useNews } from "../hooks/use-news";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -261,24 +262,61 @@ export default function TeamPage() {
                 <CardTitle>Events Calendar</CardTitle>
                 {canManageTeam && <CreateEventDialog teamId={teamId} />}
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 {eventsLoading ? (
                   <div className="flex items-center justify-center p-4">
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
                 ) : (
-                  <Calendar
-                    mode="single"
-                    components={{
-                      DayContent: (props) => (
-                        <DayContent
-                          {...props}
-                          events={events}
-                          onEventClick={() => {}}
-                        />
-                      ),
-                    }}
-                  />
+                  <>
+                    <Calendar
+                      mode="single"
+                      components={{
+                        DayContent: (props) => (
+                          <DayContent
+                            {...props}
+                            events={events}
+                            onEventClick={() => {}}
+                          />
+                        ),
+                      }}
+                    />
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Upcoming Events</h3>
+                      <div className="space-y-4">
+                        {events
+                          .filter(event => new Date(event.startDate) >= new Date())
+                          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                          .map(event => (
+                            <div key={event.id} className="flex items-center justify-between border-b pb-4">
+                              <div>
+                                <h4 className="font-medium">{event.title}</h4>
+                                {event.description && (
+                                  <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
+                                )}
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {format(new Date(event.startDate), "PPP")} at {format(new Date(event.startDate), "p")}
+                                </p>
+                                <Badge 
+                                  className={cn(
+                                    event.type === "match" ? "bg-red-500" :
+                                    event.type === "training" ? "bg-green-500" : "bg-blue-500"
+                                  )}
+                                >
+                                  {event.type}
+                                </Badge>
+                              </div>
+                              {canManageTeam && (
+                                <div className="flex gap-2">
+                                  <EditEventDialog event={event} teamId={teamId} />
+                                  <DeleteEventDialog eventId={event.id} teamId={teamId} />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -288,24 +326,58 @@ export default function TeamPage() {
               <CardHeader>
                 <CardTitle>Match Calendar</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 {eventsLoading ? (
                   <div className="flex items-center justify-center p-4">
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
                 ) : (
-                  <Calendar
-                    mode="single"
-                    components={{
-                      DayContent: (props) => (
-                        <MatchDayContent
-                          {...props}
-                          matches={matches}
-                          canManageTeam={canManageTeam}
-                        />
-                      ),
-                    }}
-                  />
+                  <>
+                    <Calendar
+                      mode="single"
+                      components={{
+                        DayContent: (props) => (
+                          <MatchDayContent
+                            {...props}
+                            matches={matches}
+                            canManageTeam={canManageTeam}
+                          />
+                        ),
+                      }}
+                    />
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-4">Upcoming Matches</h3>
+                      <div className="space-y-4">
+                        {matches
+                          .filter(match => new Date(match.startDate) >= new Date())
+                          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                          .map(match => (
+                            <div key={match.id} className="flex items-center justify-between border-b pb-4">
+                              <div>
+                                <h4 className="font-medium">{match.title}</h4>
+                                {match.description && (
+                                  <p className="text-sm text-muted-foreground mt-1">{match.description}</p>
+                                )}
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {format(new Date(match.startDate), "PPP")} at {format(new Date(match.startDate), "p")}
+                                </p>
+                                {match.homeScore !== null && match.awayScore !== null && (
+                                  <p className="text-sm font-medium mt-1">
+                                    Score: {match.homeScore} - {match.awayScore}
+                                  </p>
+                                )}
+                              </div>
+                              {canManageTeam && (
+                                <div className="flex gap-2">
+                                  <EditEventDialog event={match} teamId={teamId} />
+                                  <DeleteEventDialog eventId={match.id} teamId={teamId} />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
