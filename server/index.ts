@@ -69,27 +69,38 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = parseInt(process.env.PORT || "3002", 10);
+  const PORT = 5000;
 
-  try {
-    log(`Starting server on port ${PORT}...`);
-    
-    server.listen(PORT, "0.0.0.0", () => {
+  // Ensure clean exit on uncaught errors
+  process.on('SIGTERM', () => {
+    log('Received SIGTERM signal. Shutting down gracefully...');
+    server.close(() => {
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    log('Received SIGINT signal. Shutting down gracefully...');
+    server.close(() => {
+      process.exit(0);
+    });
+  });
+
+  // Start server with proper error handling
+  log(`Starting server on port ${PORT}...`);
+  server.listen(PORT, "0.0.0.0")
+    .on("error", (error: NodeJS.ErrnoException) => {
+      if (error.code === "EADDRINUSE") {
+        log(`Port ${PORT} is already in use. Shutting down...`);
+        process.exit(1);
+      } else {
+        log(`Server error: ${error.message}`);
+        process.exit(1);
+      }
+    })
+    .on("listening", () => {
       const address = server.address();
       const actualPort = typeof address === "object" && address ? address.port : PORT;
       log(`Server started successfully on port ${actualPort}`);
     });
-
-    server.on("error", (error: NodeJS.ErrnoException) => {
-      log(`Server encountered an error: ${error.message}`);
-      if (error.code === "EADDRINUSE") {
-        log(`Port ${PORT} is already in use. Please free up the port and try again.`);
-      }
-      process.exit(1);
-    });
-
-  } catch (error) {
-    log(`Failed to start server: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  }
 })();
