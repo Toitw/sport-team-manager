@@ -348,12 +348,12 @@ export default function TeamPage() {
                              format(props.date, 'yyyy-MM-dd')
                   );
 
+                  const [isOpen, setIsOpen] = React.useState(false);
+                  const [isClicked, setIsClicked] = React.useState(false);
+
                   if (matchingEvents.length === 0) {
                     return <div className="p-2">{props.date.getDate()}</div>;
                   }
-
-                  const [isOpen, setIsOpen] = React.useState(false);
-                  const [isClicked, setIsClicked] = React.useState(false);
 
                   return (
                     <div 
