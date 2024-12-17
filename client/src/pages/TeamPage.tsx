@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 // Custom Components
+import { LineupDialog } from "@/components/match/LineupDialog";
 import { Layout } from "@/components/Layout";
 import { CreatePlayerDialog } from "@/components/CreatePlayerDialog";
 import { EditPlayerDialog } from "@/components/EditPlayerDialog";
@@ -75,6 +76,23 @@ export default function TeamPage() {
 
   // State hooks
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
+  const [lineupDialogOpen, setLineupDialogOpen] = React.useState(false);
+  const [selectedMatchId, setSelectedMatchId] = React.useState<number | null>(null);
+
+  // Reset match selection when dialog closes
+  const handleLineupDialogChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      setSelectedMatchId(null);
+    }
+    setLineupDialogOpen(open);
+  }, []);
+
+  // Reset states when teamId changes
+  React.useEffect(() => {
+    setSelectedPlayerId(null);
+    setLineupDialogOpen(false);
+    setSelectedMatchId(null);
+  }, [parsedTeamId]);
 
   // Data fetching hooks
   const { user } = useUser();
@@ -302,12 +320,26 @@ export default function TeamPage() {
                         </div>
                       </div>
                     </div>
-                    {canManageTeam && (
-                      <div className="flex items-center gap-2">
-                        <EditEventDialog event={match} teamId={parsedTeamId} />
-                        <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {canManageTeam && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setLineupDialogOpen(true);
+                            }}
+                          >
+                            Lineup
+                          </Button>
+                          <EditEventDialog event={match} teamId={parsedTeamId} />
+                          <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -315,6 +347,16 @@ export default function TeamPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Lineup Dialog */}
+      {selectedMatchId && (
+        <LineupDialog
+          matchId={selectedMatchId}
+          teamId={parsedTeamId}
+          open={lineupDialogOpen}
+          onOpenChange={setLineupDialogOpen}
+        />
+      )}
     </div>
   );
 
