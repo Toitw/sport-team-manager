@@ -6,26 +6,10 @@ import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
 import { useNews } from "../hooks/use-news";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
@@ -43,8 +27,9 @@ import { MatchLineupDialog } from "../components/MatchLineupDialog";
 import { MatchGoalsDialog } from "../components/MatchGoalsDialog";
 import { cn } from "@/lib/utils";
 
-// Keep DayContent components as pure functions
 const DayContent = React.memo(({ date, events, onEventClick }: any) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
   const matchingEvents = events.filter(
     (event: any) =>
       format(new Date(event.startDate), "yyyy-MM-dd") === 
@@ -57,11 +42,16 @@ const DayContent = React.memo(({ date, events, onEventClick }: any) => {
 
   return (
     <div className="relative w-full h-full z-50">
-      <Popover>
+      <Popover open={isOpen}>
         <PopoverTrigger asChild>
           <div
             className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-            onClick={onEventClick}
+            onClick={() => {
+              setIsOpen(true);
+              onEventClick?.();
+            }}
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
           >
             <span>{date.getDate()}</span>
             <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
@@ -86,7 +76,7 @@ const DayContent = React.memo(({ date, events, onEventClick }: any) => {
           sideOffset={5}
           align="start"
           side="right"
-          onClick={(e) => e.stopPropagation()}
+          onInteractOutside={() => setIsOpen(false)}
         >
           <div className="space-y-2">
             {matchingEvents.map((event: any) => (
@@ -117,6 +107,8 @@ const DayContent = React.memo(({ date, events, onEventClick }: any) => {
 });
 
 const MatchDayContent = React.memo(({ date, matches, canManageTeam }: any) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+
   const matchingEvents = matches.filter(
     (match: any) =>
       format(new Date(match.startDate), "yyyy-MM-dd") === 
@@ -129,10 +121,12 @@ const MatchDayContent = React.memo(({ date, matches, canManageTeam }: any) => {
 
   return (
     <div className="relative w-full h-full z-50">
-      <Popover>
+      <Popover open={isOpen}>
         <PopoverTrigger asChild>
           <div
             className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
           >
             <span>{date.getDate()}</span>
             <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
@@ -150,7 +144,7 @@ const MatchDayContent = React.memo(({ date, matches, canManageTeam }: any) => {
           sideOffset={5}
           align="start"
           side="right"
-          onClick={(e) => e.stopPropagation()}
+          onInteractOutside={() => setIsOpen(false)}
         >
           <div className="space-y-2">
             {matchingEvents.map((match: any) => (
@@ -182,5 +176,163 @@ const MatchDayContent = React.memo(({ date, matches, canManageTeam }: any) => {
   );
 });
 
-// Rest of the TeamPage component remains the same...
-[The rest of the file content remains unchanged]
+export default function TeamPage() {
+  const params = useParams();
+  const teamId = parseInt(params.teamId);
+  const { user } = useUser();
+  const { players = [], isLoading: playersLoading } = usePlayers(teamId);
+  const { events = [], isLoading: eventsLoading } = useEvents(teamId);
+  const { news = [], nextMatch, isLoading: newsLoading } = useNews(teamId);
+  const canManageTeam = user?.role === "admin" || user?.teamId === teamId;
+
+  const matches = React.useMemo(() => 
+    events.filter(event => event.type === "match"), [events]);
+
+  return (
+    <Layout teamId={params.teamId}>
+      <div className="container py-8">
+        <div className="grid gap-8">
+          {/* News Section */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>News</CardTitle>
+              {canManageTeam && <CreateNewsDialog teamId={teamId} />}
+            </CardHeader>
+            <CardContent>
+              {newsLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {news.map((item) => (
+                    <div key={item.id} className="border-b last:border-0 pb-4 last:pb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium">{item.title}</h3>
+                        {canManageTeam && (
+                          <div className="flex gap-2">
+                            <EditNewsDialog news={item} teamId={teamId} />
+                            <DeleteNewsDialog news={item} teamId={teamId} />
+                          </div>
+                        )}
+                      </div>
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="w-full h-48 object-cover rounded-md mb-2"
+                        />
+                      )}
+                      <p className="text-sm text-muted-foreground">{item.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Events Calendar */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Events</CardTitle>
+              {canManageTeam && <CreateEventDialog teamId={teamId} />}
+            </CardHeader>
+            <CardContent>
+              {eventsLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <Calendar
+                  mode="single"
+                  components={{
+                    DayContent: (props) => (
+                      <DayContent
+                        {...props}
+                        events={events}
+                        onEventClick={() => {}}
+                      />
+                    ),
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Matches Calendar */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Matches</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {eventsLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <Calendar
+                  mode="single"
+                  components={{
+                    DayContent: (props) => (
+                      <MatchDayContent
+                        {...props}
+                        matches={matches}
+                        canManageTeam={canManageTeam}
+                      />
+                    ),
+                  }}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Players Table */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Players</CardTitle>
+              {canManageTeam && <CreatePlayerDialog teamId={teamId} />}
+            </CardHeader>
+            <CardContent>
+              {playersLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Number</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {players.map((player) => (
+                      <TableRow key={player.id}>
+                        <TableCell>{player.number}</TableCell>
+                        <TableCell>{player.name}</TableCell>
+                        <TableCell>{player.position}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <PlayerProfileDialog player={player} />
+                            {canManageTeam && (
+                              <>
+                                <EditPlayerDialog player={player} teamId={teamId} />
+                                <DeletePlayerDialog player={player} teamId={teamId} />
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </Layout>
+  );
+}
