@@ -213,8 +213,8 @@ export default function TeamPage() {
                           <h3 className="font-medium">{item.title}</h3>
                           {canManageTeam && (
                             <div className="flex gap-2">
-                              <EditNewsDialog news={item} teamId={teamId} />
-                              <DeleteNewsDialog news={item} teamId={teamId} />
+                              <EditNewsDialog newsId={item.id} teamId={teamId} />
+                              <DeleteNewsDialog newsId={item.id} teamId={teamId} />
                             </div>
                           )}
                         </div>
@@ -317,11 +317,15 @@ export default function TeamPage() {
                           <TableCell>{player.position}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <PlayerProfileDialog player={player} />
+                              <PlayerProfileDialog
+                                playerId={player.id}
+                                open={false}
+                                onOpenChange={() => {}}
+                              />
                               {canManageTeam && (
                                 <>
-                                  <EditPlayerDialog player={player} teamId={teamId} />
-                                  <DeletePlayerDialog player={player} teamId={teamId} />
+                                  <EditPlayerDialog playerId={player.id} teamId={teamId} />
+                                  <DeletePlayerDialog playerId={player.id} teamId={teamId} />
                                 </>
                               )}
                             </div>
