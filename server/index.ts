@@ -69,7 +69,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = 5000;
+  const PORT = 3000;
 
   // Ensure clean exit on uncaught errors
   process.on('SIGTERM', () => {
