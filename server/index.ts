@@ -69,10 +69,47 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
+  const PORT = parseInt(process.env.PORT || "3000", 10);
+  
+  // Add a proper error handler before starting the server
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+    process.exit(1);
+  });
+
+  // More robust server startup
+  function startServer(port: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        server.listen(port, "0.0.0.0", () => {
+          const address = server.address();
+          const actualPort = typeof address === "object" && address ? address.port : port;
+          log(`Server is running on port ${actualPort}`);
+          resolve();
+        }).on("error", (error: NodeJS.ErrnoException) => {
+          if (error.code === "EADDRINUSE") {
+            log(`Port ${port} is in use, trying ${port + 1}`);
+            server.close();
+            startServer(port + 1).then(resolve).catch(reject);
+          } else {
+            log(`Error starting server: ${error.message}`);
+            reject(error);
+          }
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Start the server with error handling
+  await startServer(PORT).catch((error) => {
+    log(`Failed to start server: ${error.message}`);
+    process.exit(1);
   });
 })();

@@ -2,8 +2,6 @@ import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { positionEnum, matchEventTypeEnum, eventTypeEnum } from "./types";
-import { players } from "./tables/players";
-import { events } from "./tables/events";
 
 export const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -17,6 +15,29 @@ export const teams = pgTable("teams", {
   name: text("name").notNull(),
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
   createdById: integer("created_by_id").notNull().references(() => users.id)
+});
+
+export const players = pgTable("players", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  name: text("name").notNull(),
+  position: positionEnum("position").notNull(),
+  number: integer("number").notNull(),
+  photoUrl: text("photo_url"),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
+export const events = pgTable("events", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date", { mode: 'string' }).notNull(),
+  endDate: timestamp("end_date", { mode: 'string' }).notNull(),
+  type: eventTypeEnum("type").notNull(),
+  homeScore: integer("home_score"),
+  awayScore: integer("away_score"),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
 export const news = pgTable("news", {
@@ -94,7 +115,3 @@ export const insertMatchScorerSchema = createInsertSchema(matchScorers);
 export const selectMatchScorerSchema = createSelectSchema(matchScorers);
 export type InsertMatchScorer = z.infer<typeof insertMatchScorerSchema>;
 export type MatchScorer = z.infer<typeof selectMatchScorerSchema>;
-
-// Re-export tables from separate files
-export { players } from "./tables/players";
-export { events } from "./tables/events";
