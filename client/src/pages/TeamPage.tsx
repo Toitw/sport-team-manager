@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { usePlayers } from "../hooks/use-players";
 import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
@@ -178,12 +178,14 @@ const MatchDayContent = React.memo(({ date, matches, canManageTeam }: any) => {
 export default function TeamPage() {
   const params = useParams();
   const teamId = parseInt(params.teamId || "0");
-  const [activeTab, setActiveTab] = React.useState("news");
+  const [location] = useLocation();
   const { user } = useUser();
   const { players = [], isLoading: playersLoading } = usePlayers(teamId);
   const { events = [], isLoading: eventsLoading } = useEvents(teamId);
   const { news = [], nextMatch, isLoading: newsLoading } = useNews(teamId);
-  const canManageTeam = user?.role === "admin" || user?.teamId === teamId;
+  const canManageTeam = user?.role === "admin";
+  
+  const currentSection = location.split('/').pop() || 'news';
 
   const matches = React.useMemo(() => 
     events.filter(event => event.type === "match"), [events]);
@@ -191,191 +193,147 @@ export default function TeamPage() {
   return (
     <Layout teamId={params.teamId}>
       <div className="container py-8">
-        <div className="flex flex-col space-y-4">
-          <div className="flex space-x-4 border-b">
-            <button
-              className={`px-4 py-2 ${
-                activeTab === "news"
-                  ? "border-b-2 border-primary font-medium"
-                  : "text-muted-foreground"
-              }`}
-              onClick={() => setActiveTab("news")}
-            >
-              News
-            </button>
-            <button
-              className={`px-4 py-2 ${
-                activeTab === "events"
-                  ? "border-b-2 border-primary font-medium"
-                  : "text-muted-foreground"
-              }`}
-              onClick={() => setActiveTab("events")}
-            >
-              Events
-            </button>
-            <button
-              className={`px-4 py-2 ${
-                activeTab === "matches"
-                  ? "border-b-2 border-primary font-medium"
-                  : "text-muted-foreground"
-              }`}
-              onClick={() => setActiveTab("matches")}
-            >
-              Matches
-            </button>
-            <button
-              className={`px-4 py-2 ${
-                activeTab === "players"
-                  ? "border-b-2 border-primary font-medium"
-                  : "text-muted-foreground"
-              }`}
-              onClick={() => setActiveTab("players")}
-            >
-              Players
-            </button>
-          </div>
-          <div className="grid gap-8">
-            {activeTab === "news" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Latest News</CardTitle>
-                  {canManageTeam && <CreateNewsDialog teamId={teamId} />}
-                </CardHeader>
-                <CardContent>
-                  {newsLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {news.map((item) => (
-                        <div key={item.id} className="border-b last:border-0 pb-4 last:pb-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-medium">{item.title}</h3>
-                            {canManageTeam && (
-                              <div className="flex gap-2">
-                                <EditNewsDialog news={item} teamId={teamId} />
-                                <DeleteNewsDialog news={item} teamId={teamId} />
-                              </div>
-                            )}
-                          </div>
-                          {item.imageUrl && (
-                            <img
-                              src={item.imageUrl}
-                              alt={item.title}
-                              className="w-full h-48 object-cover rounded-md mb-2"
-                            />
+        <div className="grid gap-8">
+          {currentSection === "news" && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Latest News</CardTitle>
+                {canManageTeam && <CreateNewsDialog teamId={teamId} />}
+              </CardHeader>
+              <CardContent>
+                {newsLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {news.map((item) => (
+                      <div key={item.id} className="border-b last:border-0 pb-4 last:pb-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium">{item.title}</h3>
+                          {canManageTeam && (
+                            <div className="flex gap-2">
+                              <EditNewsDialog news={item} teamId={teamId} />
+                              <DeleteNewsDialog news={item} teamId={teamId} />
+                            </div>
                           )}
-                          <p className="text-sm text-muted-foreground">{item.content}</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            {activeTab === "events" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Events Calendar</CardTitle>
-                  {canManageTeam && <CreateEventDialog teamId={teamId} />}
-                </CardHeader>
-                <CardContent>
-                  {eventsLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                  ) : (
-                    <Calendar
-                      mode="single"
-                      components={{
-                        DayContent: (props) => (
-                          <DayContent
-                            {...props}
-                            events={events}
-                            onEventClick={() => {}}
+                        {item.imageUrl && (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            className="w-full h-48 object-cover rounded-md mb-2"
                           />
-                        ),
-                      }}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            {activeTab === "matches" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Match Calendar</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {eventsLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                  ) : (
-                    <Calendar
-                      mode="single"
-                      components={{
-                        DayContent: (props) => (
-                          <MatchDayContent
-                            {...props}
-                            matches={matches}
-                            canManageTeam={canManageTeam}
-                          />
-                        ),
-                      }}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            )}
-            {activeTab === "players" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Team Players</CardTitle>
-                  {canManageTeam && <CreatePlayerDialog teamId={teamId} />}
-                </CardHeader>
-                <CardContent>
-                  {playersLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Number</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Position</TableHead>
-                          <TableHead>Actions</TableHead>
+                        )}
+                        <p className="text-sm text-muted-foreground">{item.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {currentSection === "events" && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Events Calendar</CardTitle>
+                {canManageTeam && <CreateEventDialog teamId={teamId} />}
+              </CardHeader>
+              <CardContent>
+                {eventsLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <Calendar
+                    mode="single"
+                    components={{
+                      DayContent: (props) => (
+                        <DayContent
+                          {...props}
+                          events={events}
+                          onEventClick={() => {}}
+                        />
+                      ),
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {currentSection === "matches" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Match Calendar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {eventsLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <Calendar
+                    mode="single"
+                    components={{
+                      DayContent: (props) => (
+                        <MatchDayContent
+                          {...props}
+                          matches={matches}
+                          canManageTeam={canManageTeam}
+                        />
+                      ),
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+          {currentSection === "players" && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Team Players</CardTitle>
+                {canManageTeam && <CreatePlayerDialog teamId={teamId} />}
+              </CardHeader>
+              <CardContent>
+                {playersLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Number</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {players.map((player) => (
+                        <TableRow key={player.id}>
+                          <TableCell>{player.number}</TableCell>
+                          <TableCell>{player.name}</TableCell>
+                          <TableCell>{player.position}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <PlayerProfileDialog player={player} />
+                              {canManageTeam && (
+                                <>
+                                  <EditPlayerDialog player={player} teamId={teamId} />
+                                  <DeletePlayerDialog player={player} teamId={teamId} />
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {players.map((player) => (
-                          <TableRow key={player.id}>
-                            <TableCell>{player.number}</TableCell>
-                            <TableCell>{player.name}</TableCell>
-                            <TableCell>{player.position}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <PlayerProfileDialog player={player} />
-                                {canManageTeam && (
-                                  <>
-                                    <EditPlayerDialog player={player} teamId={teamId} />
-                                    <DeletePlayerDialog player={player} teamId={teamId} />
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </Layout>
