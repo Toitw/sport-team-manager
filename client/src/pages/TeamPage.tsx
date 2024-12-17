@@ -26,14 +26,31 @@ import { MatchLineupDialog } from "../components/MatchLineupDialog";
 import { MatchGoalsDialog } from "../components/MatchGoalsDialog";
 import { cn } from "@/lib/utils";
 
-const DayContent = React.memo(({ date, events, onEventClick }: any) => {
+interface DayContentProps {
+  date: Date;
+  events: Array<{
+    id: number;
+    startDate: string;
+    endDate: string;
+    title: string;
+    description?: string;
+    type: string;
+  }>;
+  onEventClick?: () => void;
+}
+
+const DayContent = React.memo(({ date, events, onEventClick }: DayContentProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const matchingEvents = events.filter(
-    (event: any) =>
-      format(new Date(event.startDate), "yyyy-MM-dd") === 
-      format(date, "yyyy-MM-dd")
-  );
+  const matchingEvents = React.useMemo(() => 
+    events.filter((event) => {
+      const eventDate = new Date(event.startDate);
+      return (
+        eventDate.getFullYear() === date.getFullYear() &&
+        eventDate.getMonth() === date.getMonth() &&
+        eventDate.getDate() === date.getDate()
+      );
+    }), [events, date]);
 
   if (matchingEvents.length === 0) {
     return <div className="p-2">{date.getDate()}</div>;
@@ -41,16 +58,20 @@ const DayContent = React.memo(({ date, events, onEventClick }: any) => {
 
   return (
     <div className="relative w-full h-full z-50">
-      <Popover open={isOpen}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <div
             className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
             onClick={() => {
-              setIsOpen(true);
+              setIsOpen((prev) => !prev);
               onEventClick?.();
             }}
-            onMouseEnter={() => setIsOpen(true)}
-            onMouseLeave={() => setIsOpen(false)}
+            onMouseEnter={() => {
+              setTimeout(() => setIsOpen(true), 100);
+            }}
+            onMouseLeave={() => {
+              setTimeout(() => setIsOpen(false), 200);
+            }}
           >
             <span>{date.getDate()}</span>
             <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
