@@ -1,100 +1,111 @@
 import * as React from "react";
-import { useParams, Link } from "wouter";
-import { usePlayers } from "../hooks/use-players";
-import { useEvents } from "../hooks/use-events";
-import { useUser } from "../hooks/use-user";
-import { useNews } from "../hooks/use-news";
+import { useParams } from "wouter";
+
+// Hooks
+import { usePlayers } from "@/hooks/use-players";
+import { useEvents } from "@/hooks/use-events";
+import { useUser } from "@/hooks/use-user";
+import { useNews } from "@/hooks/use-news";
+
+// UI Components
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
-import { Calendar } from "../components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+// Icons
 import { Loader2 } from "lucide-react";
-import { Layout } from "../components/Layout";
-import { CreatePlayerDialog } from "../components/CreatePlayerDialog";
-import { EditPlayerDialog } from "../components/EditPlayerDialog";
-import { DeletePlayerDialog } from "../components/DeletePlayerDialog";
-import { PlayerProfileDialog } from "../components/PlayerProfileDialog";
-import { CreateEventDialog } from "../components/CreateEventDialog";
-import { EditEventDialog } from "../components/EditEventDialog";
-import { DeleteEventDialog } from "../components/DeleteEventDialog";
-import { CreateNewsDialog } from "../components/CreateNewsDialog";
-import { EditNewsDialog } from "../components/EditNewsDialog";
-import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
-import { LineupDialog } from "../components/match/LineupDialog";
-import { ReservesDialog } from "../components/match/ReservesDialog";
-import { ScorersDialog } from "../components/match/ScorersDialog";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
-export default function TeamPage() {
-  // Route params and state
-  const { teamId = "", section = "news" } = useParams();
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = React.useState<number | null>(null);
-  const [lineupDialogOpen, setLineupDialogOpen] = React.useState(false);
-  const [reservesDialogOpen, setReservesDialogOpen] = React.useState(false);
-  const [scorersDialogOpen, setScorersDialogOpen] = React.useState(false);
+// Custom Components
+import { Layout } from "@/components/Layout";
+import { CreatePlayerDialog } from "@/components/CreatePlayerDialog";
+import { EditPlayerDialog } from "@/components/EditPlayerDialog";
+import { DeletePlayerDialog } from "@/components/DeletePlayerDialog";
+import { PlayerProfileDialog } from "@/components/PlayerProfileDialog";
+import { CreateEventDialog } from "@/components/CreateEventDialog";
+import { EditEventDialog } from "@/components/EditEventDialog";
+import { DeleteEventDialog } from "@/components/DeleteEventDialog";
+import { CreateNewsDialog } from "@/components/CreateNewsDialog";
+import { EditNewsDialog } from "@/components/EditNewsDialog";
+import { DeleteNewsDialog } from "@/components/DeleteNewsDialog";
 
-  // Memoized values
-  const parsedTeamId = React.useMemo(
-    () => (teamId ? parseInt(teamId) : 0),
-    [teamId],
-  );
-
-  // User and permissions
-  const { user } = useUser();
-  const canManageTeam = React.useMemo(
-    () => user?.role === "admin" || user?.role === "manager",
-    [user?.role],
-  );
-
-  // Data fetching hooks
-  const { players = [], isLoading: playersLoading } = usePlayers(parsedTeamId);
-  const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
-  const {
-    news = [],
-    nextMatch,
-    isLoading: newsLoading,
-  } = useNews(parsedTeamId);
-
-  // Derived state with useMemo
-  const matches = React.useMemo(
-    () => events.filter((event) => event.type === "match"),
-    [events],
-  );
-
-  const selectedPlayer = React.useMemo(
-    () => players.find((p) => p.id === selectedPlayerId),
-    [players, selectedPlayerId],
-  );
-
-  // Loading state
-  if (playersLoading || eventsLoading || newsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
-      </div>
-    );
+// ErrorBoundary component for handling errors gracefully
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
   }
 
-  // Handlers
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h2 className="text-lg font-semibold">Something went wrong</h2>
+            <Button
+              className="mt-4"
+              onClick={() => this.setState({ hasError: false })}
+            >
+              Try again
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default function TeamPage() {
+  // Route params
+  const { teamId = "", section = "news" } = useParams();
+
+  // Parse and memoize team ID
+  const parsedTeamId = React.useMemo(() => 
+    teamId ? parseInt(teamId, 10) : 0
+  , [teamId]);
+
+  // State hooks
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
+
+  // Data fetching hooks
+  const { user } = useUser();
+  const { players = [], isLoading: playersLoading } = usePlayers(parsedTeamId);
+  const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
+  const { news = [], nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
+
+  // Memoized values
+  const canManageTeam = React.useMemo(() => 
+    user?.role === "admin" || user?.role === "manager"
+  , [user?.role]);
+
+  const now = React.useMemo(() => new Date(), []);
+
+  const matches = React.useMemo(() => 
+    events.filter(event => event.type === "match")
+  , [events]);
+
+  const upcomingMatches = React.useMemo(() => 
+    matches.filter(match => new Date(match.startDate) > now)
+  , [matches, now]);
+
+  const pastMatches = React.useMemo(() => 
+    matches.filter(match => new Date(match.startDate) <= now)
+  , [matches, now]);
+
+  const selectedPlayer = React.useMemo(() => 
+    players.find(p => p.id === selectedPlayerId)
+  , [players, selectedPlayerId]);
+
+  // Callbacks
   const handleEventClick = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -110,85 +121,89 @@ export default function TeamPage() {
     }
   }, []);
 
-  // Render functions
-  const renderPlayers = () => {
-    if (!players) return null;
-
+  // Loading state
+  if (playersLoading || eventsLoading || newsLoading) {
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Players</CardTitle>
-          {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+      <Layout teamId={parsedTeamId.toString()}>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      </Layout>
+    );
+  }
+
+  // Render methods
+  const renderPlayers = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Players</CardTitle>
+        {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Photo</TableHead>
+              <TableHead>Number</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Position</TableHead>
+              {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {players.length === 0 ? (
               <TableRow>
-                <TableHead>Photo</TableHead>
-                <TableHead>Number</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Position</TableHead>
-                {canManageTeam && (
-                  <TableHead className="text-right">Actions</TableHead>
-                )}
+                <TableCell
+                  colSpan={canManageTeam ? 5 : 4}
+                  className="text-center text-muted-foreground"
+                >
+                  No players added yet
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players?.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="text-center text-muted-foreground"
-                  >
-                    No players added yet
+            ) : (
+              players.map(player => (
+                <TableRow
+                  key={player.id}
+                  className="cursor-pointer hover:bg-accent/50"
+                  onClick={() => handlePlayerClick(player.id)}
+                >
+                  <TableCell>
+                    {player.photoUrl ? (
+                      <img
+                        src={player.photoUrl}
+                        alt={player.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-muted-foreground text-sm">
+                          {player.name[0]}
+                        </span>
+                      </div>
+                    )}
                   </TableCell>
+                  <TableCell>{player.number}</TableCell>
+                  <TableCell>{player.name}</TableCell>
+                  <TableCell>{player.position}</TableCell>
+                  {canManageTeam && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <EditPlayerDialog
+                          player={player}
+                          teamId={parsedTeamId}
+                        />
+                        <DeletePlayerDialog
+                          playerId={player.id}
+                          teamId={parsedTeamId}
+                        />
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
-              ) : (
-                players?.map((player) => (
-                  <React.Fragment key={player.id}>
-                    <TableRow
-                      className="cursor-pointer hover:bg-accent/50"
-                      onClick={() => handlePlayerClick(player.id)}
-                    >
-                      <TableCell>
-                        {player.photoUrl ? (
-                          <img
-                            src={player.photoUrl}
-                            alt={player.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                            <span className="text-muted-foreground text-sm">
-                              {player.name[0]}
-                            </span>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>{player.number}</TableCell>
-                      <TableCell>{player.name}</TableCell>
-                      <TableCell>{player.position}</TableCell>
-                      {canManageTeam && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <EditPlayerDialog
-                              player={player}
-                              teamId={parsedTeamId}
-                            />
-                            <DeletePlayerDialog
-                              playerId={player.id}
-                              teamId={parsedTeamId}
-                            />
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  </React.Fragment>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+              ))
+            )}
+          </TableBody>
+        </Table>
         {selectedPlayer && (
           <PlayerProfileDialog
             player={selectedPlayer}
@@ -196,429 +211,115 @@ export default function TeamPage() {
             onOpenChange={handlePlayerDialogChange}
           />
         )}
-      </Card>
-    );
-  };
-
-  const renderEvents = () => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Events</CardTitle>
-        {canManageTeam && <CreateEventDialog teamId={parsedTeamId} />}
-      </CardHeader>
-      <CardContent>
-        <Calendar
-          mode="single"
-          selected={new Date()}
-          className="mb-4"
-          modifiers={{
-            event: events.map((event) => new Date(event.startDate)),
-          }}
-          modifiersStyles={{
-            event: {
-              border: "2px solid var(--primary)",
-            },
-          }}
-          components={{
-            DayContent: (props) => {
-              const [isOpen, setIsOpen] = React.useState(false);
-              const [isClicked, setIsClicked] = React.useState(false);
-
-              const handleClick = () => {
-                setIsClicked((prev) => !prev);
-                setIsOpen((prev) => !prev);
-              };
-
-              const matchingEvents = events.filter(
-                (event) =>
-                  format(new Date(event.startDate), "yyyy-MM-dd") ===
-                  format(props.date, "yyyy-MM-dd"),
-              );
-
-              return matchingEvents.length === 0 ? (
-                <div className="p-2">{props.date.getDate()}</div>
-              ) : (
-                <div
-                  className="relative w-full h-full z-50"
-                  onMouseEnter={() => !isClicked && setIsOpen(true)}
-                  onMouseLeave={() => !isClicked && setIsOpen(false)}
-                >
-                  <Popover open={isOpen}>
-                    <PopoverTrigger asChild>
-                      <div
-                        className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                        onClick={handleClick}
-                      >
-                        <span>{props.date.getDate()}</span>
-                        <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                          {matchingEvents.map((event) => (
-                            <div
-                              key={event.id}
-                              className={cn(
-                                "h-1 rounded-full flex-1",
-                                event.type === "match"
-                                  ? "bg-red-500"
-                                  : event.type === "training"
-                                    ? "bg-green-500"
-                                    : "bg-blue-500",
-                              )}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-80 z-[100]"
-                      sideOffset={5}
-                      align="start"
-                      side="right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="space-y-2">
-                        {matchingEvents.map((event) => (
-                          <div
-                            key={event.id}
-                            className="border-b last:border-0 pb-2 last:pb-0"
-                          >
-                            <div className="font-medium">{event.title}</div>
-                            {event.description && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {event.description}
-                              </div>
-                            )}
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {format(new Date(event.startDate), "p")} -{" "}
-                              {format(new Date(event.endDate), "p")}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Type: {event.type}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              );
-            },
-          }}
-        />
-        <div className="space-y-2">
-          {events?.length === 0 ? (
-            <div className="text-center text-muted-foreground">
-              No events scheduled
-            </div>
-          ) : (
-            events?.map((event) => (
-              <div
-                key={event.id}
-                className="p-4 border rounded hover:bg-accent"
-                onClick={handleEventClick}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">{event.title}</div>
-                    {event.description && (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {event.description}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm text-muted-foreground">
-                      {event.type}
-                    </div>
-                    {canManageTeam && (
-                      <div className="flex items-center gap-2">
-                        <EditEventDialog event={event} teamId={parsedTeamId} />
-                        <DeleteEventDialog
-                          eventId={event.id}
-                          teamId={parsedTeamId}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground mt-2">
-                  {format(new Date(event.startDate), "PPP p")} -{" "}
-                  {format(new Date(event.endDate), "p")}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
       </CardContent>
     </Card>
   );
 
-  const renderMatches = () => {
-    const now = new Date();
-    const upcomingMatches = matches.filter(
-      (match) => new Date(match.startDate) > now,
-    );
-    const pastMatches = matches.filter(
-      (match) => new Date(match.startDate) <= now,
-    );
-
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Matches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={new Date()}
-              className="mb-4"
-              modifiers={{
-                event: matches.map((match) => new Date(match.startDate)),
-              }}
-              modifiersStyles={{
-                event: {
-                  border: "2px solid var(--primary)",
-                },
-              }}
-              components={{
-                DayContent: (props) => {
-                  const [isOpen, setIsOpen] = React.useState(false);
-                  const [isClicked, setIsClicked] = React.useState(false);
-
-                  const matchingEvents = matches.filter(
-                    (match) =>
-                      format(new Date(match.startDate), "yyyy-MM-dd") ===
-                      format(props.date, "yyyy-MM-dd"),
-                  );
-
-                  return matchingEvents.length === 0 ? (
-                    <div className="p-2">{props.date.getDate()}</div>
-                  ) : (
-                    <div
-                      className="relative w-full h-full z-50"
-                      onMouseEnter={() => !isClicked && setIsOpen(true)}
-                      onMouseLeave={() => !isClicked && setIsOpen(false)}
-                    >
-                      <Popover open={isOpen}>
-                        <PopoverTrigger asChild>
-                          <div
-                            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                            onClick={() => {
-                              setIsClicked((prev) => !prev);
-                              setIsOpen((prev) => !prev);
-                            }}
-                          >
-                            <span>{props.date.getDate()}</span>
-                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                              {matchingEvents.map((match) => (
-                                <div
-                                  key={match.id}
-                                  className="h-1 rounded-full flex-1 bg-red-500"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-80 z-[100]"
-                          sideOffset={5}
-                          align="start"
-                          side="right"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="space-y-2">
-                            {matchingEvents.map((match) => (
-                              <div
-                                key={match.id}
-                                className="border-b last:border-0 pb-2 last:pb-0"
-                              >
-                                <div className="font-medium">{match.title}</div>
-                                {match.description && (
-                                  <div className="text-sm text-muted-foreground mt-1">
-                                    {match.description}
-                                  </div>
-                                )}
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(match.startDate), "p")} -{" "}
-                                  {format(new Date(match.endDate), "p")}
-                                </div>
-                                {match.homeScore !== null &&
-                                  match.awayScore !== null && (
-                                    <div className="text-sm font-medium mt-1">
-                                      Score: {match.homeScore} -{" "}
-                                      {match.awayScore}
-                                    </div>
-                                  )}
-                                {canManageTeam && (
-                                  <div className="flex gap-2 mt-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedMatchId(match.id);
-                                        setLineupDialogOpen(true);
-                                      }}
-                                    >
-                                      Manage Lineup
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedMatchId(match.id);
-                                        setReservesDialogOpen(true);
-                                      }}
-                                    >
-                                      Manage Reserves
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedMatchId(match.id);
-                                        setScorersDialogOpen(true);
-                                      }}
-                                    >
-                                      Manage Scorers
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  );
-                },
-              }}
-            />
-            <div className="space-y-4">
-              {upcomingMatches.length === 0 ? (
-                <div className="text-center text-muted-foreground">
-                  No upcoming matches scheduled
-                </div>
-              ) : (
-                upcomingMatches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                    onClick={handleEventClick}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="font-semibold text-lg">
-                          {match.title}
-                        </div>
-                        {match.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {match.description}
-                          </div>
-                        )}
-                        <div className="text-sm font-medium text-primary">
-                          {format(new Date(match.startDate), "PPP p")}
-                        </div>
-                      </div>
-                      {canManageTeam && (
-                        <div className="flex items-center gap-2">
-                          <EditEventDialog
-                            event={match}
-                            teamId={parsedTeamId}
-                          />
-                          <DeleteEventDialog
-                            eventId={match.id}
-                            teamId={parsedTeamId}
-                          />
+  const renderMatches = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Upcoming Matches</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {upcomingMatches.length === 0 ? (
+              <div className="text-center text-muted-foreground">
+                No upcoming matches scheduled
+              </div>
+            ) : (
+              upcomingMatches.map(match => (
+                <div
+                  key={match.id}
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  onClick={handleEventClick}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-lg">{match.title}</div>
+                      {match.description && (
+                        <div className="text-sm text-muted-foreground">
+                          {match.description}
                         </div>
                       )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Match Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pastMatches.length === 0 ? (
-                <div className="text-center text-muted-foreground">
-                  No match results yet
-                </div>
-              ) : (
-                pastMatches.map((match) => (
-                  <div
-                    key={match.id}
-                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                    onClick={handleEventClick}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="font-semibold text-lg">
-                          {match.title}
-                        </div>
-                        {match.description && (
-                          <div className="text-sm text-muted-foreground">
-                            {match.description}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4">
-                          <div className="text-2xl font-bold">
-                            {match.homeScore !== null &&
-                            match.awayScore !== null ? (
-                              <span className="text-primary">
-                                {match.homeScore} - {match.awayScore}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground text-base">
-                                Score pending
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {format(new Date(match.startDate), "PPP")}
-                          </div>
-                        </div>
+                      <div className="text-sm font-medium text-primary">
+                        {format(new Date(match.startDate), "PPP p")}
                       </div>
-                      {canManageTeam && (
-                        <div className="flex items-center gap-2">
-                          <EditEventDialog
-                            event={match}
-                            teamId={parsedTeamId}
-                          />
-                          <DeleteEventDialog
-                            eventId={match.id}
-                            teamId={parsedTeamId}
-                          />
+                    </div>
+                    {canManageTeam && (
+                      <div className="flex items-center gap-2">
+                        <EditEventDialog event={match} teamId={parsedTeamId} />
+                        <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Match Results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {pastMatches.length === 0 ? (
+              <div className="text-center text-muted-foreground">
+                No match results yet
+              </div>
+            ) : (
+              pastMatches.map(match => (
+                <div
+                  key={match.id}
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  onClick={handleEventClick}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-lg">{match.title}</div>
+                      {match.description && (
+                        <div className="text-sm text-muted-foreground">
+                          {match.description}
                         </div>
                       )}
+                      <div className="flex items-center gap-4">
+                        <div className="text-2xl font-bold">
+                          {match.homeScore !== null && match.awayScore !== null ? (
+                            <span className="text-primary">
+                              {match.homeScore} - {match.awayScore}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-base">
+                              Score pending
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {format(new Date(match.startDate), "PPP")}
+                        </div>
+                      </div>
                     </div>
+                    {canManageTeam && (
+                      <div className="flex items-center gap-2">
+                        <EditEventDialog event={match} teamId={parsedTeamId} />
+                        <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                      </div>
+                    )}
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   const renderNews = () => {
     const canManageNews = user?.role === "admin";
-
-    if (newsLoading) {
-      return (
-        <div className="flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
-        </div>
-      );
-    }
 
     return (
       <div className="space-y-6">
@@ -652,12 +353,12 @@ export default function TeamPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {!news?.length ? (
+              {news.length === 0 ? (
                 <div className="text-center text-muted-foreground">
                   No news articles yet
                 </div>
               ) : (
-                news.map((article) => (
+                news.map(article => (
                   <div
                     key={article.id}
                     className="p-4 border rounded-lg space-y-2"
@@ -703,39 +404,74 @@ export default function TeamPage() {
     );
   };
 
+  const renderEvents = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Events</CardTitle>
+        {canManageTeam && <CreateEventDialog teamId={parsedTeamId} />}
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {events.length === 0 ? (
+            <div className="text-center text-muted-foreground">
+              No events scheduled
+            </div>
+          ) : (
+            events.map(event => (
+              <div
+                key={event.id}
+                className="p-4 border rounded hover:bg-accent transition-colors"
+                onClick={handleEventClick}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">{event.title}</div>
+                    {event.description && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {event.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-muted-foreground">
+                      {event.type}
+                    </div>
+                    {canManageTeam && (
+                      <div className="flex items-center gap-2">
+                        <EditEventDialog event={event} teamId={parsedTeamId} />
+                        <DeleteEventDialog
+                          eventId={event.id}
+                          teamId={parsedTeamId}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  {format(new Date(event.startDate), "PPP p")} -{" "}
+                  {format(new Date(event.endDate), "p")}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <Layout teamId={parsedTeamId.toString()}>
-      <div className="container py-8">
-        {section === "players"
-          ? renderPlayers()
-          : section === "matches"
+    <ErrorBoundary>
+      <Layout teamId={parsedTeamId.toString()}>
+        <div className="container py-8">
+          {section === "players"
+            ? renderPlayers()
+            : section === "matches"
             ? renderMatches()
             : section === "news"
-              ? renderNews()
-              : renderEvents()}
-      </div>
-      {selectedMatchId && (
-        <>
-          <LineupDialog
-            matchId={selectedMatchId}
-            teamId={parsedTeamId}
-            open={lineupDialogOpen}
-            onOpenChange={setLineupDialogOpen}
-          />
-          <ReservesDialog
-            matchId={selectedMatchId}
-            teamId={parsedTeamId}
-            open={reservesDialogOpen}
-            onOpenChange={setReservesDialogOpen}
-          />
-          <ScorersDialog
-            matchId={selectedMatchId}
-            teamId={parsedTeamId}
-            open={scorersDialogOpen}
-            onOpenChange={setScorersDialogOpen}
-          />
-        </>
-      )}
-    </Layout>
+            ? renderNews()
+            : renderEvents()}
+        </div>
+      </Layout>
+    </ErrorBoundary>
   );
 }
