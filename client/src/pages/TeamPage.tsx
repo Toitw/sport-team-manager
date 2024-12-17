@@ -188,6 +188,8 @@ export default function TeamPage() {
           }}
           components={{
             DayContent: function DayContent(props) {
+              const [isOpen, setIsOpen] = React.useState(false);
+              const [isClicked, setIsClicked] = React.useState(false);
               const matchingEvents = events.filter(
                 event => format(new Date(event.startDate), 'yyyy-MM-dd') === 
                          format(props.date, 'yyyy-MM-dd')
@@ -196,9 +198,6 @@ export default function TeamPage() {
               if (matchingEvents.length === 0) {
                 return <div className="p-2">{props.date.getDate()}</div>;
               }
-
-              const [isOpen, setIsOpen] = React.useState(false);
-              const [isClicked, setIsClicked] = React.useState(false);
 
               const handleMouseEnter = React.useCallback(() => {
                 if (!isClicked) setIsOpen(true);
@@ -343,13 +342,12 @@ export default function TeamPage() {
               }}
               components={{
                 DayContent: function DayContent(props) {
+                  const [isOpen, setIsOpen] = React.useState(false);
+                  const [isClicked, setIsClicked] = React.useState(false);
                   const matchingEvents = matches.filter(
                     match => format(new Date(match.startDate), 'yyyy-MM-dd') === 
                              format(props.date, 'yyyy-MM-dd')
                   );
-
-                  const [isOpen, setIsOpen] = React.useState(false);
-                  const [isClicked, setIsClicked] = React.useState(false);
 
                   if (matchingEvents.length === 0) {
                     return <div className="p-2">{props.date.getDate()}</div>;
