@@ -1,15 +1,30 @@
 import * as React from "react";
-import { useParams, useLocation, Link } from "wouter";
+import { useParams, Link } from "wouter";
 import { usePlayers } from "../hooks/use-players";
 import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
 import { useNews } from "../hooks/use-news";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import { Calendar } from "../components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { Layout } from "../components/Layout";
@@ -23,417 +38,639 @@ import { DeleteEventDialog } from "../components/DeleteEventDialog";
 import { CreateNewsDialog } from "../components/CreateNewsDialog";
 import { EditNewsDialog } from "../components/EditNewsDialog";
 import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
-import { MatchLineupDialog } from "../components/MatchLineupDialog";
-import { MatchGoalsDialog } from "../components/MatchGoalsDialog";
 import { cn } from "@/lib/utils";
 
-interface DayContentProps {
-  date: Date;
-  events: Array<{
-    id: number;
-    startDate: string;
-    endDate: string;
-    title: string;
-    description?: string;
-    type: string;
-  }>;
-  onEventClick?: () => void;
-}
+export default function TeamPage() {
+  // Route params and state
+  const { teamId = "", section = "news" } = useParams();
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(
+    null,
+  );
 
-const DayContent = React.memo(({ date, events, onEventClick }: DayContentProps) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  // Memoized values
+  const parsedTeamId = React.useMemo(
+    () => (teamId ? parseInt(teamId) : 0),
+    [teamId],
+  );
 
-  const matchingEvents = React.useMemo(() => 
-    events.filter((event) => {
-      const eventDate = new Date(event.startDate);
-      return (
-        eventDate.getFullYear() === date.getFullYear() &&
-        eventDate.getMonth() === date.getMonth() &&
-        eventDate.getDate() === date.getDate()
-      );
-    }), [events, date]);
+  // User and permissions
+  const { user } = useUser();
+  const canManageTeam = React.useMemo(
+    () => user?.role === "admin" || user?.role === "manager",
+    [user?.role],
+  );
 
-  if (matchingEvents.length === 0) {
-    return <div className="p-2">{date.getDate()}</div>;
+  // Data fetching hooks
+  const { players = [], isLoading: playersLoading } = usePlayers(parsedTeamId);
+  const { events = [], isLoading: eventsLoading } = useEvents(parsedTeamId);
+  const {
+    news = [],
+    nextMatch,
+    isLoading: newsLoading,
+  } = useNews(parsedTeamId);
+
+  // Derived state with useMemo
+  const matches = React.useMemo(
+    () => events.filter((event) => event.type === "match"),
+    [events],
+  );
+
+  const selectedPlayer = React.useMemo(
+    () => players.find((p) => p.id === selectedPlayerId),
+    [players, selectedPlayerId],
+  );
+
+  // Loading state
+  if (playersLoading || eventsLoading || newsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
   }
 
-  return (
-    <div className="relative w-full h-full z-50">
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <div
-            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-            onClick={() => {
-              setIsOpen((prev) => !prev);
-              onEventClick?.();
-            }}
-            onMouseEnter={() => {
-              setTimeout(() => setIsOpen(true), 100);
-            }}
-            onMouseLeave={() => {
-              setTimeout(() => setIsOpen(false), 200);
-            }}
-          >
-            <span>{date.getDate()}</span>
-            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-              {matchingEvents.map((event: any) => (
+  // Handlers
+  const handleEventClick = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handlePlayerClick = React.useCallback((playerId: number) => {
+    setSelectedPlayerId(playerId);
+  }, []);
+
+  const handlePlayerDialogChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      setSelectedPlayerId(null);
+    }
+  }, []);
+
+  // Render functions
+  const renderPlayers = () => {
+    if (!players) return null;
+
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Players</CardTitle>
+          {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Photo</TableHead>
+                <TableHead>Number</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Position</TableHead>
+                {canManageTeam && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {players?.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-center text-muted-foreground"
+                  >
+                    No players added yet
+                  </TableCell>
+                </TableRow>
+              ) : (
+                players?.map((player) => (
+                  <React.Fragment key={player.id}>
+                    <TableRow
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => handlePlayerClick(player.id)}
+                    >
+                      <TableCell>
+                        {player.photoUrl ? (
+                          <img
+                            src={player.photoUrl}
+                            alt={player.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            <span className="text-muted-foreground text-sm">
+                              {player.name[0]}
+                            </span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{player.number}</TableCell>
+                      <TableCell>{player.name}</TableCell>
+                      <TableCell>{player.position}</TableCell>
+                      {canManageTeam && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <EditPlayerDialog
+                              player={player}
+                              teamId={parsedTeamId}
+                            />
+                            <DeletePlayerDialog
+                              playerId={player.id}
+                              teamId={parsedTeamId}
+                            />
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  </React.Fragment>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+        {selectedPlayer && (
+          <PlayerProfileDialog
+            player={selectedPlayer}
+            open={!!selectedPlayerId}
+            onOpenChange={handlePlayerDialogChange}
+          />
+        )}
+      </Card>
+    );
+  };
+
+  const renderEvents = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Events</CardTitle>
+        {canManageTeam && <CreateEventDialog teamId={parsedTeamId} />}
+      </CardHeader>
+      <CardContent>
+        <Calendar
+          mode="single"
+          selected={new Date()}
+          className="mb-4"
+          modifiers={{
+            event: events.map((event) => new Date(event.startDate)),
+          }}
+          modifiersStyles={{
+            event: {
+              border: "2px solid var(--primary)",
+            },
+          }}
+          components={{
+            DayContent: (props) => {
+              const [isOpen, setIsOpen] = React.useState(false);
+              const [isClicked, setIsClicked] = React.useState(false);
+
+              const handleClick = () => {
+                setIsClicked((prev) => !prev);
+                setIsOpen((prev) => !prev);
+              };
+
+              const matchingEvents = events.filter(
+                (event) =>
+                  format(new Date(event.startDate), "yyyy-MM-dd") ===
+                  format(props.date, "yyyy-MM-dd"),
+              );
+
+              return matchingEvents.length === 0 ? (
+                <div className="p-2">{props.date.getDate()}</div>
+              ) : (
                 <div
-                  key={event.id}
-                  className={cn(
-                    "h-1 rounded-full flex-1",
-                    event.type === "match"
-                      ? "bg-red-500"
-                      : event.type === "training"
-                        ? "bg-green-500"
-                        : "bg-blue-500"
-                  )}
-                />
-              ))}
+                  className="relative w-full h-full z-50"
+                  onMouseEnter={() => !isClicked && setIsOpen(true)}
+                  onMouseLeave={() => !isClicked && setIsOpen(false)}
+                >
+                  <Popover open={isOpen}>
+                    <PopoverTrigger asChild>
+                      <div
+                        className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+                        onClick={handleClick}
+                      >
+                        <span>{props.date.getDate()}</span>
+                        <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                          {matchingEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                "h-1 rounded-full flex-1",
+                                event.type === "match"
+                                  ? "bg-red-500"
+                                  : event.type === "training"
+                                    ? "bg-green-500"
+                                    : "bg-blue-500",
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-80 z-[100]"
+                      sideOffset={5}
+                      align="start"
+                      side="right"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="space-y-2">
+                        {matchingEvents.map((event) => (
+                          <div
+                            key={event.id}
+                            className="border-b last:border-0 pb-2 last:pb-0"
+                          >
+                            <div className="font-medium">{event.title}</div>
+                            {event.description && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {event.description}
+                              </div>
+                            )}
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {format(new Date(event.startDate), "p")} -{" "}
+                              {format(new Date(event.endDate), "p")}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Type: {event.type}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              );
+            },
+          }}
+        />
+        <div className="space-y-2">
+          {events?.length === 0 ? (
+            <div className="text-center text-muted-foreground">
+              No events scheduled
             </div>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-80 z-[100]"
-          sideOffset={5}
-          align="start"
-          side="right"
-          onInteractOutside={() => setIsOpen(false)}
-        >
-          <div className="space-y-2">
-            {matchingEvents.map((event: any) => (
+          ) : (
+            events?.map((event) => (
               <div
                 key={event.id}
-                className="border-b last:border-0 pb-2 last:pb-0"
+                className="p-4 border rounded hover:bg-accent"
+                onClick={handleEventClick}
               >
-                <div className="font-medium">{event.title}</div>
-                {event.description && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {event.description}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-medium">{event.title}</div>
+                    {event.description && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {event.description}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(event.startDate), "p")} -{" "}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-muted-foreground">
+                      {event.type}
+                    </div>
+                    {canManageTeam && (
+                      <div className="flex items-center gap-2">
+                        <EditEventDialog event={event} teamId={parsedTeamId} />
+                        <DeleteEventDialog
+                          eventId={event.id}
+                          teamId={parsedTeamId}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  {format(new Date(event.startDate), "PPP p")} -{" "}
                   {format(new Date(event.endDate), "p")}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Type: {event.type}
-                </div>
               </div>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-});
-
-const MatchDayContent = React.memo(({ date, matches, canManageTeam }: any) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  const matchingEvents = matches.filter(
-    (match: any) =>
-      format(new Date(match.startDate), "yyyy-MM-dd") === 
-      format(date, "yyyy-MM-dd")
-  );
-
-  if (matchingEvents.length === 0) {
-    return <div className="p-2">{date.getDate()}</div>;
-  }
-
-  return (
-    <div className="relative w-full h-full z-50">
-      <Popover open={isOpen}>
-        <PopoverTrigger asChild>
-          <div
-            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-            onMouseEnter={() => setIsOpen(true)}
-            onMouseLeave={() => setIsOpen(false)}
-          >
-            <span>{date.getDate()}</span>
-            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-              {matchingEvents.map((match: any) => (
-                <div
-                  key={match.id}
-                  className="h-1 rounded-full flex-1 bg-red-500"
-                />
-              ))}
-            </div>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-80 z-[100]"
-          sideOffset={5}
-          align="start"
-          side="right"
-          onInteractOutside={() => setIsOpen(false)}
-        >
-          <div className="space-y-2">
-            {matchingEvents.map((match: any) => (
-              <div
-                key={match.id}
-                className="border-b last:border-0 pb-2 last:pb-0"
-              >
-                <div className="font-medium">{match.title}</div>
-                {match.description && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {match.description}
-                  </div>
-                )}
-                <div className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(match.startDate), "p")} -{" "}
-                  {format(new Date(match.endDate), "p")}
-                </div>
-                {match.homeScore !== null && match.awayScore !== null && (
-                  <div className="text-sm font-medium mt-1">
-                    Score: {match.homeScore} - {match.awayScore}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-});
-
-export default function TeamPage() {
-  const params = useParams();
-  const teamId = parseInt(params.teamId || "0");
-  const [location] = useLocation();
-  const { user } = useUser();
-  const { players = [], isLoading: playersLoading } = usePlayers(teamId);
-  const { events = [], isLoading: eventsLoading } = useEvents(teamId);
-  const { news = [], nextMatch, isLoading: newsLoading } = useNews(teamId);
-  const canManageTeam = user?.role === "admin";
-  const [selectedPlayer, setSelectedPlayer] = React.useState<number | null>(null);
-  
-  const currentSection = location.split('/').pop() || 'news';
-
-  const matches = React.useMemo(() => 
-    events.filter(event => event.type === "match"), [events]);
-
-  return (
-    <Layout teamId={params.teamId}>
-      <div className="container py-8">
-        <div className="grid gap-8">
-          {currentSection === "news" && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Latest News</CardTitle>
-                {canManageTeam && <CreateNewsDialog teamId={teamId} />}
-              </CardHeader>
-              <CardContent>
-                {newsLoading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {news
-                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((item) => (
-                      <div key={item.id} className="border-b last:border-0 pb-4 last:pb-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium">{item.title}</h3>
-                          {canManageTeam && (
-                            <div className="flex gap-2">
-                                <EditNewsDialog news={item} teamId={teamId} />
-                                <DeleteNewsDialog newsId={item.id} teamId={teamId} />
-                            </div>
-                          )}
-                        </div>
-                        {item.imageUrl && (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.title}
-                            className="w-full h-48 object-cover rounded-md mb-2"
-                          />
-                        )}
-                        <p className="text-sm text-muted-foreground">{item.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          {currentSection === "events" && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Events Calendar</CardTitle>
-                {canManageTeam && <CreateEventDialog teamId={teamId} />}
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {eventsLoading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : (
-                  <>
-                    <Calendar
-                      mode="single"
-                      components={{
-                        DayContent: (props) => (
-                          <DayContent
-                            {...props}
-                            events={events}
-                            onEventClick={() => {}}
-                          />
-                        ),
-                      }}
-                    />
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Upcoming Events</h3>
-                      <div className="space-y-4">
-                        {events
-                          .filter(event => new Date(event.startDate) >= new Date())
-                          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-                          .map(event => (
-                            <div key={event.id} className="flex items-center justify-between border-b pb-4">
-                              <div>
-                                <h4 className="font-medium">{event.title}</h4>
-                                {event.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
-                                )}
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(event.startDate), "PPP")} at {format(new Date(event.startDate), "p")}
-                                </p>
-                                <Badge 
-                                  className={cn(
-                                    event.type === "match" ? "bg-red-500" :
-                                    event.type === "training" ? "bg-green-500" : "bg-blue-500"
-                                  )}
-                                >
-                                  {event.type}
-                                </Badge>
-                              </div>
-                              {canManageTeam && (
-                                <div className="flex gap-2">
-                                  <EditEventDialog event={event} teamId={teamId} />
-                                  <DeleteEventDialog eventId={event.id} teamId={teamId} />
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          {currentSection === "matches" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Match Calendar</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {eventsLoading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : (
-                  <>
-                    <Calendar
-                      mode="single"
-                      components={{
-                        DayContent: (props) => (
-                          <MatchDayContent
-                            {...props}
-                            matches={matches}
-                            canManageTeam={canManageTeam}
-                          />
-                        ),
-                      }}
-                    />
-                    <div className="border-t pt-6">
-                      <h3 className="font-medium mb-4">Upcoming Matches</h3>
-                      <div className="space-y-4">
-                        {matches
-                          .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-                          .map(match => (
-                            <div key={match.id} className="flex items-center justify-between border-b pb-4">
-                              <div>
-                                <h4 className="font-medium">{match.title}</h4>
-                                {match.description && (
-                                  <p className="text-sm text-muted-foreground mt-1">{match.description}</p>
-                                )}
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(match.startDate), "PPP")} at {format(new Date(match.startDate), "p")}
-                                </p>
-                                {match.homeScore !== null && match.awayScore !== null && (
-                                  <p className="text-sm font-medium mt-1">
-                                    Score: {match.homeScore} - {match.awayScore}
-                                  </p>
-                                )}
-                              </div>
-                              {canManageTeam && (
-                                <div className="flex gap-2">
-                                  <EditEventDialog event={match} teamId={teamId} />
-                                  <DeleteEventDialog eventId={match.id} teamId={teamId} />
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          {currentSection === "players" && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Team Players</CardTitle>
-                {canManageTeam && <CreatePlayerDialog teamId={teamId} />}
-              </CardHeader>
-              <CardContent>
-                {playersLoading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Number</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {players.map((player) => (
-                        <TableRow key={player.id}>
-                          <TableCell>{player.number}</TableCell>
-                          <TableCell>{player.name}</TableCell>
-                          <TableCell>{player.position}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <PlayerProfileDialog 
-                                player={player} 
-                                open={selectedPlayer === player.id} 
-                                onOpenChange={(open) => setSelectedPlayer(open ? player.id : null)}
-                              />
-                              {canManageTeam && (
-                                <>
-                                  <EditPlayerDialog player={player} teamId={teamId} />
-                                  <DeletePlayerDialog playerId={player.id} teamId={teamId} />
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+            ))
           )}
         </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderMatches = () => {
+    const now = new Date();
+    const upcomingMatches = matches.filter(
+      (match) => new Date(match.startDate) > now,
+    );
+    const pastMatches = matches.filter(
+      (match) => new Date(match.startDate) <= now,
+    );
+
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Matches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="single"
+              selected={new Date()}
+              className="mb-4"
+              modifiers={{
+                event: matches.map((match) => new Date(match.startDate)),
+              }}
+              modifiersStyles={{
+                event: {
+                  border: "2px solid var(--primary)",
+                },
+              }}
+              components={{
+                DayContent: (props) => {
+                  const [isOpen, setIsOpen] = React.useState(false);
+                  const [isClicked, setIsClicked] = React.useState(false);
+
+                  const matchingEvents = matches.filter(
+                    (match) =>
+                      format(new Date(match.startDate), "yyyy-MM-dd") ===
+                      format(props.date, "yyyy-MM-dd"),
+                  );
+
+                  return matchingEvents.length === 0 ? (
+                    <div className="p-2">{props.date.getDate()}</div>
+                  ) : (
+                    <div
+                      className="relative w-full h-full z-50"
+                      onMouseEnter={() => !isClicked && setIsOpen(true)}
+                      onMouseLeave={() => !isClicked && setIsOpen(false)}
+                    >
+                      <Popover open={isOpen}>
+                        <PopoverTrigger asChild>
+                          <div
+                            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+                            onClick={() => {
+                              setIsClicked((prev) => !prev);
+                              setIsOpen((prev) => !prev);
+                            }}
+                          >
+                            <span>{props.date.getDate()}</span>
+                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                              {matchingEvents.map((match) => (
+                                <div
+                                  key={match.id}
+                                  className="h-1 rounded-full flex-1 bg-red-500"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-80 z-[100]"
+                          sideOffset={5}
+                          align="start"
+                          side="right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="space-y-2">
+                            {matchingEvents.map((match) => (
+                              <div
+                                key={match.id}
+                                className="border-b last:border-0 pb-2 last:pb-0"
+                              >
+                                <div className="font-medium">{match.title}</div>
+                                {match.description && (
+                                  <div className="text-sm text-muted-foreground mt-1">
+                                    {match.description}
+                                  </div>
+                                )}
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {format(new Date(match.startDate), "p")} -{" "}
+                                  {format(new Date(match.endDate), "p")}
+                                </div>
+                                {match.homeScore !== null &&
+                                  match.awayScore !== null && (
+                                    <div className="text-sm font-medium mt-1">
+                                      Score: {match.homeScore} -{" "}
+                                      {match.awayScore}
+                                    </div>
+                                  )}
+                              </div>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  );
+                },
+              }}
+            />
+            <div className="space-y-4">
+              {upcomingMatches.length === 0 ? (
+                <div className="text-center text-muted-foreground">
+                  No upcoming matches scheduled
+                </div>
+              ) : (
+                upcomingMatches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    onClick={handleEventClick}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="font-semibold text-lg">
+                          {match.title}
+                        </div>
+                        {match.description && (
+                          <div className="text-sm text-muted-foreground">
+                            {match.description}
+                          </div>
+                        )}
+                        <div className="text-sm font-medium text-primary">
+                          {format(new Date(match.startDate), "PPP p")}
+                        </div>
+                      </div>
+                      {canManageTeam && (
+                        <div className="flex items-center gap-2">
+                          <EditEventDialog
+                            event={match}
+                            teamId={parsedTeamId}
+                          />
+                          <DeleteEventDialog
+                            eventId={match.id}
+                            teamId={parsedTeamId}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Match Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pastMatches.length === 0 ? (
+                <div className="text-center text-muted-foreground">
+                  No match results yet
+                </div>
+              ) : (
+                pastMatches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    onClick={handleEventClick}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="font-semibold text-lg">
+                          {match.title}
+                        </div>
+                        {match.description && (
+                          <div className="text-sm text-muted-foreground">
+                            {match.description}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4">
+                          <div className="text-2xl font-bold">
+                            {match.homeScore !== null &&
+                            match.awayScore !== null ? (
+                              <span className="text-primary">
+                                {match.homeScore} - {match.awayScore}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-base">
+                                Score pending
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(new Date(match.startDate), "PPP")}
+                          </div>
+                        </div>
+                      </div>
+                      {canManageTeam && (
+                        <div className="flex items-center gap-2">
+                          <EditEventDialog
+                            event={match}
+                            teamId={parsedTeamId}
+                          />
+                          <DeleteEventDialog
+                            eventId={match.id}
+                            teamId={parsedTeamId}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const renderNews = () => {
+    const canManageNews = user?.role === "admin";
+
+    if (newsLoading) {
+      return (
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {nextMatch && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Next Match</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 border rounded-lg">
+                <div className="space-y-2">
+                  <div className="font-semibold text-lg">{nextMatch.title}</div>
+                  {nextMatch.description && (
+                    <div className="text-sm text-muted-foreground">
+                      {nextMatch.description}
+                    </div>
+                  )}
+                  <div className="text-sm font-medium text-primary">
+                    {format(new Date(nextMatch.startDate), "PPP p")}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>News</CardTitle>
+            {canManageNews && <CreateNewsDialog teamId={parsedTeamId} />}
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {!news?.length ? (
+                <div className="text-center text-muted-foreground">
+                  No news articles yet
+                </div>
+              ) : (
+                news.map((article) => (
+                  <div
+                    key={article.id}
+                    className="p-4 border rounded-lg space-y-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="font-semibold text-lg">
+                        {article.title}
+                      </div>
+                      {canManageNews && (
+                        <div className="flex items-center gap-2">
+                          <EditNewsDialog
+                            news={article}
+                            teamId={parsedTeamId}
+                          />
+                          <DeleteNewsDialog
+                            newsId={article.id}
+                            teamId={parsedTeamId}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    {article.imageUrl && (
+                      <img
+                        src={article.imageUrl}
+                        alt={article.title}
+                        className="w-full h-48 object-cover rounded-md"
+                      />
+                    )}
+                    <div className="text-sm">{article.content}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Posted on{" "}
+                      {article.createdAt
+                        ? format(new Date(article.createdAt), "PPP")
+                        : "Unknown date"}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  return (
+    <Layout teamId={parsedTeamId.toString()}>
+      <div className="container py-8">
+        {section === "players"
+          ? renderPlayers()
+          : section === "matches"
+            ? renderMatches()
+            : section === "news"
+              ? renderNews()
+              : renderEvents()}
       </div>
     </Layout>
   );

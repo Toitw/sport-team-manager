@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -80,30 +80,3 @@ export const insertEventSchema = createInsertSchema(events);
 export const selectEventSchema = createSelectSchema(events);
 export type InsertEvent = z.infer<typeof insertEventSchema>;
 export type Event = z.infer<typeof selectEventSchema>;
-
-export const matchLineups = pgTable("match_lineups", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  matchId: integer("match_id").notNull().references(() => events.id),
-  playerId: integer("player_id").notNull().references(() => players.id),
-  isStarter: boolean("is_starter").notNull().default(false),
-  positionInMatch: text("position_in_match").notNull(),
-  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
-});
-
-export const matchGoals = pgTable("match_goals", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  matchId: integer("match_id").notNull().references(() => events.id),
-  playerId: integer("player_id").notNull().references(() => players.id),
-  minute: integer("minute").notNull(),
-  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
-});
-
-export const insertMatchLineupSchema = createInsertSchema(matchLineups);
-export const selectMatchLineupSchema = createSelectSchema(matchLineups);
-export type InsertMatchLineup = z.infer<typeof insertMatchLineupSchema>;
-export type MatchLineup = z.infer<typeof selectMatchLineupSchema>;
-
-export const insertMatchGoalSchema = createInsertSchema(matchGoals);
-export const selectMatchGoalSchema = createSelectSchema(matchGoals);
-export type InsertMatchGoal = z.infer<typeof insertMatchGoalSchema>;
-export type MatchGoal = z.infer<typeof selectMatchGoalSchema>;
