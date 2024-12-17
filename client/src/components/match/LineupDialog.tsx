@@ -59,18 +59,47 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
   }, [open, matchId, fetchLineup]);
 
   const handleSave = React.useCallback(async () => {
-    if (!matchId) return;
+    if (!matchId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Match ID is required",
+      });
+      return;
+    }
     
     try {
-      if (lineup.some((item) => !item.playerId || !item.position)) {
+      // Validate lineup data
+      const invalidPlayers = lineup.filter(
+        (item) => !item.playerId || !item.position
+      );
+      
+      if (invalidPlayers.length > 0) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Please fill in all player positions",
+          title: "Validation Error",
+          description: "Please fill in both position and player for all entries",
         });
         return;
       }
 
+      // Check for duplicate players
+      const playerIds = lineup.map(item => item.playerId);
+      const duplicatePlayer = playerIds.find(
+        (id, index) => playerIds.indexOf(id) !== index
+      );
+      
+      if (duplicatePlayer) {
+        const player = players.find(p => p.id === duplicatePlayer);
+        toast({
+          variant: "destructive",
+          title: "Duplicate Player",
+          description: `${player?.name || 'Player'} is selected multiple times`,
+        });
+        return;
+      }
+
+      setIsLoading(true);
       const response = await fetch(`/api/matches/${matchId}/lineup`, {
         method: "POST",
         headers: {
@@ -80,7 +109,8 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save lineup");
+        const error = await response.text();
+        throw new Error(error || "Failed to save lineup");
       }
 
       toast({
@@ -93,10 +123,12 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save lineup",
+        description: error instanceof Error ? error.message : "Failed to save lineup",
       });
+    } finally {
+      setIsLoading(false);
     }
-  }, [matchId, lineup, toast, onOpenChange]);
+  }, [matchId, lineup, players, toast, onOpenChange, setIsLoading]);
 
   const addPlayer = React.useCallback(() => {
     setLineup(prev => [...prev, { playerId: 0, position: "" }]);
@@ -127,27 +159,28 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Manage Match Lineup</DialogTitle>
         </DialogHeader>
-        <div className="mt-4">
+        <div className="mt-4 flex-1 overflow-hidden flex flex-col min-h-0">
           {isLoading ? (
             <div className="flex justify-center items-center p-4">
               <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
             </div>
           ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Player</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lineup.map((item, index) => (
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <TableHead className="w-1/3">Position</TableHead>
+                      <TableHead className="w-1/2">Player</TableHead>
+                      <TableHead className="w-[100px]">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="relative">
+                    {lineup.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
                         <Select
@@ -195,18 +228,21 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
                   ))}
                 </TableBody>
               </Table>
-              <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={addPlayer}>
+              </div>
+              <div className="flex justify-between py-4 px-2 border-t mt-4 bg-background sticky bottom-0">
+                <Button variant="outline" onClick={addPlayer} size="sm">
                   Add Player
                 </Button>
                 <div className="space-x-2">
-                  <Button variant="outline" onClick={() => handleDialogChange(false)}>
+                  <Button variant="outline" size="sm" onClick={() => handleDialogChange(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSave}>Save Lineup</Button>
+                  <Button size="sm" onClick={handleSave} disabled={isLoading || lineup.length === 0}>
+                    Save Lineup
+                  </Button>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </DialogContent>

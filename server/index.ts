@@ -69,7 +69,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = parseInt(process.env.PORT || "3000", 10);
+  const PORT = parseInt(process.env.PORT || "3001", 10);
   
   // Add a proper error handler before starting the server
   process.on('uncaughtException', (err) => {
@@ -82,18 +82,19 @@ app.use((req, res, next) => {
     process.exit(1);
   });
 
-  // More robust server startup
+  // Start the server with error handling
   function startServer(port: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      try {
-        server.listen(port, "0.0.0.0", () => {
+      server.listen(port, "0.0.0.0")
+        .once('listening', () => {
           const address = server.address();
           const actualPort = typeof address === "object" && address ? address.port : port;
           log(`Server is running on port ${actualPort}`);
           resolve();
-        }).on("error", (error: NodeJS.ErrnoException) => {
+        })
+        .once("error", (error: NodeJS.ErrnoException) => {
           if (error.code === "EADDRINUSE") {
-            log(`Port ${port} is in use, trying ${port + 1}`);
+            log(`Port ${port} is in use, trying port ${port + 1}`);
             server.close();
             startServer(port + 1).then(resolve).catch(reject);
           } else {
@@ -101,15 +102,13 @@ app.use((req, res, next) => {
             reject(error);
           }
         });
-      } catch (error) {
-        reject(error);
-      }
     });
   }
 
-  // Start the server with error handling
-  await startServer(PORT).catch((error) => {
-    log(`Failed to start server: ${error.message}`);
+  try {
+    await startServer(PORT);
+  } catch (error) {
+    log(`Failed to start server: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
-  });
+  }
 })();
