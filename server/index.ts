@@ -69,44 +69,25 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = parseInt(process.env.PORT || "3001", 10);
-  
-  // Add a proper error handler before starting the server
-  process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    process.exit(1);
-  });
-
-  process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Rejection:', err);
-    process.exit(1);
-  });
-
-  // Start the server with error handling
-  function startServer(port: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      server.listen(port, "0.0.0.0")
-        .once('listening', () => {
-          const address = server.address();
-          const actualPort = typeof address === "object" && address ? address.port : port;
-          log(`Server is running on port ${actualPort}`);
-          resolve();
-        })
-        .once("error", (error: NodeJS.ErrnoException) => {
-          if (error.code === "EADDRINUSE") {
-            log(`Port ${port} is in use, trying port ${port + 1}`);
-            server.close();
-            startServer(port + 1).then(resolve).catch(reject);
-          } else {
-            log(`Error starting server: ${error.message}`);
-            reject(error);
-          }
-        });
-    });
-  }
+  const PORT = parseInt(process.env.PORT || "3002", 10);
 
   try {
-    await startServer(PORT);
+    log(`Starting server on port ${PORT}...`);
+    
+    server.listen(PORT, "0.0.0.0", () => {
+      const address = server.address();
+      const actualPort = typeof address === "object" && address ? address.port : PORT;
+      log(`Server started successfully on port ${actualPort}`);
+    });
+
+    server.on("error", (error: NodeJS.ErrnoException) => {
+      log(`Server encountered an error: ${error.message}`);
+      if (error.code === "EADDRINUSE") {
+        log(`Port ${PORT} is already in use. Please free up the port and try again.`);
+      }
+      process.exit(1);
+    });
+
   } catch (error) {
     log(`Failed to start server: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

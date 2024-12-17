@@ -67,6 +67,15 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
       });
       return;
     }
+
+    if (lineup.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please add at least one player to the lineup",
+      });
+      return;
+    }
     
     try {
       // Validate lineup data
@@ -78,7 +87,7 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
         toast({
           variant: "destructive",
           title: "Validation Error",
-          description: "Please fill in both position and player for all entries",
+          description: "Please select both position and player for all entries",
         });
         return;
       }
@@ -159,11 +168,11 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Manage Match Lineup</DialogTitle>
         </DialogHeader>
-        <div className="mt-4 flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="mt-4 flex-1 overflow-y-auto flex flex-col min-h-0">
           {isLoading ? (
             <div className="flex justify-center items-center p-4">
               <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
@@ -172,14 +181,14 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
             <div className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                     <TableRow>
                       <TableHead className="w-1/3">Position</TableHead>
                       <TableHead className="w-1/2">Player</TableHead>
-                      <TableHead className="w-[100px]">Action</TableHead>
+                      <TableHead className="w-[100px] text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="relative">
+                  <TableBody>
                     {lineup.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
