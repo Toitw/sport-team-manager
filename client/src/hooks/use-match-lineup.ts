@@ -33,7 +33,7 @@ export function useMatchLineup(matchId: number) {
 
   const {
     mutate: updateLineup,
-    isLoading: isUpdating,
+    isPending: isUpdating,
     error: updateError,
   } = useMutation({
     mutationFn: async (players: { playerId: number; isStarter: boolean; positionInMatch: string }[]) => {

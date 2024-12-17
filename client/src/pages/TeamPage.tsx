@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
 import { usePlayers } from "../hooks/use-players";
 import { useEvents } from "../hooks/use-events";
 import { useUser } from "../hooks/use-user";
@@ -41,6 +41,170 @@ import { DeleteNewsDialog } from "../components/DeleteNewsDialog";
 import { MatchLineupDialog } from "../components/MatchLineupDialog";
 import { MatchGoalsDialog } from "../components/MatchGoalsDialog";
 import { cn } from "@/lib/utils";
+
+// Extracted DayContent components to avoid inline hooks in render
+function DayContentForEvents(props: { date: Date }, events: any[]) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [isClicked, setIsClicked] = React.useState(false);
+
+  const matchingEvents = events.filter(
+    (event) =>
+      format(new Date(event.startDate), "yyyy-MM-dd") ===
+      format(props.date, "yyyy-MM-dd"),
+  );
+
+  if (matchingEvents.length === 0) {
+    return <div className="p-2">{props.date.getDate()}</div>;
+  }
+
+  return (
+    <div
+      className="relative w-full h-full z-50"
+      onMouseEnter={() => !isClicked && setIsOpen(true)}
+      onMouseLeave={() => !isClicked && setIsOpen(false)}
+    >
+      <Popover open={isOpen}>
+        <PopoverTrigger asChild>
+          <div
+            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+            onClick={() => {
+              setIsClicked((prev) => !prev);
+              setIsOpen((prev) => !prev);
+            }}
+          >
+            <span>{props.date.getDate()}</span>
+            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+              {matchingEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className={cn(
+                    "h-1 rounded-full flex-1",
+                    event.type === "match"
+                      ? "bg-red-500"
+                      : event.type === "training"
+                        ? "bg-green-500"
+                        : "bg-blue-500",
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-80 z-[100]"
+          sideOffset={5}
+          align="start"
+          side="right"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-2">
+            {matchingEvents.map((event) => (
+              <div
+                key={event.id}
+                className="border-b last:border-0 pb-2 last:pb-0"
+              >
+                <div className="font-medium">{event.title}</div>
+                {event.description && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {event.description}
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground mt-1">
+                  {format(new Date(event.startDate), "p")} -{" "}
+                  {format(new Date(event.endDate), "p")}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Type: {event.type}
+                </div>
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+function DayContentForMatches(
+  props: { date: Date },
+  matches: any[],
+  canManageTeam: boolean,
+) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [isClicked, setIsClicked] = React.useState(false);
+
+  const matchingEvents = matches.filter(
+    (match) =>
+      format(new Date(match.startDate), "yyyy-MM-dd") ===
+      format(props.date, "yyyy-MM-dd"),
+  );
+
+  if (matchingEvents.length === 0) {
+    return <div className="p-2">{props.date.getDate()}</div>;
+  }
+
+  return (
+    <div
+      className="relative w-full h-full z-50"
+      onMouseEnter={() => !isClicked && setIsOpen(true)}
+      onMouseLeave={() => !isClicked && setIsOpen(false)}
+    >
+      <Popover open={isOpen}>
+        <PopoverTrigger asChild>
+          <div
+            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
+            onClick={() => {
+              setIsClicked((prev) => !prev);
+              setIsOpen((prev) => !prev);
+            }}
+          >
+            <span>{props.date.getDate()}</span>
+            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+              {matchingEvents.map((match) => (
+                <div
+                  key={match.id}
+                  className="h-1 rounded-full flex-1 bg-red-500"
+                />
+              ))}
+            </div>
+          </div>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-80 z-[100]"
+          sideOffset={5}
+          align="start"
+          side="right"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-2">
+            {matchingEvents.map((match) => (
+              <div
+                key={match.id}
+                className="border-b last:border-0 pb-2 last:pb-0"
+              >
+                <div className="font-medium">{match.title}</div>
+                {match.description && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {match.description}
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground mt-1">
+                  {format(new Date(match.startDate), "p")} -{" "}
+                  {format(new Date(match.endDate), "p")}
+                </div>
+                {match.homeScore !== null && match.awayScore !== null && (
+                  <div className="text-sm font-medium mt-1">
+                    Score: {match.homeScore} - {match.awayScore}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export default function TeamPage() {
   // Route params and state
@@ -107,7 +271,6 @@ export default function TeamPage() {
     }
   }, []);
 
-  // Render functions
   const renderPlayers = () => {
     if (!players) return null;
 
@@ -131,7 +294,7 @@ export default function TeamPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {players?.length === 0 ? (
+              {players.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={4}
@@ -141,7 +304,7 @@ export default function TeamPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                players?.map((player) => (
+                players.map((player) => (
                   <React.Fragment key={player.id}>
                     <TableRow
                       className="cursor-pointer hover:bg-accent/50"
@@ -217,96 +380,16 @@ export default function TeamPage() {
             },
           }}
           components={{
-            DayContent: (props) => {
-              const [isOpen, setIsOpen] = React.useState(false);
-              const [isClicked, setIsClicked] = React.useState(false);
-
-              const handleClick = () => {
-                setIsClicked((prev) => !prev);
-                setIsOpen((prev) => !prev);
-              };
-
-              const matchingEvents = events.filter(
-                (event) =>
-                  format(new Date(event.startDate), "yyyy-MM-dd") ===
-                  format(props.date, "yyyy-MM-dd"),
-              );
-
-              return matchingEvents.length === 0 ? (
-                <div className="p-2">{props.date.getDate()}</div>
-              ) : (
-                <div
-                  className="relative w-full h-full z-50"
-                  onMouseEnter={() => !isClicked && setIsOpen(true)}
-                  onMouseLeave={() => !isClicked && setIsOpen(false)}
-                >
-                  <Popover open={isOpen}>
-                    <PopoverTrigger asChild>
-                      <div
-                        className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                        onClick={handleClick}
-                      >
-                        <span>{props.date.getDate()}</span>
-                        <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                          {matchingEvents.map((event) => (
-                            <div
-                              key={event.id}
-                              className={cn(
-                                "h-1 rounded-full flex-1",
-                                event.type === "match"
-                                  ? "bg-red-500"
-                                  : event.type === "training"
-                                    ? "bg-green-500"
-                                    : "bg-blue-500",
-                              )}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-80 z-[100]"
-                      sideOffset={5}
-                      align="start"
-                      side="right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="space-y-2">
-                        {matchingEvents.map((event) => (
-                          <div
-                            key={event.id}
-                            className="border-b last:border-0 pb-2 last:pb-0"
-                          >
-                            <div className="font-medium">{event.title}</div>
-                            {event.description && (
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {event.description}
-                              </div>
-                            )}
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {format(new Date(event.startDate), "p")} -{" "}
-                              {format(new Date(event.endDate), "p")}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Type: {event.type}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              );
-            },
+            DayContent: (props) => DayContentForEvents(props, events),
           }}
         />
         <div className="space-y-2">
-          {events?.length === 0 ? (
+          {events.length === 0 ? (
             <div className="text-center text-muted-foreground">
               No events scheduled
             </div>
           ) : (
-            events?.map((event) => (
+            events.map((event) => (
               <div
                 key={event.id}
                 className="p-4 border rounded hover:bg-accent"
@@ -377,82 +460,8 @@ export default function TeamPage() {
                 },
               }}
               components={{
-                DayContent: (props) => {
-                  const [isOpen, setIsOpen] = React.useState(false);
-                  const [isClicked, setIsClicked] = React.useState(false);
-
-                  const matchingEvents = matches.filter(
-                    (match) =>
-                      format(new Date(match.startDate), "yyyy-MM-dd") ===
-                      format(props.date, "yyyy-MM-dd"),
-                  );
-
-                  return matchingEvents.length === 0 ? (
-                    <div className="p-2">{props.date.getDate()}</div>
-                  ) : (
-                    <div
-                      className="relative w-full h-full z-50"
-                      onMouseEnter={() => !isClicked && setIsOpen(true)}
-                      onMouseLeave={() => !isClicked && setIsOpen(false)}
-                    >
-                      <Popover open={isOpen}>
-                        <PopoverTrigger asChild>
-                          <div
-                            className="w-full h-full p-2 cursor-pointer hover:bg-accent/50 focus:bg-accent/50 transition-colors rounded-sm"
-                            onClick={() => {
-                              setIsClicked((prev) => !prev);
-                              setIsOpen((prev) => !prev);
-                            }}
-                          >
-                            <span>{props.date.getDate()}</span>
-                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                              {matchingEvents.map((match) => (
-                                <div
-                                  key={match.id}
-                                  className="h-1 rounded-full flex-1 bg-red-500"
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-80 z-[100]"
-                          sideOffset={5}
-                          align="start"
-                          side="right"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="space-y-2">
-                            {matchingEvents.map((match) => (
-                              <div
-                                key={match.id}
-                                className="border-b last:border-0 pb-2 last:pb-0"
-                              >
-                                <div className="font-medium">{match.title}</div>
-                                {match.description && (
-                                  <div className="text-sm text-muted-foreground mt-1">
-                                    {match.description}
-                                  </div>
-                                )}
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  {format(new Date(match.startDate), "p")} -{" "}
-                                  {format(new Date(match.endDate), "p")}
-                                </div>
-                                {match.homeScore !== null &&
-                                  match.awayScore !== null && (
-                                    <div className="text-sm font-medium mt-1">
-                                      Score: {match.homeScore} -{" "}
-                                      {match.awayScore}
-                                    </div>
-                                  )}
-                              </div>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  );
-                },
+                DayContent: (props) =>
+                  DayContentForMatches(props, matches, canManageTeam),
               }}
             />
             <div className="space-y-4">
@@ -624,7 +633,7 @@ export default function TeamPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {!news?.length ? (
+              {news.length === 0 ? (
                 <div className="text-center text-muted-foreground">
                   No news articles yet
                 </div>

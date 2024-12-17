@@ -29,7 +29,7 @@ export function useMatchGoals(matchId: number) {
 
   const {
     mutate: addGoal,
-    isLoading: isAdding,
+    isPending: isAdding,
     error: addError,
   } = useMutation({
     mutationFn: async ({ playerId, minute }: { playerId: number; minute: number }) => {

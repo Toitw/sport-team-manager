@@ -24,14 +24,21 @@ interface MatchLineupDialogProps {
 }
 
 export function MatchLineupDialog({ matchId, teamId }: MatchLineupDialogProps) {
+  // Hooks at top level, no conditions
   const [open, setOpen] = React.useState(false);
   const { players = [], isLoading: playersLoading } = usePlayers(teamId);
-  const { lineup, updateLineup, isLoading: lineupLoading } = useMatchLineup(matchId);
-  const [selectedPlayers, setSelectedPlayers] = React.useState<Array<{
-    playerId: number;
-    isStarter: boolean;
-    positionInMatch: string;
-  }>>([]);
+  const {
+    lineup = [],
+    updateLineup,
+    isLoading: lineupLoading,
+  } = useMatchLineup(matchId);
+  const [selectedPlayers, setSelectedPlayers] = React.useState<
+    Array<{
+      playerId: number;
+      isStarter: boolean;
+      positionInMatch: string;
+    }>
+  >([]);
 
   React.useEffect(() => {
     if (lineup) {
@@ -40,19 +47,19 @@ export function MatchLineupDialog({ matchId, teamId }: MatchLineupDialogProps) {
           playerId: player.id,
           isStarter: player.isStarter,
           positionInMatch: player.positionInMatch,
-        }))
+        })),
       );
     }
   }, [lineup]);
 
-  const handleSave = async () => {
+  const handleSave = React.useCallback(async () => {
     try {
       await updateLineup(selectedPlayers);
       setOpen(false);
     } catch (error) {
       console.error("Failed to update lineup:", error);
     }
-  };
+  }, [selectedPlayers, updateLineup]);
 
   const isLoading = playersLoading || lineupLoading;
 
@@ -75,85 +82,117 @@ export function MatchLineupDialog({ matchId, teamId }: MatchLineupDialogProps) {
               <div>
                 <h3 className="font-medium mb-2">Starting Lineup</h3>
                 <div className="space-y-2">
-                  {Array.from({ length: 11 }).map((_, index) => (
-                    <div key={`starter-${index}`} className="flex gap-2">
-                      <Select
-                        value={
-                          selectedPlayers.find(
-                            (p) => p.isStarter && Number(p.positionInMatch.split("-")[1]) === index + 1
-                          )?.playerId.toString() || ""
-                        }
-                        onValueChange={(value) => {
-                          setSelectedPlayers((prev) => {
-                            const newPlayers = prev.filter(
-                              (p) => !(p.isStarter && Number(p.positionInMatch.split("-")[1]) === index + 1)
-                            );
-                            if (value) {
-                              newPlayers.push({
-                                playerId: Number(value),
-                                isStarter: true,
-                                positionInMatch: `starter-${index + 1}`,
-                              });
-                            }
-                            return newPlayers;
-                          });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Player ${index + 1}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {players.map((player) => (
-                            <SelectItem key={player.id} value={player.id.toString()}>
-                              {player.number} - {player.name} ({player.position})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
+                  {Array.from({ length: 11 }).map((_, index) => {
+                    const starterValue =
+                      selectedPlayers
+                        .find(
+                          (p) =>
+                            p.isStarter &&
+                            Number(p.positionInMatch.split("-")[1]) ===
+                              index + 1,
+                        )
+                        ?.playerId.toString() || "";
+                    return (
+                      <div key={`starter-${index}`} className="flex gap-2">
+                        <Select
+                          value={starterValue}
+                          onValueChange={(value) => {
+                            setSelectedPlayers((prev) => {
+                              const newPlayers = prev.filter(
+                                (p) =>
+                                  !(
+                                    p.isStarter &&
+                                    Number(p.positionInMatch.split("-")[1]) ===
+                                      index + 1
+                                  ),
+                              );
+                              if (value) {
+                                newPlayers.push({
+                                  playerId: Number(value),
+                                  isStarter: true,
+                                  positionInMatch: `starter-${index + 1}`,
+                                });
+                              }
+                              return newPlayers;
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Player ${index + 1}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {players.map((player) => (
+                              <SelectItem
+                                key={player.id}
+                                value={player.id.toString()}
+                              >
+                                {player.number} - {player.name} (
+                                {player.position})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <div>
                 <h3 className="font-medium mb-2">Reserves</h3>
                 <div className="space-y-2">
-                  {Array.from({ length: 7 }).map((_, index) => (
-                    <div key={`reserve-${index}`} className="flex gap-2">
-                      <Select
-                        value={
-                          selectedPlayers.find(
-                            (p) => !p.isStarter && Number(p.positionInMatch.split("-")[1]) === index + 1
-                          )?.playerId.toString() || ""
-                        }
-                        onValueChange={(value) => {
-                          setSelectedPlayers((prev) => {
-                            const newPlayers = prev.filter(
-                              (p) => !(!p.isStarter && Number(p.positionInMatch.split("-")[1]) === index + 1)
-                            );
-                            if (value) {
-                              newPlayers.push({
-                                playerId: Number(value),
-                                isStarter: false,
-                                positionInMatch: `reserve-${index + 1}`,
-                              });
-                            }
-                            return newPlayers;
-                          });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Reserve ${index + 1}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {players.map((player) => (
-                            <SelectItem key={player.id} value={player.id.toString()}>
-                              {player.number} - {player.name} ({player.position})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
+                  {Array.from({ length: 7 }).map((_, index) => {
+                    const reserveValue =
+                      selectedPlayers
+                        .find(
+                          (p) =>
+                            !p.isStarter &&
+                            Number(p.positionInMatch.split("-")[1]) ===
+                              index + 1,
+                        )
+                        ?.playerId.toString() || "";
+                    return (
+                      <div key={`reserve-${index}`} className="flex gap-2">
+                        <Select
+                          value={reserveValue}
+                          onValueChange={(value) => {
+                            setSelectedPlayers((prev) => {
+                              const newPlayers = prev.filter(
+                                (p) =>
+                                  !(
+                                    !p.isStarter &&
+                                    Number(p.positionInMatch.split("-")[1]) ===
+                                      index + 1
+                                  ),
+                              );
+                              if (value) {
+                                newPlayers.push({
+                                  playerId: Number(value),
+                                  isStarter: false,
+                                  positionInMatch: `reserve-${index + 1}`,
+                                });
+                              }
+                              return newPlayers;
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Reserve ${index + 1}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {players.map((player) => (
+                              <SelectItem
+                                key={player.id}
+                                value={player.id.toString()}
+                              >
+                                {player.number} - {player.name} (
+                                {player.position})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

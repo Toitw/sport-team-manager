@@ -25,16 +25,18 @@ interface MatchGoalsDialogProps {
 }
 
 export function MatchGoalsDialog({ matchId, teamId }: MatchGoalsDialogProps) {
+  // Hooks at top level, no conditions
   const [open, setOpen] = React.useState(false);
   const [selectedPlayer, setSelectedPlayer] = React.useState<string>("");
   const [minute, setMinute] = React.useState<string>("");
 
   const { players = [], isLoading: playersLoading } = usePlayers(teamId);
-  const { goals, addGoal, isLoading: goalsLoading } = useMatchGoals(matchId);
+  const { goals = [], addGoal, isLoading: goalsLoading } = useMatchGoals(matchId);
 
-  const handleAddGoal = async () => {
+  const isLoading = playersLoading || goalsLoading;
+
+  const handleAddGoal = React.useCallback(async () => {
     if (!selectedPlayer || !minute) return;
-
     try {
       await addGoal({
         playerId: parseInt(selectedPlayer),
@@ -45,9 +47,7 @@ export function MatchGoalsDialog({ matchId, teamId }: MatchGoalsDialogProps) {
     } catch (error) {
       console.error("Failed to add goal:", error);
     }
-  };
-
-  const isLoading = playersLoading || goalsLoading;
+  }, [addGoal, minute, selectedPlayer]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -66,11 +66,11 @@ export function MatchGoalsDialog({ matchId, teamId }: MatchGoalsDialogProps) {
           <div className="space-y-4">
             <div>
               <h3 className="font-medium mb-2">Current Goals</h3>
-              {goals?.length === 0 ? (
+              {goals.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No goals recorded</p>
               ) : (
                 <div className="space-y-2">
-                  {goals?.map((goal) => (
+                  {goals.map((goal) => (
                     <div
                       key={goal.id}
                       className="flex items-center justify-between border p-2 rounded"
