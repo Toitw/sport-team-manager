@@ -48,8 +48,33 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
   }, [matchId, open]);
 
   const handleSave = async () => {
+    if (!matchId) {
+      console.error("Match ID is required");
+      return;
+    }
+
+    // Validate scorers data
+    const invalidScorers = scorers.filter(
+      scorer => !scorer.playerId || scorer.minute < 0 || scorer.minute > 120 || !scorer.eventType
+    );
+
+    if (invalidScorers.length > 0) {
+      console.error("Invalid scorer data detected");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Save each scorer individually
+      // First, delete existing scorers
+      const deleteResponse = await fetch(`/api/matches/${matchId}/scorers`, {
+        method: "DELETE",
+      });
+
+      if (!deleteResponse.ok) {
+        throw new Error("Failed to clear existing scorers");
+      }
+
+      // Then save new scorers
       await Promise.all(
         scorers.map((scorer) =>
           fetch(`/api/matches/${matchId}/scorers`, {
@@ -58,13 +83,19 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
               "Content-Type": "application/json",
             },
             body: JSON.stringify(scorer),
-          }),
+          }).then(response => {
+            if (!response.ok) {
+              throw new Error(`Failed to save scorer: ${response.statusText}`);
+            }
+          })
         ),
       );
 
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving scorers:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

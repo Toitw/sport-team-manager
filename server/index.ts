@@ -69,7 +69,36 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = 3000;
+  const PORTS = [3000, 3001, 3002, 3003, 8080];
+  let currentPortIndex = 0;
+
+  function tryNextPort() {
+    if (currentPortIndex >= PORTS.length) {
+      log('No available ports found. Shutting down...');
+      process.exit(1);
+      return;
+    }
+
+    const PORT = PORTS[currentPortIndex];
+    log(`Attempting to start server on port ${PORT}...`);
+
+    server.listen(PORT, "0.0.0.0")
+      .on("error", (error: NodeJS.ErrnoException) => {
+        if (error.code === "EADDRINUSE") {
+          log(`Port ${PORT} is already in use. Trying next port...`);
+          currentPortIndex++;
+          tryNextPort();
+        } else {
+          log(`Server error: ${error.message}`);
+          process.exit(1);
+        }
+      })
+      .on("listening", () => {
+        const address = server.address();
+        const actualPort = typeof address === "object" && address ? address.port : PORT;
+        log(`Server started successfully on port ${actualPort}`);
+      });
+  }
 
   // Ensure clean exit on uncaught errors
   process.on('SIGTERM', () => {
@@ -86,21 +115,6 @@ app.use((req, res, next) => {
     });
   });
 
-  // Start server with proper error handling
-  log(`Starting server on port ${PORT}...`);
-  server.listen(PORT, "0.0.0.0")
-    .on("error", (error: NodeJS.ErrnoException) => {
-      if (error.code === "EADDRINUSE") {
-        log(`Port ${PORT} is already in use. Shutting down...`);
-        process.exit(1);
-      } else {
-        log(`Server error: ${error.message}`);
-        process.exit(1);
-      }
-    })
-    .on("listening", () => {
-      const address = server.address();
-      const actualPort = typeof address === "object" && address ? address.port : PORT;
-      log(`Server started successfully on port ${actualPort}`);
-    });
+  // Start server with port fallback
+  tryNextPort();
 })();

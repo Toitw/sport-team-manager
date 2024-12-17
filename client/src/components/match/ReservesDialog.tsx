@@ -37,6 +37,26 @@ export function ReservesDialog({ matchId, teamId, open, onOpenChange }: Reserves
   }, [matchId, open]);
 
   const handleSave = async () => {
+    if (!matchId) {
+      console.error("Match ID is required");
+      return;
+    }
+
+    // Validate reserves data
+    const invalidReserves = reserves.filter(playerId => !playerId);
+    if (invalidReserves.length > 0) {
+      console.error("Please select players for all reserve positions");
+      return;
+    }
+
+    // Check for duplicate players
+    const uniqueReserves = new Set(reserves);
+    if (uniqueReserves.size !== reserves.length) {
+      console.error("Duplicate players detected in reserves");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/matches/${matchId}/reserves`, {
         method: "POST",
@@ -53,6 +73,8 @@ export function ReservesDialog({ matchId, teamId, open, onOpenChange }: Reserves
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving reserves:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
