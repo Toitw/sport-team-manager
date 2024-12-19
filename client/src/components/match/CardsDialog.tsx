@@ -7,46 +7,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "../ui/input";
 import { useToast } from "../../hooks/use-toast";
 
-interface ScorersDialogProps {
+interface CardsDialogProps {
   matchId: number;
   teamId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface Scorer {
+interface Card {
   playerId: number;
   minute: number;
-  eventType: 'goal' | 'own_goal' | 'penalty';
+  cardType: 'yellow' | 'red';
+  reason?: string;
 }
 
-export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDialogProps) {
+export function CardsDialog({ matchId, teamId, open, onOpenChange }: CardsDialogProps) {
   const { players = [] } = usePlayers(teamId);
   const { toast } = useToast();
-  const [scorers, setScorers] = React.useState<Scorer[]>([]);
+  const [cards, setCards] = React.useState<Card[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Fetch scorers when dialog opens
   React.useEffect(() => {
     if (open && matchId) {
       setIsLoading(true);
       fetch(`/api/matches/${matchId}/details`)
         .then((res) => res.json())
         .then((data) => {
-          if (data.scorers) {
-            setScorers(data.scorers.map((scorer: any) => ({
-              playerId: scorer.playerId,
-              minute: scorer.minute,
-              eventType: scorer.eventType
+          if (data.cards) {
+            setCards(data.cards.map((card: any) => ({
+              playerId: card.playerId,
+              minute: card.minute,
+              cardType: card.cardType,
+              reason: card.reason,
             })));
           }
         })
         .catch((error) => {
-          console.error("Error loading scorers:", error);
+          console.error("Error loading cards:", error);
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to load scorers data",
+            description: "Failed to load cards data",
           });
         })
         .finally(() => {
@@ -65,59 +66,45 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
       return;
     }
 
-    // Validate scorers data
-    const invalidScorers = scorers.filter(
-      scorer => !scorer.playerId || scorer.minute < 0 || scorer.minute > 120 || !scorer.eventType
+    // Validate cards data
+    const invalidCards = cards.filter(
+      card => !card.playerId || card.minute < 0 || card.minute > 120 || !card.cardType
     );
 
-    if (invalidScorers.length > 0) {
+    if (invalidCards.length > 0) {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please fill in all scorer details correctly (valid player, minute between 0-120)",
+        description: "Please fill in all card details correctly (valid player, minute between 0-120)",
       });
       return;
     }
 
     setIsLoading(true);
     try {
-      // First, delete existing scorers
-      const deleteResponse = await fetch(`/api/matches/${matchId}/scorers`, {
-        method: "DELETE",
+      const response = await fetch(`/api/matches/${matchId}/cards`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cards }),
       });
 
-      if (!deleteResponse.ok) {
-        throw new Error("Failed to clear existing scorers");
+      if (!response.ok) {
+        throw new Error("Failed to save cards");
       }
-
-      // Then save new scorers
-      await Promise.all(
-        scorers.map((scorer) =>
-          fetch(`/api/matches/${matchId}/scorers`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(scorer),
-          }).then(response => {
-            if (!response.ok) {
-              throw new Error(`Failed to save scorer: ${response.statusText}`);
-            }
-          })
-        ),
-      );
 
       toast({
         title: "Success",
-        description: "Scorers saved successfully",
+        description: "Cards saved successfully",
       });
       onOpenChange(false);
     } catch (error) {
-      console.error("Error saving scorers:", error);
+      console.error("Error saving cards:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to save scorers",
+        description: error instanceof Error ? error.message : "Failed to save cards",
       });
     } finally {
       setIsLoading(false);
@@ -128,7 +115,7 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Manage Match Scorers</DialogTitle>
+          <DialogTitle>Manage Match Cards</DialogTitle>
         </DialogHeader>
         <div className="mt-4 flex-1 overflow-y-auto">
           {isLoading ? (
@@ -143,20 +130,21 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
                     <TableRow>
                       <TableHead className="w-1/3">Player</TableHead>
                       <TableHead className="w-16">Minute</TableHead>
-                      <TableHead className="w-1/4">Type</TableHead>
+                      <TableHead className="w-24">Card</TableHead>
+                      <TableHead>Reason</TableHead>
                       <TableHead className="w-20 text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {scorers.map((scorer, index) => (
+                    {cards.map((card, index) => (
                       <TableRow key={index}>
                         <TableCell>
                           <Select
-                            value={scorer.playerId.toString()}
+                            value={card.playerId.toString()}
                             onValueChange={(value) => {
-                              const newScorers = [...scorers];
-                              newScorers[index].playerId = parseInt(value);
-                              setScorers(newScorers);
+                              const newCards = [...cards];
+                              newCards[index].playerId = parseInt(value);
+                              setCards(newCards);
                             }}
                           >
                             <SelectTrigger>
@@ -176,40 +164,51 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
                             type="number"
                             min="0"
                             max="120"
-                            value={scorer.minute}
+                            value={card.minute}
                             onChange={(e) => {
-                              const newScorers = [...scorers];
-                              newScorers[index].minute = parseInt(e.target.value) || 0;
-                              setScorers(newScorers);
+                              const newCards = [...cards];
+                              newCards[index].minute = parseInt(e.target.value) || 0;
+                              setCards(newCards);
                             }}
                             className="w-16"
                           />
                         </TableCell>
                         <TableCell>
                           <Select
-                            value={scorer.eventType}
-                            onValueChange={(value: 'goal' | 'own_goal' | 'penalty') => {
-                              const newScorers = [...scorers];
-                              newScorers[index].eventType = value;
-                              setScorers(newScorers);
+                            value={card.cardType}
+                            onValueChange={(value: 'yellow' | 'red') => {
+                              const newCards = [...cards];
+                              newCards[index].cardType = value;
+                              setCards(newCards);
                             }}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="goal">Goal</SelectItem>
-                              <SelectItem value="own_goal">Own Goal</SelectItem>
-                              <SelectItem value="penalty">Penalty</SelectItem>
+                              <SelectItem value="yellow">Yellow</SelectItem>
+                              <SelectItem value="red">Red</SelectItem>
                             </SelectContent>
                           </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="text"
+                            value={card.reason || ''}
+                            onChange={(e) => {
+                              const newCards = [...cards];
+                              newCards[index].reason = e.target.value;
+                              setCards(newCards);
+                            }}
+                            placeholder="Enter reason"
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => {
-                              setScorers(scorers.filter((_, i) => i !== index));
+                              setCards(cards.filter((_, i) => i !== index));
                             }}
                           >
                             Remove
@@ -225,14 +224,14 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setScorers([
-                      ...scorers,
-                      { playerId: 0, minute: 0, eventType: "goal" },
+                    setCards([
+                      ...cards,
+                      { playerId: 0, minute: 0, cardType: "yellow" },
                     ]);
                   }}
                   disabled={isLoading}
                 >
-                  Add Scorer
+                  Add Card
                 </Button>
                 <div className="space-x-2">
                   <Button 
@@ -246,7 +245,7 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
                   <Button 
                     size="sm" 
                     onClick={handleSave}
-                    disabled={isLoading || scorers.length === 0}
+                    disabled={isLoading || cards.length === 0}
                   >
                     {isLoading ? (
                       <>
@@ -254,7 +253,7 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
                         Saving...
                       </>
                     ) : (
-                      'Save Scorers'
+                      'Save Cards'
                     )}
                   </Button>
                 </div>

@@ -31,12 +31,10 @@ import { DeleteEventDialog } from "@/components/DeleteEventDialog";
 import { CreateNewsDialog } from "@/components/CreateNewsDialog";
 import { EditNewsDialog } from "@/components/EditNewsDialog";
 import { DeleteNewsDialog } from "@/components/DeleteNewsDialog";
+import { CardsDialog } from "@/components/match/CardsDialog";
 
 // ErrorBoundary component for handling errors gracefully
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean }
-> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -52,10 +50,7 @@ class ErrorBoundary extends React.Component<
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <h2 className="text-lg font-semibold">Something went wrong</h2>
-            <Button
-              className="mt-4"
-              onClick={() => this.setState({ hasError: false })}
-            >
+            <Button className="mt-4" onClick={() => this.setState({ hasError: false })}>
               Try again
             </Button>
           </div>
@@ -72,15 +67,14 @@ export default function TeamPage() {
   const { teamId = "", section = "news" } = useParams();
 
   // Parse and memoize team ID
-  const parsedTeamId = React.useMemo(() =>
-    teamId ? parseInt(teamId, 10) : 0
-  , [teamId]);
+  const parsedTeamId = React.useMemo(() => (teamId ? parseInt(teamId, 10) : 0), [teamId]);
 
   // State hooks
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
   const [lineupDialogOpen, setLineupDialogOpen] = React.useState(false);
   const [selectedMatchId, setSelectedMatchId] = React.useState<number | null>(null);
   const [scorersDialogOpen, setScorersDialogOpen] = React.useState(false);
+  const [cardsDialogOpen, setCardsDialogOpen] = React.useState(false);
 
   // Reset match selection when dialog closes
   const handleLineupDialogChange = React.useCallback((open: boolean) => {
@@ -96,6 +90,7 @@ export default function TeamPage() {
     setLineupDialogOpen(false);
     setSelectedMatchId(null);
     setScorersDialogOpen(false);
+    setCardsDialogOpen(false);
   }, [parsedTeamId]);
 
   // Data fetching hooks
@@ -105,27 +100,17 @@ export default function TeamPage() {
   const { news = [], nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
 
   // Memoized values
-  const canManageTeam = React.useMemo(() =>
-    user?.role === "admin" || user?.role === "manager"
-  , [user?.role]);
+  const canManageTeam = React.useMemo(() => (user?.role === "admin" || user?.role === "manager"), [user?.role]);
 
   const now = React.useMemo(() => new Date(), []);
 
-  const matches = React.useMemo(() =>
-    events.filter(event => event.type === "match")
-  , [events]);
+  const matches = React.useMemo(() => events.filter(event => event.type === "match"), [events]);
 
-  const upcomingMatches = React.useMemo(() =>
-    matches.filter(match => new Date(match.startDate) > now)
-  , [matches, now]);
+  const upcomingMatches = React.useMemo(() => matches.filter(match => new Date(match.startDate) > now), [matches, now]);
 
-  const pastMatches = React.useMemo(() =>
-    matches.filter(match => new Date(match.startDate) <= now)
-  , [matches, now]);
+  const pastMatches = React.useMemo(() => matches.filter(match => new Date(match.startDate) <= now), [matches, now]);
 
-  const selectedPlayer = React.useMemo(() =>
-    players.find(p => p.id === selectedPlayerId)
-  , [players, selectedPlayerId]);
+  const selectedPlayer = React.useMemo(() => players.find(p => p.id === selectedPlayerId), [players, selectedPlayerId]);
 
   // Callbacks
   const handleEventClick = React.useCallback((e: React.MouseEvent) => {
@@ -175,10 +160,7 @@ export default function TeamPage() {
           <TableBody>
             {players.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={canManageTeam ? 5 : 4}
-                  className="text-center text-muted-foreground"
-                >
+                <TableCell colSpan={canManageTeam ? 5 : 4} className="text-center text-muted-foreground">
                   No players added yet
                 </TableCell>
               </TableRow>
@@ -198,9 +180,7 @@ export default function TeamPage() {
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-muted-foreground text-sm">
-                          {player.name[0]}
-                        </span>
+                        <span className="text-muted-foreground text-sm">{player.name[0]}</span>
                       </div>
                     )}
                   </TableCell>
@@ -210,14 +190,8 @@ export default function TeamPage() {
                   {canManageTeam && (
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        <EditPlayerDialog
-                          player={player}
-                          teamId={parsedTeamId}
-                        />
-                        <DeletePlayerDialog
-                          playerId={player.id}
-                          teamId={parsedTeamId}
-                        />
+                        <EditPlayerDialog player={player} teamId={parsedTeamId} />
+                        <DeletePlayerDialog playerId={player.id} teamId={parsedTeamId} />
                       </div>
                     </TableCell>
                   )}
@@ -227,11 +201,7 @@ export default function TeamPage() {
           </TableBody>
         </Table>
         {selectedPlayer && (
-          <PlayerProfileDialog
-            player={selectedPlayer}
-            open={!!selectedPlayerId}
-            onOpenChange={handlePlayerDialogChange}
-          />
+          <PlayerProfileDialog player={selectedPlayer} open={!!selectedPlayerId} onOpenChange={handlePlayerDialogChange} />
         )}
       </CardContent>
     </Card>
@@ -246,9 +216,7 @@ export default function TeamPage() {
         <CardContent>
           <div className="space-y-4">
             {upcomingMatches.length === 0 ? (
-              <div className="text-center text-muted-foreground">
-                No upcoming matches scheduled
-              </div>
+              <div className="text-center text-muted-foreground">No upcoming matches scheduled</div>
             ) : (
               upcomingMatches.map(match => (
                 <div
@@ -260,9 +228,7 @@ export default function TeamPage() {
                     <div className="space-y-2">
                       <div className="font-semibold text-lg">{match.title}</div>
                       {match.description && (
-                        <div className="text-sm text-muted-foreground">
-                          {match.description}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{match.description}</div>
                       )}
                       <div className="text-sm font-medium text-primary">
                         {format(new Date(match.startDate), "PPP p")}
@@ -289,9 +255,7 @@ export default function TeamPage() {
         <CardContent>
           <div className="space-y-4">
             {pastMatches.length === 0 ? (
-              <div className="text-center text-muted-foreground">
-                No match results yet
-              </div>
+              <div className="text-center text-muted-foreground">No match results yet</div>
             ) : (
               pastMatches.map(match => (
                 <div
@@ -303,25 +267,17 @@ export default function TeamPage() {
                     <div className="space-y-2">
                       <div className="font-semibold text-lg">{match.title}</div>
                       {match.description && (
-                        <div className="text-sm text-muted-foreground">
-                          {match.description}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{match.description}</div>
                       )}
                       <div className="flex items-center gap-4">
                         <div className="text-2xl font-bold">
                           {match.homeScore !== null && match.awayScore !== null ? (
-                            <span className="text-primary">
-                              {match.homeScore} - {match.awayScore}
-                            </span>
+                            <span className="text-primary">{match.homeScore} - {match.awayScore}</span>
                           ) : (
-                            <span className="text-muted-foreground text-base">
-                              Score pending
-                            </span>
+                            <span className="text-muted-foreground text-base">Score pending</span>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(match.startDate), "PPP")}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{format(new Date(match.startDate), "PPP")}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -351,6 +307,18 @@ export default function TeamPage() {
                           >
                             Scorers
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setCardsDialogOpen(true);
+                            }}
+                          >
+                            Cards
+                          </Button>
                           <EditEventDialog event={match} teamId={parsedTeamId} />
                           <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
                         </>
@@ -378,6 +346,12 @@ export default function TeamPage() {
             open={scorersDialogOpen}
             onOpenChange={setScorersDialogOpen}
           />
+          <CardsDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={cardsDialogOpen}
+            onOpenChange={setCardsDialogOpen}
+          />
         </>
       )}
     </div>
@@ -398,9 +372,7 @@ export default function TeamPage() {
                 <div className="space-y-2">
                   <div className="font-semibold text-lg">{nextMatch.title}</div>
                   {nextMatch.description && (
-                    <div className="text-sm text-muted-foreground">
-                      {nextMatch.description}
-                    </div>
+                    <div className="text-sm text-muted-foreground">{nextMatch.description}</div>
                   )}
                   <div className="text-sm font-medium text-primary">
                     {format(new Date(nextMatch.startDate), "PPP p")}
@@ -419,29 +391,16 @@ export default function TeamPage() {
           <CardContent>
             <div className="space-y-4">
               {news.length === 0 ? (
-                <div className="text-center text-muted-foreground">
-                  No news articles yet
-                </div>
+                <div className="text-center text-muted-foreground">No news articles yet</div>
               ) : (
                 news.map(article => (
-                  <div
-                    key={article.id}
-                    className="p-4 border rounded-lg space-y-2"
-                  >
+                  <div key={article.id} className="p-4 border rounded-lg space-y-2">
                     <div className="flex justify-between items-start">
-                      <div className="font-semibold text-lg">
-                        {article.title}
-                      </div>
+                      <div className="font-semibold text-lg">{article.title}</div>
                       {canManageNews && (
                         <div className="flex items-center gap-2">
-                          <EditNewsDialog
-                            news={article}
-                            teamId={parsedTeamId}
-                          />
-                          <DeleteNewsDialog
-                            newsId={article.id}
-                            teamId={parsedTeamId}
-                          />
+                          <EditNewsDialog news={article} teamId={parsedTeamId} />
+                          <DeleteNewsDialog newsId={article.id} teamId={parsedTeamId} />
                         </div>
                       )}
                     </div>
@@ -455,9 +414,7 @@ export default function TeamPage() {
                     <div className="text-sm">{article.content}</div>
                     <div className="text-xs text-muted-foreground">
                       Posted on{" "}
-                      {article.createdAt
-                        ? format(new Date(article.createdAt), "PPP")
-                        : "Unknown date"}
+                      {article.createdAt ? format(new Date(article.createdAt), "PPP") : "Unknown date"}
                     </div>
                   </div>
                 ))
@@ -478,9 +435,7 @@ export default function TeamPage() {
       <CardContent>
         <div className="space-y-2">
           {events.length === 0 ? (
-            <div className="text-center text-muted-foreground">
-              No events scheduled
-            </div>
+            <div className="text-center text-muted-foreground">No events scheduled</div>
           ) : (
             events.map(event => (
               <div
@@ -492,29 +447,21 @@ export default function TeamPage() {
                   <div>
                     <div className="font-medium">{event.title}</div>
                     {event.description && (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {event.description}
-                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">{event.description}</div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-sm text-muted-foreground">
-                      {event.type}
-                    </div>
+                    <div className="text-sm text-muted-foreground">{event.type}</div>
                     {canManageTeam && (
                       <div className="flex items-center gap-2">
                         <EditEventDialog event={event} teamId={parsedTeamId} />
-                        <DeleteEventDialog
-                          eventId={event.id}
-                          teamId={parsedTeamId}
-                        />
+                        <DeleteEventDialog eventId={event.id} teamId={parsedTeamId} />
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground mt-2">
-                  {format(new Date(event.startDate), "PPP p")} -{" "}
-                  {format(new Date(event.endDate), "p")}
+                  {format(new Date(event.startDate), "PPP p")} - {format(new Date(event.endDate), "p")}
                 </div>
               </div>
             ))
