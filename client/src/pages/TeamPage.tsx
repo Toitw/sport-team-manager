@@ -18,6 +18,8 @@ import { format } from "date-fns";
 
 // Custom Components
 import { LineupDialog } from "@/components/match/LineupDialog";
+import { ReservesDialog } from "@/components/match/ReservesDialog";
+import { ScorersDialog } from "@/components/match/ScorersDialog";
 import { Layout } from "@/components/Layout";
 import { CreatePlayerDialog } from "@/components/CreatePlayerDialog";
 import { EditPlayerDialog } from "@/components/EditPlayerDialog";
@@ -70,7 +72,7 @@ export default function TeamPage() {
   const { teamId = "", section = "news" } = useParams();
 
   // Parse and memoize team ID
-  const parsedTeamId = React.useMemo(() => 
+  const parsedTeamId = React.useMemo(() =>
     teamId ? parseInt(teamId, 10) : 0
   , [teamId]);
 
@@ -78,6 +80,7 @@ export default function TeamPage() {
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
   const [lineupDialogOpen, setLineupDialogOpen] = React.useState(false);
   const [selectedMatchId, setSelectedMatchId] = React.useState<number | null>(null);
+  const [scorersDialogOpen, setScorersDialogOpen] = React.useState(false);
 
   // Reset match selection when dialog closes
   const handleLineupDialogChange = React.useCallback((open: boolean) => {
@@ -92,6 +95,7 @@ export default function TeamPage() {
     setSelectedPlayerId(null);
     setLineupDialogOpen(false);
     setSelectedMatchId(null);
+    setScorersDialogOpen(false);
   }, [parsedTeamId]);
 
   // Data fetching hooks
@@ -101,25 +105,25 @@ export default function TeamPage() {
   const { news = [], nextMatch, isLoading: newsLoading } = useNews(parsedTeamId);
 
   // Memoized values
-  const canManageTeam = React.useMemo(() => 
+  const canManageTeam = React.useMemo(() =>
     user?.role === "admin" || user?.role === "manager"
   , [user?.role]);
 
   const now = React.useMemo(() => new Date(), []);
 
-  const matches = React.useMemo(() => 
+  const matches = React.useMemo(() =>
     events.filter(event => event.type === "match")
   , [events]);
 
-  const upcomingMatches = React.useMemo(() => 
+  const upcomingMatches = React.useMemo(() =>
     matches.filter(match => new Date(match.startDate) > now)
   , [matches, now]);
 
-  const pastMatches = React.useMemo(() => 
+  const pastMatches = React.useMemo(() =>
     matches.filter(match => new Date(match.startDate) <= now)
   , [matches, now]);
 
-  const selectedPlayer = React.useMemo(() => 
+  const selectedPlayer = React.useMemo(() =>
     players.find(p => p.id === selectedPlayerId)
   , [players, selectedPlayerId]);
 
@@ -335,6 +339,18 @@ export default function TeamPage() {
                           >
                             Lineup
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setScorersDialogOpen(true);
+                            }}
+                          >
+                            Scorers
+                          </Button>
                           <EditEventDialog event={match} teamId={parsedTeamId} />
                           <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
                         </>
@@ -347,15 +363,22 @@ export default function TeamPage() {
           </div>
         </CardContent>
       </Card>
-      
-      {/* Lineup Dialog */}
+
       {selectedMatchId && (
-        <LineupDialog
-          matchId={selectedMatchId}
-          teamId={parsedTeamId}
-          open={lineupDialogOpen}
-          onOpenChange={setLineupDialogOpen}
-        />
+        <>
+          <LineupDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={lineupDialogOpen}
+            onOpenChange={setLineupDialogOpen}
+          />
+          <ScorersDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={scorersDialogOpen}
+            onOpenChange={setScorersDialogOpen}
+          />
+        </>
       )}
     </div>
   );
