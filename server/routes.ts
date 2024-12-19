@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards } from "@db/schema";
+import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards, matchSubstitutions } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -339,7 +339,12 @@ export function registerRoutes(app: Express) {
         .from(matchCards)
         .where(eq(matchCards.matchId, matchId));
 
-      res.json({ lineup, reserves, scorers, cards });
+      // Get substitutions
+      const substitutions = await db.select()
+        .from(matchSubstitutions)
+        .where(eq(matchSubstitutions.matchId, matchId));
+
+      res.json({ lineup, reserves, scorers, cards, substitutions });
     } catch (error: any) {
       console.error('Error fetching match details:', error);
       res.status(500).json({ message: error.message || "Failed to fetch match details" });
@@ -484,6 +489,38 @@ export function registerRoutes(app: Express) {
     } catch (error: any) {
       console.error('Error updating match cards:', error);
       res.status(500).json({ message: error.message || "Failed to update match cards" });
+    }
+  });
+
+  // Add the substitutions endpoint
+  app.post("/api/matches/:matchId/substitutions", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const { substitutions } = req.body; // Array of { playerOutId, playerInId, minute, half }
+
+      // First, remove existing substitutions
+      await db.delete(matchSubstitutions)
+        .where(eq(matchSubstitutions.matchId, matchId));
+
+      // Then insert new substitutions
+      if (substitutions.length > 0) {
+        const newSubstitutions = await db.insert(matchSubstitutions)
+          .values(substitutions.map((sub: any) => ({
+            matchId,
+            playerOutId: sub.playerOutId,
+            playerInId: sub.playerInId,
+            minute: sub.minute,
+            half: sub.half
+          })))
+          .returning();
+
+        res.json(newSubstitutions);
+      } else {
+        res.json([]);
+      }
+    } catch (error: any) {
+      console.error('Error updating match substitutions:', error);
+      res.status(500).json({ message: error.message || "Failed to update match substitutions" });
     }
   });
 }

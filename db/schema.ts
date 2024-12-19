@@ -85,6 +85,16 @@ export const matchCards = pgTable("match_cards", {
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
+export const matchSubstitutions = pgTable("match_substitutions", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  matchId: integer("match_id").notNull().references(() => events.id),
+  playerOutId: integer("player_out_id").notNull().references(() => players.id),
+  playerInId: integer("player_in_id").notNull().references(() => players.id),
+  minute: integer("minute").notNull(),
+  half: integer("half").notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -129,3 +139,8 @@ export const insertMatchCardSchema = createInsertSchema(matchCards);
 export const selectMatchCardSchema = createSelectSchema(matchCards);
 export type InsertMatchCard = z.infer<typeof insertMatchCardSchema>;
 export type MatchCard = z.infer<typeof selectMatchCardSchema>;
+
+export const insertMatchSubstitutionSchema = createInsertSchema(matchSubstitutions);
+export const selectMatchSubstitutionSchema = createSelectSchema(matchSubstitutions);
+export type InsertMatchSubstitution = z.infer<typeof insertMatchSubstitutionSchema>;
+export type MatchSubstitution = z.infer<typeof selectMatchSubstitutionSchema>;

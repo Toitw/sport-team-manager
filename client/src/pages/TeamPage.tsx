@@ -32,6 +32,7 @@ import { CreateNewsDialog } from "@/components/CreateNewsDialog";
 import { EditNewsDialog } from "@/components/EditNewsDialog";
 import { DeleteNewsDialog } from "@/components/DeleteNewsDialog";
 import { CardsDialog } from "@/components/match/CardsDialog";
+import { SubstitutionsDialog } from "@/components/match/SubstitutionsDialog";
 
 // ErrorBoundary component for handling errors gracefully
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -75,6 +76,7 @@ export default function TeamPage() {
   const [selectedMatchId, setSelectedMatchId] = React.useState<number | null>(null);
   const [scorersDialogOpen, setScorersDialogOpen] = React.useState(false);
   const [cardsDialogOpen, setCardsDialogOpen] = React.useState(false);
+  const [substitutionsDialogOpen, setSubstitutionsDialogOpen] = React.useState(false);
 
   // Reset match selection when dialog closes
   const handleLineupDialogChange = React.useCallback((open: boolean) => {
@@ -91,6 +93,7 @@ export default function TeamPage() {
     setSelectedMatchId(null);
     setScorersDialogOpen(false);
     setCardsDialogOpen(false);
+    setSubstitutionsDialogOpen(false);
   }, [parsedTeamId]);
 
   // Data fetching hooks
@@ -319,6 +322,18 @@ export default function TeamPage() {
                           >
                             Cards
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setSubstitutionsDialogOpen(true);
+                            }}
+                          >
+                            Substitutions
+                          </Button>
                           <EditEventDialog event={match} teamId={parsedTeamId} />
                           <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
                         </>
@@ -351,6 +366,12 @@ export default function TeamPage() {
             teamId={parsedTeamId}
             open={cardsDialogOpen}
             onOpenChange={setCardsDialogOpen}
+          />
+          <SubstitutionsDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={substitutionsDialogOpen}
+            onOpenChange={setSubstitutionsDialogOpen}
           />
         </>
       )}
