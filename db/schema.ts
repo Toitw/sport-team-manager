@@ -1,7 +1,7 @@
 import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { positionEnum, matchEventTypeEnum, eventTypeEnum } from "./types";
+import { positionEnum, matchEventTypeEnum, eventTypeEnum, cardTypeEnum } from "./types";
 
 export const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -75,7 +75,16 @@ export const matchScorers = pgTable("match_scorers", {
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
-// Create schemas for all tables
+export const matchCards = pgTable("match_cards", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  matchId: integer("match_id").notNull().references(() => events.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  cardType: cardTypeEnum("card_type").notNull(),
+  minute: integer("minute").notNull(),
+  reason: text("reason"),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -115,3 +124,8 @@ export const insertMatchScorerSchema = createInsertSchema(matchScorers);
 export const selectMatchScorerSchema = createSelectSchema(matchScorers);
 export type InsertMatchScorer = z.infer<typeof insertMatchScorerSchema>;
 export type MatchScorer = z.infer<typeof selectMatchScorerSchema>;
+
+export const insertMatchCardSchema = createInsertSchema(matchCards);
+export const selectMatchCardSchema = createSelectSchema(matchCards);
+export type InsertMatchCard = z.infer<typeof insertMatchCardSchema>;
+export type MatchCard = z.infer<typeof selectMatchCardSchema>;

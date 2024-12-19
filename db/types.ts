@@ -8,3 +8,6 @@ export const matchEventTypeEnum = pgEnum("match_event_type", ["goal", "own_goal"
 
 // Define event type enum
 export const eventTypeEnum = pgEnum('event_type', ['match', 'training', 'other']);
+
+// Define card type enum
+export const cardTypeEnum = pgEnum('card_type', ['yellow', 'red']);
