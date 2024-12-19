@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
+import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@db/schema";
 
@@ -9,7 +10,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 console.log('Initializing database connection...');
-let db;
+let db: NeonDatabase<typeof schema>;
 
 try {
   db = drizzle({
