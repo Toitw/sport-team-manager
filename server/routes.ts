@@ -492,16 +492,35 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Add the substitutions endpoint
+  // Add the substitutions endpoint with improved error handling
   app.post("/api/matches/:matchId/substitutions", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
       const { substitutions } = req.body; // Array of { playerOutId, playerInId, minute, half }
 
+      if (!substitutions || !Array.isArray(substitutions)) {
+        return res.status(400).json({ message: "Invalid substitutions data format" });
+      }
+
+      // Validate substitutions data
+      const invalidSubs = substitutions.filter(
+        sub => !sub.playerOutId || !sub.playerInId || sub.minute < 0 || 
+               sub.minute > 120 || ![1, 2].includes(sub.half)
+      );
+
+      if (invalidSubs.length > 0) {
+        return res.status(400).json({ 
+          message: "Invalid substitution data",
+          details: "All substitutions must have valid player IDs, minute (0-120), and half (1 or 2)"
+        });
+      }
+
+      console.log('Removing existing substitutions for match:', matchId);
       // First, remove existing substitutions
       await db.delete(matchSubstitutions)
         .where(eq(matchSubstitutions.matchId, matchId));
 
+      console.log('Adding new substitutions:', substitutions);
       // Then insert new substitutions
       if (substitutions.length > 0) {
         const newSubstitutions = await db.insert(matchSubstitutions)
@@ -514,13 +533,17 @@ export function registerRoutes(app: Express) {
           })))
           .returning();
 
+        console.log('Successfully added substitutions:', newSubstitutions);
         res.json(newSubstitutions);
       } else {
         res.json([]);
       }
     } catch (error: any) {
       console.error('Error updating match substitutions:', error);
-      res.status(500).json({ message: error.message || "Failed to update match substitutions" });
+      res.status(500).json({ 
+        message: "Failed to update match substitutions",
+        error: error.message 
+      });
     }
   });
 }

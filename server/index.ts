@@ -16,6 +16,7 @@ function log(message: string) {
 
 async function startServer() {
   try {
+    log('Initializing express application...');
     const app = express();
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
@@ -47,6 +48,7 @@ async function startServer() {
     });
 
     // Register API routes
+    log('Registering API routes...');
     registerRoutes(app);
     const server = createServer(app);
 
@@ -59,6 +61,7 @@ async function startServer() {
     });
 
     // Set up Vite or static serving
+    log('Setting up Vite/static serving...');
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
