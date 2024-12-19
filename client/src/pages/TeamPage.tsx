@@ -33,6 +33,7 @@ import { EditNewsDialog } from "@/components/EditNewsDialog";
 import { DeleteNewsDialog } from "@/components/DeleteNewsDialog";
 import { CardsDialog } from "@/components/match/CardsDialog";
 import { SubstitutionsDialog } from "@/components/match/SubstitutionsDialog";
+import { CommentaryDialog } from "@/components/match/CommentaryDialog";
 
 // ErrorBoundary component for handling errors gracefully
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -77,6 +78,7 @@ export default function TeamPage() {
   const [scorersDialogOpen, setScorersDialogOpen] = React.useState(false);
   const [cardsDialogOpen, setCardsDialogOpen] = React.useState(false);
   const [substitutionsDialogOpen, setSubstitutionsDialogOpen] = React.useState(false);
+  const [commentaryDialogOpen, setCommentaryDialogOpen] = React.useState(false);
 
   // Reset match selection when dialog closes
   const handleLineupDialogChange = React.useCallback((open: boolean) => {
@@ -94,6 +96,7 @@ export default function TeamPage() {
     setScorersDialogOpen(false);
     setCardsDialogOpen(false);
     setSubstitutionsDialogOpen(false);
+    setCommentaryDialogOpen(false);
   }, [parsedTeamId]);
 
   // Data fetching hooks
@@ -334,6 +337,18 @@ export default function TeamPage() {
                           >
                             Substitutions
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setCommentaryDialogOpen(true);
+                            }}
+                          >
+                            Commentary
+                          </Button>
                           <EditEventDialog event={match} teamId={parsedTeamId} />
                           <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
                         </>
@@ -372,6 +387,12 @@ export default function TeamPage() {
             teamId={parsedTeamId}
             open={substitutionsDialogOpen}
             onOpenChange={setSubstitutionsDialogOpen}
+          />
+          <CommentaryDialog
+            matchId={selectedMatchId}
+            teamId={parsedTeamId}
+            open={commentaryDialogOpen}
+            onOpenChange={setCommentaryDialogOpen}
           />
         </>
       )}

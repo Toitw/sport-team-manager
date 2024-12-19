@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards, matchSubstitutions } from "@db/schema";
+import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards, matchSubstitutions, matchCommentary } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -544,6 +544,51 @@ export function registerRoutes(app: Express) {
         message: "Failed to update match substitutions",
         error: error.message 
       });
+    }
+  });
+
+  // Match Commentary endpoints
+  app.get("/api/matches/:matchId/commentary", requireAuth, async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const commentary = await db.select()
+        .from(matchCommentary)
+        .where(eq(matchCommentary.matchId, matchId))
+        .orderBy(sql`${matchCommentary.minute}`);
+
+      res.json(commentary);
+    } catch (error: any) {
+      console.error('Error fetching match commentary:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch match commentary" });
+    }
+  });
+
+  app.post("/api/matches/:matchId/commentary", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const matchId = parseInt(req.params.matchId);
+      const { minute, type, content } = req.body;
+
+      if (!["highlight", "commentary"].includes(type)) {
+        return res.status(400).json({ message: "Invalid commentary type" });
+      }
+
+      if (minute < 0 || minute > 120) {
+        return res.status(400).json({ message: "Invalid minute" });
+      }
+
+      const newCommentary = await db.insert(matchCommentary)
+        .values({
+          matchId,
+          minute,
+          type,
+          content
+        })
+        .returning();
+
+      res.json(newCommentary[0]);
+    } catch (error: any) {
+      console.error('Error adding match commentary:', error);
+      res.status(500).json({ message: error.message || "Failed to add match commentary" });
     }
   });
 }

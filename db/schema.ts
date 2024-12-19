@@ -95,6 +95,15 @@ export const matchSubstitutions = pgTable("match_substitutions", {
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
+export const matchCommentary = pgTable("match_commentary", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  matchId: integer("match_id").notNull().references(() => events.id),
+  minute: integer("minute").notNull(),
+  type: text("type").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -144,3 +153,8 @@ export const insertMatchSubstitutionSchema = createInsertSchema(matchSubstitutio
 export const selectMatchSubstitutionSchema = createSelectSchema(matchSubstitutions);
 export type InsertMatchSubstitution = z.infer<typeof insertMatchSubstitutionSchema>;
 export type MatchSubstitution = z.infer<typeof selectMatchSubstitutionSchema>;
+
+export const insertMatchCommentarySchema = createInsertSchema(matchCommentary);
+export const selectMatchCommentarySchema = createSelectSchema(matchCommentary);
+export type InsertMatchCommentary = z.infer<typeof insertMatchCommentarySchema>;
+export type MatchCommentary = z.infer<typeof selectMatchCommentarySchema>;
