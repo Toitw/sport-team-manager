@@ -80,29 +80,6 @@ export function CardsDialog({ matchId, teamId, open, onOpenChange }: CardsDialog
       return;
     }
 
-    // Check for duplicate players with same card type
-    const duplicates = cards.reduce((acc: any[], card, index) => {
-      const duplicateCard = cards.find((c, i) => 
-        i !== index && 
-        c.playerId === card.playerId && 
-        c.cardType === card.cardType
-      );
-      if (duplicateCard) {
-        const player = players.find(p => p.id === card.playerId);
-        acc.push(`${player?.name || 'Player'} (${card.cardType})`);
-      }
-      return acc;
-    }, []);
-
-    if (duplicates.length > 0) {
-      toast({
-        variant: "destructive",
-        title: "Duplicate Cards",
-        description: `${duplicates[0]} has duplicate cards of the same type`,
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       const response = await fetch(`/api/matches/${matchId}/cards`, {
@@ -134,11 +111,6 @@ export function CardsDialog({ matchId, teamId, open, onOpenChange }: CardsDialog
     }
   };
 
-  // Sort players by name to make them easier to find
-  const sortedPlayers = React.useMemo(() => {
-    return [...players].sort((a, b) => a.name.localeCompare(b.name));
-  }, [players]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -168,7 +140,7 @@ export function CardsDialog({ matchId, teamId, open, onOpenChange }: CardsDialog
                       <TableRow key={index}>
                         <TableCell>
                           <Select
-                            value={card.playerId ? card.playerId.toString() : ""}
+                            value={card.playerId.toString()}
                             onValueChange={(value) => {
                               const newCards = [...cards];
                               newCards[index].playerId = parseInt(value);
@@ -179,7 +151,7 @@ export function CardsDialog({ matchId, teamId, open, onOpenChange }: CardsDialog
                               <SelectValue placeholder="Select player" />
                             </SelectTrigger>
                             <SelectContent>
-                              {sortedPlayers.map((player) => (
+                              {players.map((player) => (
                                 <SelectItem key={player.id} value={player.id.toString()}>
                                   {player.name} ({player.position} - #{player.number})
                                 </SelectItem>

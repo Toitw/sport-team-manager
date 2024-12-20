@@ -2,15 +2,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { type Player } from "@db/schema";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
-
-interface PlayerStats {
-  gamesPlayed: number;
-  goals: number;
-  yellowCards: number;
-  redCards: number;
-  seasonYear: number;
-}
 
 interface PlayerProfileDialogProps {
   player: Player;
@@ -19,17 +10,6 @@ interface PlayerProfileDialogProps {
 }
 
 export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfileDialogProps) {
-  const [stats, setStats] = useState<PlayerStats | null>(null);
-
-  useEffect(() => {
-    if (open && player.id) {
-      fetch(`/api/players/${player.id}/statistics`)
-        .then(res => res.json())
-        .then(data => setStats(data))
-        .catch(error => console.error('Error loading player statistics:', error));
-    }
-  }, [player.id, open]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[800px]">
@@ -82,29 +62,6 @@ export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfil
                 </div>
               </dl>
             </div>
-            {stats && (
-              <div>
-                <h3 className="font-semibold mt-4">Season {stats.seasonYear} Statistics</h3>
-                <dl className="mt-2 space-y-2">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Games Played</dt>
-                    <dd>{stats.gamesPlayed}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Goals</dt>
-                    <dd>{stats.goals}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Yellow Cards</dt>
-                    <dd>{stats.yellowCards}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Red Cards</dt>
-                    <dd>{stats.redCards}</dd>
-                  </div>
-                </dl>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>
