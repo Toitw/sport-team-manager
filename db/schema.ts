@@ -104,6 +104,16 @@ export const matchCommentary = pgTable("match_commentary", {
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
+export const playerStatistics = pgTable("player_statistics", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  gamesPlayed: integer("games_played").notNull().default(0),
+  goals: integer("goals").notNull().default(0),
+  yellowCards: integer("yellow_cards").notNull().default(0),
+  redCards: integer("red_cards").notNull().default(0),
+  seasonYear: integer("season_year").notNull()
+});
+
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -158,3 +168,8 @@ export const insertMatchCommentarySchema = createInsertSchema(matchCommentary);
 export const selectMatchCommentarySchema = createSelectSchema(matchCommentary);
 export type InsertMatchCommentary = z.infer<typeof insertMatchCommentarySchema>;
 export type MatchCommentary = z.infer<typeof selectMatchCommentarySchema>;
+
+export const insertPlayerStatisticsSchema = createInsertSchema(playerStatistics);
+export const selectPlayerStatisticsSchema = createSelectSchema(playerStatistics);
+export type InsertPlayerStatistics = z.infer<typeof insertPlayerStatisticsSchema>;
+export type PlayerStatistics = z.infer<typeof selectPlayerStatisticsSchema>;
