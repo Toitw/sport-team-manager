@@ -76,13 +76,13 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
       });
       return;
     }
-    
+
     try {
       // Validate lineup data
       const invalidPlayers = lineup.filter(
         (item) => !item.playerId || !item.position
       );
-      
+
       if (invalidPlayers.length > 0) {
         toast({
           variant: "destructive",
@@ -97,7 +97,7 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
       const duplicatePlayer = playerIds.find(
         (id, index) => playerIds.indexOf(id) !== index
       );
-      
+
       if (duplicatePlayer) {
         const player = players.find(p => p.id === duplicatePlayer);
         toast({
@@ -137,7 +137,7 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
     } finally {
       setIsLoading(false);
     }
-  }, [matchId, lineup, players, toast, onOpenChange, setIsLoading]);
+  }, [matchId, lineup, players, toast, onOpenChange]);
 
   const addPlayer = React.useCallback(() => {
     setLineup(prev => [...prev, { playerId: 0, position: "" }]);
@@ -234,9 +234,9 @@ export function LineupDialog({ matchId, teamId, open, onOpenChange }: LineupDial
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
               <div className="flex justify-between py-4 px-2 border-t mt-4 bg-background sticky bottom-0">
                 <Button variant="outline" onClick={addPlayer} size="sm">
