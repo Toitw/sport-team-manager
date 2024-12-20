@@ -212,111 +212,6 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Update statistics after match events
-  async function updatePlayerStatistics(matchId: number) {
-    const currentYear = new Date().getFullYear();
-
-    try {
-      // Get match details first to verify it's completed
-      const match = await db.select().from(events)
-        .where(eq(events.id, matchId))
-        .limit(1);
-
-      if (!match.length || match[0].type !== 'match') {
-        console.log('Match not found or not a match type event');
-        return;
-      }
-
-      // For completed matches, we need both scores to be set
-      if (match[0].homeScore === null || match[0].awayScore === null) {
-        console.log('Match scores not set, skipping statistics update');
-        return;
-      }
-
-      console.log(`Processing statistics for match ${matchId}`);
-
-      // Get all players who participated (lineup + substitutes)
-      const lineupPlayers = await db.select().from(matchLineups)
-        .where(eq(matchLineups.matchId, matchId));
-
-      console.log(`Found ${lineupPlayers.length} players in lineup`);
-
-      // Get substituted players
-      const substitutions = await db.select().from(matchSubstitutions)
-        .where(eq(matchSubstitutions.matchId, matchId));
-
-      console.log(`Found ${substitutions.length} substitutions`);
-
-      // Get all players who participated
-      const allPlayerIds = [...new Set([
-        ...lineupPlayers.map(p => p.playerId),
-        ...substitutions.map(s => s.playerInId)
-      ])];
-
-      console.log(`Updating statistics for ${allPlayerIds.length} players`);
-
-      // Process each player
-      for (const playerId of allPlayerIds) {
-        // Get goals scored
-        const goals = await db.select().from(matchScorers)
-          .where(and(
-            eq(matchScorers.matchId, matchId),
-            eq(matchScorers.playerId, playerId),
-            eq(matchScorers.eventType, 'goal')
-          ));
-
-        // Get cards received
-        const cards = await db.select().from(matchCards)
-          .where(and(
-            eq(matchCards.matchId, matchId),
-            eq(matchCards.playerId, playerId)
-          ));
-
-        const yellowCards = cards.filter(c => c.cardType === 'yellow').length;
-        const redCards = cards.filter(c => c.cardType === 'red').length;
-
-        // Update player statistics
-        const stats = await db.select().from(playerStatistics)
-          .where(and(
-            eq(playerStatistics.playerId, playerId),
-            eq(playerStatistics.seasonYear, currentYear)
-          ));
-
-        if (stats.length === 0) {
-          // Create new statistics record
-          await db.insert(playerStatistics).values({
-            playerId,
-            seasonYear: currentYear,
-            gamesPlayed: 1,
-            goals: goals.length,
-            yellowCards,
-            redCards
-          });
-          console.log(`Created new statistics for player ${playerId}`);
-        } else {
-          // Update existing statistics
-          await db.update(playerStatistics)
-            .set({
-              gamesPlayed: sql`${playerStatistics.gamesPlayed} + 1`,
-              goals: sql`${playerStatistics.goals} + ${goals.length}`,
-              yellowCards: sql`${playerStatistics.yellowCards} + ${yellowCards}`,
-              redCards: sql`${playerStatistics.redCards} + ${redCards}`
-            })
-            .where(and(
-              eq(playerStatistics.playerId, playerId),
-              eq(playerStatistics.seasonYear, currentYear)
-            ));
-          console.log(`Updated statistics for player ${playerId}`);
-        }
-      }
-
-      console.log(`Successfully updated statistics for match ${matchId}`);
-    } catch (error) {
-      console.error('Error updating player statistics:', error);
-      throw error;
-    }
-  }
-
   // Update event endpoint
   app.put("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {
     try {
@@ -339,6 +234,27 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Event not found" });
       }
 
+      console.log('Current event:', currentEvent[0]);
+      console.log('Updating event with:', rest);
+
+      // Check if this is a match being completed
+      const isMatchCompletion = currentEvent[0].type === 'match' &&
+        (rest.homeScore !== undefined && rest.homeScore !== null) &&
+        (rest.awayScore !== undefined && rest.awayScore !== null);
+
+      // Check if this is a new completion (not previously completed)
+      const isNewCompletion = isMatchCompletion &&
+        (currentEvent[0].homeScore === null || currentEvent[0].awayScore === null);
+
+      console.log('Match completion check:', {
+        isMatchCompletion,
+        isNewCompletion,
+        currentHomeScore: currentEvent[0].homeScore,
+        currentAwayScore: currentEvent[0].awayScore,
+        newHomeScore: rest.homeScore,
+        newAwayScore: rest.awayScore
+      });
+
       const updatedEvent = await db.update(events)
         .set({
           ...rest,
@@ -353,12 +269,99 @@ export function registerRoutes(app: Express) {
         .where(eq(events.id, parseInt(req.params.eventId)))
         .returning();
 
-      // Update player statistics if this is a match and scores are being updated
-      if (updatedEvent[0].type === 'match' && 
-          (updatedEvent[0].homeScore !== null || updatedEvent[0].awayScore !== null) &&
-          (currentEvent[0].homeScore === null || currentEvent[0].awayScore === null)) {
-        console.log('Updating player statistics for match:', updatedEvent[0].id);
-        await updatePlayerStatistics(updatedEvent[0].id);
+      // Update player statistics if this is a new match completion
+      if (isNewCompletion) {
+        console.log('New match completion detected, updating player statistics for match:', updatedEvent[0].id);
+
+        const currentYear = new Date().getFullYear();
+
+        // Get all players who participated
+        const lineupPlayers = await db.select().from(matchLineups)
+          .where(eq(matchLineups.matchId, updatedEvent[0].id));
+
+        console.log(`Found ${lineupPlayers.length} players in lineup:`, lineupPlayers);
+
+        const substitutions = await db.select().from(matchSubstitutions)
+          .where(eq(matchSubstitutions.matchId, updatedEvent[0].id));
+
+        console.log(`Found ${substitutions.length} substitutions:`, substitutions);
+
+        // Get unique player IDs who participated
+        const allPlayerIds = [...new Set([
+          ...lineupPlayers.map(p => p.playerId),
+          ...substitutions.map(s => s.playerInId),
+          ...substitutions.map(s => s.playerOutId)
+        ])];
+
+        console.log(`Processing statistics for ${allPlayerIds.length} players:`, allPlayerIds);
+
+        // Process each player
+        for (const playerId of allPlayerIds) {
+          try {
+            console.log(`Processing player ${playerId}`);
+
+            // Get player's goals in this match
+            const goals = await db.select().from(matchScorers)
+              .where(and(
+                eq(matchScorers.matchId, updatedEvent[0].id),
+                eq(matchScorers.playerId, playerId),
+                eq(matchScorers.eventType, 'goal')
+              ));
+
+            console.log(`Player ${playerId} scored ${goals.length} goals:`, goals);
+
+            // Get player's cards in this match
+            const cards = await db.select().from(matchCards)
+              .where(and(
+                eq(matchCards.matchId, updatedEvent[0].id),
+                eq(matchCards.playerId, playerId)
+              ));
+
+            const yellowCards = cards.filter(c => c.cardType === 'yellow').length;
+            const redCards = cards.filter(c => c.cardType === 'red').length;
+
+            console.log(`Player ${playerId} cards:`, { yellowCards, redCards, cards });
+
+            // Get existing statistics
+            const stats = await db.select().from(playerStatistics)
+              .where(and(
+                eq(playerStatistics.playerId, playerId),
+                eq(playerStatistics.seasonYear, currentYear)
+              ));
+
+            console.log(`Current statistics for player ${playerId}:`, stats);
+
+            if (stats.length === 0) {
+              // Create new statistics record
+              const newStats = await db.insert(playerStatistics).values({
+                playerId,
+                seasonYear: currentYear,
+                gamesPlayed: 1,
+                goals: goals.length,
+                yellowCards,
+                redCards
+              }).returning();
+              console.log(`Created new statistics for player ${playerId}:`, newStats);
+            } else {
+              // Update existing statistics
+              const updatedStats = await db.update(playerStatistics)
+                .set({
+                  gamesPlayed: sql`${playerStatistics.gamesPlayed} + 1`,
+                  goals: sql`${playerStatistics.goals} + ${goals.length}`,
+                  yellowCards: sql`${playerStatistics.yellowCards} + ${yellowCards}`,
+                  redCards: sql`${playerStatistics.redCards} + ${redCards}`
+                })
+                .where(and(
+                  eq(playerStatistics.playerId, playerId),
+                  eq(playerStatistics.seasonYear, currentYear)
+                ))
+                .returning();
+              console.log(`Updated statistics for player ${playerId}:`, updatedStats);
+            }
+          } catch (error) {
+            console.error(`Error processing statistics for player ${playerId}:`, error);
+          }
+        }
       }
 
       res.json(updatedEvent[0]);
@@ -576,7 +579,16 @@ export function registerRoutes(app: Express) {
     try {
       const matchId = parseInt(req.params.matchId);
       const { playerId, minute, eventType = 'goal' } = req.body;
-      
+
+      // Check if match is completed
+      const match = await db.select().from(events)
+        .where(eq(events.id, matchId))
+        .limit(1);
+
+      if (!match.length || match[0].type !== 'match') {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
       const scorer = await db.insert(matchScorers)
         .values({
           matchId,
@@ -585,7 +597,42 @@ export function registerRoutes(app: Express) {
           eventType
         })
         .returning();
-      
+
+      // If match is completed and this is a goal, update player statistics
+      if (match[0].homeScore !== null && match[0].awayScore !== null && eventType === 'goal') {
+        console.log(`Updating statistics for goal scored by player ${playerId}`);
+        const currentYear = new Date().getFullYear();
+
+        // Get or create player statistics
+        const stats = await db.select().from(playerStatistics)
+          .where(and(
+            eq(playerStatistics.playerId, playerId),
+            eq(playerStatistics.seasonYear, currentYear)
+          ));
+
+        if (stats.length === 0) {
+          await db.insert(playerStatistics).values({
+            playerId,
+            seasonYear: currentYear,
+            gamesPlayed: 0,
+            goals: 1,
+            yellowCards: 0,
+            redCards: 0
+          });
+          console.log(`Created new statistics for player ${playerId} with 1 goal`);
+        } else {
+          await db.update(playerStatistics)
+            .set({
+              goals: sql`${playerStatistics.goals} + 1`
+            })
+            .where(and(
+              eq(playerStatistics.playerId, playerId),
+              eq(playerStatistics.seasonYear, currentYear)
+            ));
+          console.log(`Updated goals for player ${playerId}`);
+        }
+      }
+
       res.json(scorer[0]);
     } catch (error: any) {
       console.error('Error adding match scorer:', error);
@@ -806,8 +853,7 @@ export function registerRoutes(app: Express) {
       }
 
       const newCommentary = await db.insert(matchCommentary)
-        .values({
-          matchId,
+        .values({          matchId,
           minute,
           type,
           content
