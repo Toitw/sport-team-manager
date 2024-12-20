@@ -166,17 +166,18 @@ export function registerRoutes(app: Express) {
   app.get("/api/players/:playerId/statistics", requireAuth, async (req, res) => {
     try {
       const playerId = parseInt(req.params.playerId);
+      const currentYear = new Date().getFullYear();
 
-      // Get the latest season's statistics for the player
+      // Get player statistics
       const stats = await db.select()
         .from(playerStatistics)
-        .where(eq(playerStatistics.playerId, playerId))
-        .orderBy(desc(playerStatistics.seasonYear))
-        .limit(1);
+        .where(and(
+          eq(playerStatistics.playerId, playerId),
+          eq(playerStatistics.seasonYear, currentYear)
+        ));
 
       if (stats.length === 0) {
-        // If no statistics exist, return default values
-        const currentYear = new Date().getFullYear();
+        // Return default values for new players
         return res.json({
           gamesPlayed: 0,
           goals: 0,
@@ -198,19 +199,32 @@ export function registerRoutes(app: Express) {
     const currentYear = new Date().getFullYear();
 
     try {
-      // Get all players involved in the match
+      // Get match details first to verify it's completed
+      const match = await db.select().from(events)
+        .where(eq(events.id, matchId))
+        .limit(1);
+
+      if (!match.length || match[0].type !== 'match' || 
+          (match[0].homeScore === null && match[0].awayScore === null)) {
+        console.log('Match not completed or scores not set, skipping statistics update');
+        return;
+      }
+
+      // Get players who actually played in the match (lineup + substitutes)
       const lineupPlayers = await db.select().from(matchLineups)
         .where(eq(matchLineups.matchId, matchId));
 
-      const reservePlayers = await db.select().from(matchReserves)
-        .where(eq(matchReserves.matchId, matchId));
+      // Get substituted players (they also played in the match)
+      const substitutions = await db.select().from(matchSubstitutions)
+        .where(eq(matchSubstitutions.matchId, matchId));
 
-      const allPlayerIds = new Set([
+      // Combine all players who participated
+      const allPlayerIds = [...new Set([
         ...lineupPlayers.map(p => p.playerId),
-        ...reservePlayers.map(p => p.playerId)
-      ]);
+        ...substitutions.map(s => s.playerInId)
+      ])];
 
-      // For each player, update their statistics
+      // For each player who played, update their statistics
       for (const playerId of allPlayerIds) {
         // Get or create player statistics for current season
         let stats = await db.select().from(playerStatistics)
@@ -224,13 +238,13 @@ export function registerRoutes(app: Express) {
           await db.insert(playerStatistics).values({
             playerId,
             seasonYear: currentYear,
-            gamesPlayed: 1,
+            gamesPlayed: 1, // First game
             goals: 0,
             yellowCards: 0,
             redCards: 0
           });
         } else {
-          // Update existing statistics
+          // Increment games played
           await db.update(playerStatistics)
             .set({ gamesPlayed: sql`${playerStatistics.gamesPlayed} + 1` })
             .where(and(
@@ -239,11 +253,12 @@ export function registerRoutes(app: Express) {
             ));
         }
 
-        // Update goals
+        // Update goals (only count actual goals, not own goals)
         const goals = await db.select().from(matchScorers)
           .where(and(
             eq(matchScorers.matchId, matchId),
-            eq(matchScorers.playerId, playerId)
+            eq(matchScorers.playerId, playerId),
+            eq(matchScorers.eventType, 'goal')
           ));
 
         if (goals.length > 0) {
@@ -277,58 +292,31 @@ export function registerRoutes(app: Express) {
             ));
         }
       }
+
+      console.log(`Successfully updated statistics for match ${matchId}`);
     } catch (error) {
       console.error('Error updating player statistics:', error);
       throw error;
     }
   }
 
-  // Events
-  app.get("/api/teams/:teamId/events", requireAuth, async (req, res) => {
-    const teamEvents = await db.select().from(events)
-      .where(eq(events.teamId, parseInt(req.params.teamId)));
-    res.json(teamEvents);
-  });
-
-  app.post("/api/teams/:teamId/events", requireRole(["admin", "editor"]), async (req, res) => {
-    try {
-      const { startDate, endDate, ...rest } = req.body;
-      
-      // Validate dates
-      const startDateObj = new Date(startDate);
-      const endDateObj = new Date(endDate);
-      
-      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
-        return res.status(400).json({ message: "Invalid date format" });
-      }
-
-      const newEvent = await db.insert(events).values({
-        ...rest,
-        teamId: parseInt(req.params.teamId),
-        startDate: startDateObj.toISOString(),
-        endDate: endDateObj.toISOString(),
-        type: rest.type
-      }).returning();
-
-      res.json(newEvent[0]);
-    } catch (error: any) {
-      console.error('Error creating event:', error);
-      res.status(500).json({ message: error.message || "Failed to create event" });
-    }
-  });
-
-  // Update event
+  // Update event endpoint
   app.put("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const { startDate, endDate, ...rest } = req.body;
-      
+
       // Validate dates
       const startDateObj = new Date(startDate);
       const endDateObj = new Date(endDate);
-      
+
       if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         return res.status(400).json({ message: "Invalid date format" });
       }
+
+      // Get the current event to check if scores are being updated
+      const currentEvent = await db.select().from(events)
+        .where(eq(events.id, parseInt(req.params.eventId)))
+        .limit(1);
 
       const updatedEvent = await db.update(events)
         .set({
@@ -348,9 +336,10 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      // If this is a match event and scores are set, update player statistics
+      // Update player statistics if this is a match and scores are being set for the first time
       if (updatedEvent[0].type === 'match' && 
-          (updatedEvent[0].homeScore !== null || updatedEvent[0].awayScore !== null)) {
+          (updatedEvent[0].homeScore !== null || updatedEvent[0].awayScore !== null) &&
+          (currentEvent[0].homeScore === null && currentEvent[0].awayScore === null)) {
         await updatePlayerStatistics(updatedEvent[0].id);
       }
 
@@ -360,6 +349,41 @@ export function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message || "Failed to update event" });
     }
   });
+
+  // Events
+  app.get("/api/teams/:teamId/events", requireAuth, async (req, res) => {
+    const teamEvents = await db.select().from(events)
+      .where(eq(events.teamId, parseInt(req.params.teamId)));
+    res.json(teamEvents);
+  });
+
+  app.post("/api/teams/:teamId/events", requireRole(["admin", "editor"]), async (req, res) => {
+    try {
+      const { startDate, endDate, ...rest } = req.body;
+      
+      // Validate dates
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      const newEvent = await db.insert(events).values({
+        ...rest,
+        teamId: parseInt(req.params.teamId),
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
+        type: rest.type
+      }).returning();
+      
+      res.json(newEvent[0]);
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      res.status(500).json({ message: error.message || "Failed to create event" });
+    }
+  });
+
 
   // Delete event
   app.delete("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {

@@ -13,3 +13,6 @@ CREATE TABLE IF NOT EXISTS player_statistics (
 
 -- Add index for better query performance
 CREATE INDEX IF NOT EXISTS idx_player_statistics_player_id ON player_statistics(player_id);
+
+-- Add index for season queries
+CREATE INDEX IF NOT EXISTS idx_player_statistics_season ON player_statistics(season_year);
