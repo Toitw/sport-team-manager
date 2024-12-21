@@ -35,10 +35,10 @@ export function SubstitutionsDialog({ matchId, teamId, open, onOpenChange }: Sub
         .then((data) => {
           if (data.substitutions) {
             setSubstitutions(data.substitutions.map((sub: any) => ({
-              playerOutId: sub.playerOutId,
-              playerInId: sub.playerInId,
-              minute: sub.minute,
-              half: sub.half,
+              playerOutId: sub.playerOutId ?? 0,
+              playerInId: sub.playerInId ?? 0,
+              minute: sub.minute ?? 0,
+              half: sub.half ?? 1,
             })));
           }
         })
@@ -140,7 +140,7 @@ export function SubstitutionsDialog({ matchId, teamId, open, onOpenChange }: Sub
                       <TableRow key={index}>
                         <TableCell>
                           <Select
-                            value={sub.playerOutId.toString()}
+                            value={(sub.playerOutId ?? 0).toString()}
                             onValueChange={(value) => {
                               const newSubs = [...substitutions];
                               newSubs[index].playerOutId = parseInt(value);
@@ -161,7 +161,7 @@ export function SubstitutionsDialog({ matchId, teamId, open, onOpenChange }: Sub
                         </TableCell>
                         <TableCell>
                           <Select
-                            value={sub.playerInId.toString()}
+                            value={(sub.playerInId ?? 0).toString()}
                             onValueChange={(value) => {
                               const newSubs = [...substitutions];
                               newSubs[index].playerInId = parseInt(value);
