@@ -537,7 +537,15 @@ export default function TeamPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-medium">{event.title}</div>
+                    <TableCell>
+                      {event.type === 'match' ? (
+                        <Link to={`/team/${parsedTeamId}/matches/${event.id}`} className="text-primary hover:underline">
+                          {event.title}
+                        </Link>
+                      ) : (
+                        event.title
+                      )}
+                    </TableCell>
                     {event.description && (
                       <div className="text-sm text-muted-foreground mt-1">{event.description}</div>
                     )}

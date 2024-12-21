@@ -13,7 +13,7 @@ export function useNews(teamId: number) {
     }
   });
 
-  const { data: nextMatch, isLoading: isLoadingNextMatch } = useQuery({
+  const { data: nextMatch, isLoading: isLoadingNextMatch } = useQuery<{ id: number } & Event>({
     queryKey: ['nextMatch', teamId],
     queryFn: async () => {
       const response = await fetch(`/api/teams/${teamId}/next-match`, { credentials: 'include' });
