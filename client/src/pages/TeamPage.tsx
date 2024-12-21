@@ -11,6 +11,7 @@ import { useNews } from "@/hooks/use-news";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Icons
 import { Loader2 } from "lucide-react";
@@ -135,6 +136,9 @@ export default function TeamPage() {
   }, []);
 
   // Loading state
+  // Sort state
+  const [sortBy, setSortBy] = React.useState<'number' | 'name' | 'position'>('number');
+
   if (playersLoading || eventsLoading || newsLoading) {
     return (
       <Layout teamId={parsedTeamId.toString()}>
@@ -146,7 +150,6 @@ export default function TeamPage() {
   }
 
   // Render methods
-  const [sortBy, setSortBy] = React.useState<'number' | 'name' | 'position'>('number');
 
   const getSortedPlayers = () => {
     if (!players) return [];
