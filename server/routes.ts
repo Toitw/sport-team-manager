@@ -328,7 +328,8 @@ export function registerRoutes(app: Express) {
           position: matchLineups.position,
           player: {
             name: players.name,
-            number: players.number
+            number: players.number,
+            photoUrl: players.photoUrl
           }
         })
         .from(matchLineups)
@@ -344,7 +345,8 @@ export function registerRoutes(app: Express) {
           eventType: matchScorers.eventType,
           player: {
             name: players.name,
-            number: players.number
+            number: players.number,
+            photoUrl: players.photoUrl
           }
         })
         .from(matchScorers)
@@ -361,7 +363,8 @@ export function registerRoutes(app: Express) {
           reason: matchCards.reason,
           player: {
             name: players.name,
-            number: players.number
+            number: players.number,
+            photoUrl: players.photoUrl
           }
         })
         .from(matchCards)
