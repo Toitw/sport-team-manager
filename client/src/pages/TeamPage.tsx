@@ -121,8 +121,7 @@ export default function TeamPage() {
 
   // Callbacks
   const handleEventClick = React.useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    // Removed preventDefault and stopPropagation
   }, []);
 
   const handlePlayerClick = React.useCallback((playerId: number) => {
@@ -258,48 +257,45 @@ export default function TeamPage() {
               <div className="text-center text-muted-foreground">No upcoming matches scheduled</div>
             ) : (
               upcomingMatches.map(match => (
-                <Link
+                <div
                   key={match.id}
-                  href={`/team/${parsedTeamId}/matches/${match.id}`}
-                  className="block"
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    window.location.href = `/team/${parsedTeamId}/matches/${match.id}`;
+                  }}
                 >
-                  <div
-                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                    onClick={handleEventClick}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="font-semibold text-lg">{match.title}</div>
-                        {match.description && (
-                          <div className="text-sm text-muted-foreground">{match.description}</div>
-                        )}
-                        <div className="text-sm font-medium text-primary">
-                          {format(new Date(match.startDate), "PPP p")}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {canManageTeam && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedMatchId(match.id);
-                                setLineupDialogOpen(true);
-                              }}
-                            >
-                              Lineup
-                            </Button>
-                            <EditEventDialog event={match} teamId={parsedTeamId} />
-                            <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
-                          </>
-                        )}
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-lg">{match.title}</div>
+                      {match.description && (
+                        <div className="text-sm text-muted-foreground">{match.description}</div>
+                      )}
+                      <div className="text-sm font-medium text-primary">
+                        {format(new Date(match.startDate), "PPP p")}
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      {canManageTeam && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setLineupDialogOpen(true);
+                            }}
+                          >
+                            Lineup
+                          </Button>
+                          <EditEventDialog event={match} teamId={parsedTeamId} />
+                          <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                        </>
+                      )}
+                    </div>
                   </div>
-                </Link>
+                </div>
               ))
             )}
           </div>
@@ -316,103 +312,100 @@ export default function TeamPage() {
               <div className="text-center text-muted-foreground">No match results yet</div>
             ) : (
               pastMatches.map(match => (
-                <Link
+                <div
                   key={match.id}
-                  href={`/team/${parsedTeamId}/matches/${match.id}`}
-                  className="block"
+                  className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                  onClick={() => {
+                    window.location.href = `/team/${parsedTeamId}/matches/${match.id}`;
+                  }}
                 >
-                  <div
-                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                    onClick={handleEventClick}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="font-semibold text-lg">{match.title}</div>
-                        {match.description && (
-                          <div className="text-sm text-muted-foreground">{match.description}</div>
-                        )}
-                        <div className="flex items-center gap-4">
-                          <div className="text-2xl font-bold">
-                            {match.homeScore !== null && match.awayScore !== null ? (
-                              <span className="text-primary">{match.homeScore} - {match.awayScore}</span>
-                            ) : (
-                              <span className="text-muted-foreground text-base">Score pending</span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">{format(new Date(match.startDate), "PPP")}</div>
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-lg">{match.title}</div>
+                      {match.description && (
+                        <div className="text-sm text-muted-foreground">{match.description}</div>
+                      )}
+                      <div className="flex items-center gap-4">
+                        <div className="text-2xl font-bold">
+                          {match.homeScore !== null && match.awayScore !== null ? (
+                            <span className="text-primary">{match.homeScore} - {match.awayScore}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-base">Score pending</span>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {canManageTeam && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedMatchId(match.id);
-                                setLineupDialogOpen(true);
-                              }}
-                            >
-                              Lineup
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedMatchId(match.id);
-                                setScorersDialogOpen(true);
-                              }}
-                            >
-                              Scorers
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedMatchId(match.id);
-                                setCardsDialogOpen(true);
-                              }}
-                            >
-                              Cards
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedMatchId(match.id);
-                                setSubstitutionsDialogOpen(true);
-                              }}
-                            >
-                              Substitutions
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setSelectedMatchId(match.id);
-                                setCommentaryDialogOpen(true);
-                              }}
-                            >
-                              Commentary
-                            </Button>
-                            <EditEventDialog event={match} teamId={parsedTeamId} />
-                            <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
-                          </>
-                        )}
+                        <div className="text-sm text-muted-foreground">{format(new Date(match.startDate), "PPP")}</div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      {canManageTeam && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setLineupDialogOpen(true);
+                            }}
+                          >
+                            Lineup
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setScorersDialogOpen(true);
+                            }}
+                          >
+                            Scorers
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setCardsDialogOpen(true);
+                            }}
+                          >
+                            Cards
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setSubstitutionsDialogOpen(true);
+                            }}
+                          >
+                            Substitutions
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setCommentaryDialogOpen(true);
+                            }}
+                          >
+                            Commentary
+                          </Button>
+                          <EditEventDialog event={match} teamId={parsedTeamId} />
+                          <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                        </>
+                      )}
+                    </div>
                   </div>
-                </Link>
+                </div>
               ))
             )}
           </div>
