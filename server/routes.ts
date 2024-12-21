@@ -318,33 +318,103 @@ export function registerRoutes(app: Express) {
   app.get("/api/matches/:matchId/details", requireAuth, async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-      
-      // Get lineup
-      const lineup = await db.select()
+
+      // Get lineup with player details
+      const lineup = await db
+        .select({
+          id: matchLineups.id,
+          matchId: matchLineups.matchId,
+          playerId: matchLineups.playerId,
+          position: matchLineups.position,
+          player: {
+            name: players.name,
+            number: players.number
+          }
+        })
         .from(matchLineups)
+        .leftJoin(players, eq(matchLineups.playerId, players.id))
         .where(eq(matchLineups.matchId, matchId));
-      
-      // Get reserves
-      const reserves = await db.select()
-        .from(matchReserves)
-        .where(eq(matchReserves.matchId, matchId));
-      
-      // Get scorers
-      const scorers = await db.select()
+
+      // Get scorers with player details
+      const scorers = await db
+        .select({
+          id: matchScorers.id,
+          playerId: matchScorers.playerId,
+          minute: matchScorers.minute,
+          eventType: matchScorers.eventType,
+          player: {
+            name: players.name,
+            number: players.number
+          }
+        })
         .from(matchScorers)
+        .leftJoin(players, eq(matchScorers.playerId, players.id))
         .where(eq(matchScorers.matchId, matchId));
-      
-      // Get cards
-      const cards = await db.select()
+
+      // Get cards with player details
+      const cards = await db
+        .select({
+          id: matchCards.id,
+          playerId: matchCards.playerId,
+          cardType: matchCards.cardType,
+          minute: matchCards.minute,
+          reason: matchCards.reason,
+          player: {
+            name: players.name,
+            number: players.number
+          }
+        })
         .from(matchCards)
+        .leftJoin(players, eq(matchCards.playerId, players.id))
         .where(eq(matchCards.matchId, matchId));
 
-      // Get substitutions
-      const substitutions = await db.select()
+      // Get substitutions with player details for both in and out players
+      const substitutions = await db
+        .select({
+          id: matchSubstitutions.id,
+          minute: matchSubstitutions.minute,
+          playerInId: matchSubstitutions.playerInId,
+          playerOutId: matchSubstitutions.playerOutId,
+          playerIn: {
+            name: players.name,
+            number: players.number
+          }
+        })
         .from(matchSubstitutions)
+        .leftJoin(players, eq(matchSubstitutions.playerInId, players.id))
         .where(eq(matchSubstitutions.matchId, matchId));
 
-      res.json({ lineup, reserves, scorers, cards, substitutions });
+      // Get player out details separately and merge them
+      const playerOutDetails = await Promise.all(
+        substitutions.map(async (sub) => {
+          const [playerOut] = await db
+            .select({
+              name: players.name,
+              number: players.number
+            })
+            .from(players)
+            .where(eq(players.id, sub.playerOutId));
+          return {
+            ...sub,
+            playerOut
+          };
+        })
+      );
+
+      // Get commentary
+      const commentary = await db
+        .select()
+        .from(matchCommentary)
+        .where(eq(matchCommentary.matchId, matchId))
+        .orderBy(sql`${matchCommentary.minute}`);
+
+      res.json({ 
+        lineup, 
+        scorers, 
+        cards, 
+        substitutions: playerOutDetails,
+        commentary 
+      });
     } catch (error: any) {
       console.error('Error fetching match details:', error);
       res.status(500).json({ message: error.message || "Failed to fetch match details" });
