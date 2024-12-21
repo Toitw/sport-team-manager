@@ -1,7 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { sql } from "drizzle-orm";
-import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { Pool, PoolConfig } from '@neondatabase/serverless';
 import * as schema from "@db/schema";
 import WebSocket from 'ws';
 
@@ -11,24 +10,41 @@ if (!process.env.DATABASE_URL) {
 }
 
 console.log('Initializing database connection...');
-let db: NeonDatabase<typeof schema>;
+let db: ReturnType<typeof drizzle>;
 
 try {
-  // Configure neon for websocket connections
-  neonConfig.webSocketConstructor = WebSocket;
+  console.log('Setting up database pool configuration...');
 
-  // Create the neon client with the correct configuration
-  const client = neon(process.env.DATABASE_URL!);
+  // Define pool configuration with proper types
+  const poolConfig: Partial<PoolConfig> & { wsProxy?: (url: string) => WebSocket } = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: true
+  };
 
-  // Initialize drizzle with the neon client and schema
-  db = drizzle(client, { schema });
+  // Add WebSocket proxy configuration
+  poolConfig.wsProxy = (url: string) => {
+    console.log('Creating WebSocket connection to:', url);
+    return new WebSocket(url, {
+      rejectUnauthorized: false,
+      headers: {
+        'User-Agent': 'neon-serverless'
+      }
+    });
+  };
+
+  // Initialize pool with configuration
+  const pool = new Pool(poolConfig);
+
+  console.log('Initializing Drizzle with pool...');
+  // Initialize Drizzle with the pool
+  db = drizzle(pool, { schema });
 
   // Test the connection
   const testConnection = async () => {
     try {
       console.log('Testing database connection...');
-      const result = await client`SELECT NOW()`;
-      console.log('Database connection test successful:', result);
+      const result = await pool.query('SELECT NOW()');
+      console.log('Database connection test successful:', result.rows[0]);
       return result;
     } catch (error) {
       console.error('Database connection test failed:', error);
