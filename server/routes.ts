@@ -173,19 +173,25 @@ export function registerRoutes(app: Express) {
         .from(matchLineups)
         .where(eq(matchLineups.playerId, playerId));
 
-      // Calculate minutes played
-      const matchesWithMinutes = await db
+      // Get all matches where player was involved (either as starter or substitute)
+      const matchesPlayed = await db
         .select({
           matchId: matchLineups.matchId,
-          substitutionOut: matchSubstitutions.minute,
-          substitutionIn: sql<number>`CASE 
-            WHEN ${matchSubstitutions.playerInId} = ${playerId} 
-            THEN ${matchSubstitutions.minute} 
+          // When they started and got subbed out
+          subOutMinute: sql<number>`CASE 
+            WHEN ${matchSubstitutions.playerOutId} = ${playerId} 
+            THEN ${matchSubstitutions.minute}
             ELSE NULL 
           END`,
+          // When they came on as a sub
+          subInMinute: sql<number>`CASE 
+            WHEN ${matchSubstitutions.playerInId} = ${playerId} 
+            THEN ${matchSubstitutions.minute}
+            ELSE NULL 
+          END`
         })
         .from(matchLineups)
-        .leftJoin(
+        .fullOuterJoin(
           matchSubstitutions,
           and(
             eq(matchSubstitutions.matchId, matchLineups.matchId),
@@ -195,21 +201,32 @@ export function registerRoutes(app: Express) {
             )
           )
         )
-        .where(eq(matchLineups.playerId, playerId));
+        .where(
+          or(
+            eq(matchLineups.playerId, playerId),
+            eq(matchSubstitutions.playerInId, playerId)
+          )
+        );
 
       let totalMinutes = 0;
-      matchesWithMinutes.forEach(match => {
-        if (match.substitutionIn !== null) {
+      const uniqueMatchIds = new Set();
+      
+      matchesPlayed.forEach(match => {
+        uniqueMatchIds.add(match.matchId);
+        
+        if (match.subInMinute !== null) {
           // Player came on as a substitute
-          totalMinutes += 90 - match.substitutionIn;
-        } else if (match.substitutionOut !== null) {
-          // Player was substituted off
-          totalMinutes += match.substitutionOut;
+          totalMinutes += 90 - match.subInMinute;
+        } else if (match.subOutMinute !== null) {
+          // Player started and was substituted off
+          totalMinutes += match.subOutMinute;
         } else {
           // Player played full match
           totalMinutes += 90;
         }
       });
+
+      const gamesPlayed = uniqueMatchIds.size;
 
       // Get goals
       const goals = await db
