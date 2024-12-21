@@ -20,6 +20,10 @@ export function PlayerStats({ playerId }: PlayerStatsProps) {
         <dd>{stats?.gamesPlayed || 0}</dd>
       </div>
       <div className="flex justify-between">
+        <dt className="text-muted-foreground">Minutes Played</dt>
+        <dd>{stats?.minutesPlayed || 0}</dd>
+      </div>
+      <div className="flex justify-between">
         <dt className="text-muted-foreground">Goals</dt>
         <dd>{stats?.goals || 0}</dd>
       </div>

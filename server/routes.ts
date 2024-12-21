@@ -167,11 +167,49 @@ export function registerRoutes(app: Express) {
     try {
       const playerId = parseInt(req.params.playerId);
 
-      // Get games played
+      // Get games played and calculate minutes
       const games = await db
         .select({ count: sql<number>`count(DISTINCT ${matchLineups.matchId})` })
         .from(matchLineups)
         .where(eq(matchLineups.playerId, playerId));
+
+      // Calculate minutes played
+      const matchesWithMinutes = await db
+        .select({
+          matchId: matchLineups.matchId,
+          substitutionOut: matchSubstitutions.minute,
+          substitutionIn: sql<number>`CASE 
+            WHEN ${matchSubstitutions.playerInId} = ${playerId} 
+            THEN ${matchSubstitutions.minute} 
+            ELSE NULL 
+          END`,
+        })
+        .from(matchLineups)
+        .leftJoin(
+          matchSubstitutions,
+          and(
+            eq(matchSubstitutions.matchId, matchLineups.matchId),
+            or(
+              eq(matchSubstitutions.playerOutId, playerId),
+              eq(matchSubstitutions.playerInId, playerId)
+            )
+          )
+        )
+        .where(eq(matchLineups.playerId, playerId));
+
+      let totalMinutes = 0;
+      matchesWithMinutes.forEach(match => {
+        if (match.substitutionIn !== null) {
+          // Player came on as a substitute
+          totalMinutes += 90 - match.substitutionIn;
+        } else if (match.substitutionOut !== null) {
+          // Player was substituted off
+          totalMinutes += match.substitutionOut;
+        } else {
+          // Player played full match
+          totalMinutes += 90;
+        }
+      });
 
       // Get goals
       const goals = await db
@@ -203,6 +241,7 @@ export function registerRoutes(app: Express) {
 
       res.json({
         gamesPlayed: games[0].count || 0,
+        minutesPlayed: totalMinutes,
         goals: goals[0].count || 0,
         yellowCards: yellowCards[0].count || 0,
         redCards: redCards[0].count || 0
