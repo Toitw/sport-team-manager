@@ -90,22 +90,31 @@ export function ScorersDialog({ matchId, teamId, open, onOpenChange }: ScorersDi
         throw new Error("Failed to clear existing scorers");
       }
 
-      // Then save new scorers
-      await Promise.all(
-        scorers.map((scorer) =>
-          fetch(`/api/matches/${matchId}/scorers`, {
+      // Then save new scorers if there are any
+      if (scorers.length > 0) {
+        for (const scorer of scorers) {
+          const response = await fetch(`/api/matches/${matchId}/scorers`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(scorer),
-          }).then(response => {
-            if (!response.ok) {
-              throw new Error(`Failed to save scorer: ${response.statusText}`);
-            }
-          })
-        ),
-      );
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to save scorer: ${response.statusText}`);
+          }
+        }
+      }
+
+      // Refresh data before closing
+      const refreshResponse = await fetch(`/api/matches/${matchId}/details`);
+      const refreshedData = await refreshResponse.json();
+      setScorers(refreshedData.scorers?.map((scorer: any) => ({
+        playerId: scorer.playerId,
+        minute: scorer.minute,
+        eventType: scorer.eventType
+      })) || []);
 
       toast({
         title: "Success",

@@ -424,23 +424,18 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Delete match scorer
-  app.delete("/api/matches/:matchId/scorers/:scorerId", requireRole(["admin", "editor"]), async (req, res) => {
+  // Delete all match scorers
+  app.delete("/api/matches/:matchId/scorers", requireRole(["admin", "editor"]), async (req, res) => {
     try {
-      const { matchId, scorerId } = req.params;
+      const matchId = parseInt(req.params.matchId);
       
-      const deleted = await db.delete(matchScorers)
-        .where(sql`${matchScorers.id} = ${parseInt(scorerId)} AND ${matchScorers.matchId} = ${parseInt(matchId)}`)
-        .returning();
-
-      if (!deleted.length) {
-        return res.status(404).json({ message: "Scorer not found" });
-      }
+      await db.delete(matchScorers)
+        .where(eq(matchScorers.matchId, matchId));
       
-      res.json({ message: "Scorer deleted successfully" });
+      res.json({ message: "Scorers deleted successfully" });
     } catch (error: any) {
-      console.error('Error deleting match scorer:', error);
-      res.status(500).json({ message: error.message || "Failed to delete match scorer" });
+      console.error('Error deleting match scorers:', error);
+      res.status(500).json({ message: error.message || "Failed to delete match scorers" });
     }
   });
 
