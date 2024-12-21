@@ -116,10 +116,10 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 )}
               </div>
               <div className="text-center">
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-foreground">
                   #{player.player?.number || ''}
                 </div>
-                <div className="text-xs text-white/90">
+                <div className="text-xs text-muted-foreground">
                   {player.player?.name?.split(' ')[0] || 'Unknown'}
                 </div>
               </div>
@@ -145,10 +145,10 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 )}
               </div>
               <div className="text-center">
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-foreground">
                   #{player.player?.number || ''}
                 </div>
-                <div className="text-xs text-white/90">
+                <div className="text-xs text-muted-foreground">
                   {player.player?.name?.split(' ')[0] || 'Unknown'}
                 </div>
               </div>
@@ -174,10 +174,10 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 )}
               </div>
               <div className="text-center">
-                <div className="text-sm font-bold text-white">
+                <div className="text-sm font-bold text-foreground">
                   #{player.player?.number || ''}
                 </div>
-                <div className="text-xs text-white/90">
+                <div className="text-xs text-muted-foreground">
                   {player.player?.name?.split(' ')[0] || 'Unknown'}
                 </div>
               </div>
