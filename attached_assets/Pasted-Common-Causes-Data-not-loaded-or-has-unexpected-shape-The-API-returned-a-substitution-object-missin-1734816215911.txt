@@ -1,0 +1,84 @@
+Common Causes
+Data not loaded or has unexpected shape
+
+The API returned a substitution object missing playerInId or playerOutId.
+The code is storing a substitution with playerInId = undefined instead of a default (e.g., 0).
+You are adding a new substitution defaulting to 0 but never updating it to a valid ID before rendering. If you set:
+
+ts
+Copiar código
+{ playerOutId: 0, playerInId: 0, minute: 0, half: 1 }
+then in the UI you do:
+
+tsx
+Copiar código
+value={sub.playerInId.toString()}
+playerInId will be 0, which is fine if you do 0..toString() => "0". But if somehow the code sets it to undefined, React can’t do undefined.toString().
+
+How to Fix
+1. Safely convert to string
+If you want to allow for a “no selection” scenario, you could do:
+
+tsx
+Copiar código
+<Select
+  value={sub.playerInId ? sub.playerInId.toString() : ""}
+  onValueChange={(value) => {
+    const newSubs = [...substitutions];
+    newSubs[index].playerInId = parseInt(value) || 0;
+    setSubstitutions(newSubs);
+  }}
+>
+Or using the nullish coalescing operator:
+
+tsx
+Copiar código
+value={(sub.playerInId ?? 0).toString()}
+That ensures even if playerInId is undefined, you don’t immediately break.
+
+2. Make sure the API or DB always returns a valid ID
+In your useEffect, you do:
+
+ts
+Copiar código
+setSubstitutions(data.substitutions.map((sub: any) => ({
+  playerOutId: sub.playerOutId,
+  playerInId: sub.playerInId,
+  minute: sub.minute,
+  half: sub.half,
+})));
+Confirm playerOutId and playerInId are always at least 0 in your database.
+If the DB can return null, you need a default. For example:
+ts
+Copiar código
+playerOutId: sub.playerOutId ?? 0,
+playerInId: sub.playerInId ?? 0,
+3. Handle new, blank substitutions carefully
+When you do:
+
+ts
+Copiar código
+onClick={() => {
+  setSubstitutions([
+    ...substitutions,
+    { playerOutId: 0, playerInId: 0, minute: 0, half: 1 },
+  ]);
+}}
+You’re giving them default 0. That’s okay, as 0..toString() => "0". But if for some reason you have a path that sets playerOutId or playerInId to undefined, or the code references substitutions[index] that doesn’t exist, you can see this error.
+
+4. Defensive checks
+In your JSX where you render each substitution, you might do a quick fallback:
+
+tsx
+Copiar código
+value={sub.playerInId ? sub.playerInId.toString() : ""}
+This ensures you don’t attempt .toString() on undefined. You can do the same for playerOutId and minute.
+
+Summary
+To fix “Cannot read properties of undefined (reading 'toString')”:
+
+Identify which field is undefined in the sub object (usually playerInId or playerOutId).
+Default that field to 0 or "" in your state if it’s truly optional.
+Ensure your substitution objects from the API or the “Add Substitution” button are never populated with undefined for numeric fields. Use 0 or an empty string if you need a “not selected” state.
+Convert to string safely (with a conditional or ?? 0) so React doesn’t break when a field is undefined.
+Once the code no longer tries to call .toString() on undefined, the error should disappear.
