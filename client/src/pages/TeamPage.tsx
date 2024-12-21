@@ -460,7 +460,12 @@ export default function TeamPage() {
               <CardTitle>Next Match</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="p-4 border rounded-lg">
+              <div 
+                className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => {
+                  window.location.href = `/team/${parsedTeamId}/matches/${nextMatch.id}`;
+                }}
+              >
                 <div className="space-y-2">
                   <div className="font-semibold text-lg">{nextMatch.title}</div>
                   {nextMatch.description && (
@@ -532,20 +537,18 @@ export default function TeamPage() {
             events.map(event => (
               <div
                 key={event.id}
-                className="p-4 border rounded hover:bg-accent transition-colors"
-                onClick={handleEventClick}
+                className="p-4 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => {
+                  if (event.type === 'match') {
+                    window.location.href = `/team/${parsedTeamId}/matches/${event.id}`;
+                  }
+                }}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <TableCell>
-                      {event.type === 'match' ? (
-                        <Link to={`/team/${parsedTeamId}/matches/${event.id}`} className="text-primary hover:underline">
-                          {event.title}
-                        </Link>
-                      ) : (
-                        event.title
-                      )}
-                    </TableCell>
+                    <div className="font-medium">
+                      {event.title}
+                    </div>
                     {event.description && (
                       <div className="text-sm text-muted-foreground mt-1">{event.description}</div>
                     )}
