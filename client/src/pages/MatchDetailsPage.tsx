@@ -55,6 +55,12 @@ interface MatchDetails {
       number: number;
     };
   }>;
+  commentary?: Array<{
+    id: number;
+    minute: number;
+    content: string;
+    type: string;
+  }>;
 }
 
 const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
@@ -382,6 +388,39 @@ export default function MatchDetailsPage() {
           {/* Match Events */}
           <div className="space-y-6">
             <MatchEvents event={event} matchDetails={matchDetails} />
+            
+            {/* Commentary Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Match Commentary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {matchDetails.commentary?.length === 0 ? (
+                    <div className="text-center text-muted-foreground">
+                      No commentary available
+                    </div>
+                  ) : (
+                    matchDetails.commentary?.map((entry) => (
+                      <div key={entry.id} className="flex items-start gap-3 p-2 rounded-lg bg-accent/10">
+                        <div className="min-w-[3rem] text-sm font-semibold text-muted-foreground">
+                          {entry.minute}'
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm">{entry.content}</div>
+                          <div className="text-xs text-muted-foreground capitalize mt-1">
+                            {entry.type}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
