@@ -59,54 +59,132 @@ interface MatchDetails {
 
 const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
   const positions = {
-    GK: lineup.filter(p => p.position === 'GK'),
-    DEF: lineup.filter(p => p.position === 'DEF'),
+    FWD: lineup.filter(p => p.position === 'FWD'),
     MID: lineup.filter(p => p.position === 'MID'),
-    FWD: lineup.filter(p => p.position === 'FWD')
+    DEF: lineup.filter(p => p.position === 'DEF'),
+    GK: lineup.filter(p => p.position === 'GK')
   };
 
   return (
-    <div className="flex flex-col space-y-8">
-      {Object.entries(positions).map(([position, players]) => (
-        <div key={position} className="flex flex-col items-center">
-          <h3 className="text-lg font-semibold text-muted-foreground mb-4">
-            {position === 'GK' ? 'Goalkeeper' :
-             position === 'DEF' ? 'Defenders' :
-             position === 'MID' ? 'Midfielders' :
-             'Forwards'}
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {players.map((player) => (
+    <div className="relative w-full max-w-2xl mx-auto aspect-[2/3] bg-[#005500]/90 rounded-lg p-4">
+      <div className="absolute inset-0 flex flex-col justify-between py-8">
+        {/* Forwards */}
+        <div className="flex justify-center gap-16 px-4">
+          {positions.FWD.map((player) => (
               <div 
                 key={player.id} 
-                className="flex flex-col items-center p-4 rounded-lg bg-accent/10 hover:bg-accent/20 transition-colors"
+                className="flex flex-col items-center p-2"
               >
-                {player.player?.photoUrl ? (
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 overflow-hidden">
+                <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+                  {player.player?.photoUrl ? (
                     <img 
                       src={player.player.photoUrl} 
                       alt={player.player?.name || 'Player'} 
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                    <ShirtIcon className="w-8 h-8 text-primary" />
-                  </div>
-                )}
+                  ) : (
+                    <ShirtIcon className="w-6 h-6 text-white" />
+                  )}
+                </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold">
+                  <div className="text-sm font-bold text-white">
                     #{player.player?.number || ''}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {player.player?.name || 'Unknown Player'}
+                  <div className="text-xs text-white/90">
+                    {player.player?.name?.split(' ')[0] || 'Unknown'}
                   </div>
                 </div>
               </div>
             ))}
-          </div>
         </div>
-      ))}
+        {/* Midfielders */}
+        <div className="flex justify-center gap-12 px-4">
+          {positions.MID.map((player) => (
+            <div 
+              key={player.id} 
+              className="flex flex-col items-center p-2"
+            >
+              <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+                {player.player?.photoUrl ? (
+                  <img 
+                    src={player.player.photoUrl} 
+                    alt={player.player?.name || 'Player'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ShirtIcon className="w-6 h-6 text-white" />
+                )}
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-bold text-white">
+                  #{player.player?.number || ''}
+                </div>
+                <div className="text-xs text-white/90">
+                  {player.player?.name?.split(' ')[0] || 'Unknown'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Defenders */}
+        <div className="flex justify-center gap-8 px-4">
+          {positions.DEF.map((player) => (
+            <div 
+              key={player.id} 
+              className="flex flex-col items-center p-2"
+            >
+              <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+                {player.player?.photoUrl ? (
+                  <img 
+                    src={player.player.photoUrl} 
+                    alt={player.player?.name || 'Player'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ShirtIcon className="w-6 h-6 text-white" />
+                )}
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-bold text-white">
+                  #{player.player?.number || ''}
+                </div>
+                <div className="text-xs text-white/90">
+                  {player.player?.name?.split(' ')[0] || 'Unknown'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Goalkeeper */}
+        <div className="flex justify-center px-4">
+          {positions.GK.map((player) => (
+            <div 
+              key={player.id} 
+              className="flex flex-col items-center p-2"
+            >
+              <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+                {player.player?.photoUrl ? (
+                  <img 
+                    src={player.player.photoUrl} 
+                    alt={player.player?.name || 'Player'} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ShirtIcon className="w-6 h-6 text-white" />
+                )}
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-bold text-white">
+                  #{player.player?.number || ''}
+                </div>
+                <div className="text-xs text-white/90">
+                  {player.player?.name?.split(' ')[0] || 'Unknown'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
