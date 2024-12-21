@@ -66,8 +66,8 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
   };
 
   return (
-    <div className="relative w-full aspect-[2/3] bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
-      <div className="absolute inset-0 flex flex-col justify-between py-4">
+    <div className="relative w-full aspect-[2/3] p-2">
+      <div className="h-full flex flex-col justify-between py-2">
         {/* Forwards */}
         <div className="flex justify-center gap-16 px-4">
           {positions.FWD.map((player) => (
@@ -102,9 +102,9 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
           {positions.MID.map((player) => (
             <div 
               key={player.id} 
-              className="flex flex-col items-center p-2"
+              className="flex flex-col items-center p-1"
             >
-              <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+              <div className="w-7 h-7 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
                     src={player.player.photoUrl} 
@@ -131,9 +131,9 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
           {positions.DEF.map((player) => (
             <div 
               key={player.id} 
-              className="flex flex-col items-center p-2"
+              className="flex flex-col items-center p-1"
             >
-              <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+              <div className="w-7 h-7 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
                     src={player.player.photoUrl} 
@@ -160,9 +160,9 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
           {positions.GK.map((player) => (
             <div 
               key={player.id} 
-              className="flex flex-col items-center p-2"
+              className="flex flex-col items-center p-1"
             >
-              <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+              <div className="w-7 h-7 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
                     src={player.player.photoUrl} 
