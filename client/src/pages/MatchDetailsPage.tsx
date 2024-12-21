@@ -78,9 +78,19 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 key={player.id} 
                 className="flex flex-col items-center p-4 rounded-lg bg-accent/10 hover:bg-accent/20 transition-colors"
               >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  <ShirtIcon className="w-8 h-8 text-primary" />
-                </div>
+                {player.player?.photoUrl ? (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 overflow-hidden">
+                    <img 
+                      src={player.player.photoUrl} 
+                      alt={player.player?.name || 'Player'} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                    <ShirtIcon className="w-8 h-8 text-primary" />
+                  </div>
+                )}
                 <div className="text-center">
                   <div className="text-xl font-semibold">
                     #{player.player?.number || ''}
