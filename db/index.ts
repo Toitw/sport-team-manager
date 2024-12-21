@@ -1,8 +1,9 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { sql } from "drizzle-orm";
 import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { neon } from '@neondatabase/serverless';
+import { neon, neonConfig } from '@neondatabase/serverless';
 import * as schema from "@db/schema";
+import WebSocket from 'ws';
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -14,19 +15,33 @@ console.log('Initializing database connection...');
 let db: NeonDatabase<typeof schema>;
 
 try {
-  // Create the neon SQL connection with pooling
-  const sqlConnection = neon(process.env.DATABASE_URL, {
-    poolSize: 1,
-    connectionTimeoutMillis: 5000,
-  });
+  // Configure neon for websocket connections
+  neonConfig.fetchConnectionCache = true;
+  neonConfig.webSocketConstructor = WebSocket;
 
-  // Initialize drizzle with the neon connection and schema
-  db = drizzle(sqlConnection, { schema });
+  // Create the SQL connection with proper typing
+  const sql = neon<any>(process.env.DATABASE_URL);
 
-  // Test the connection with a simple query
-  console.log('Testing database connection...');
-  await sqlConnection`SELECT 1`;
-  console.log('Database connection established successfully');
+  // Initialize drizzle with the SQL connection
+  db = drizzle(sql, { schema }) as NeonDatabase<typeof schema>;
+
+  // Test the connection
+  const testConnection = async () => {
+    try {
+      console.log('Testing database connection...');
+      const result = await sql`SELECT 1 as test`;
+      if (result[0]?.test === 1) {
+        console.log('Database connection established successfully');
+      }
+    } catch (error) {
+      console.error('Database connection test failed:', error);
+      throw error;
+    }
+  };
+
+  // Execute test connection
+  testConnection();
+
 } catch (error) {
   console.error('Failed to initialize database:', error);
   throw error;
