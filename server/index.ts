@@ -14,11 +14,32 @@ function log(message: string) {
   console.log(`${formattedTime} [express] ${message}`);
 }
 
+async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolean> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      log(`Attempting database connection (attempt ${i + 1}/${retries})...`);
+      await db.execute(sql`SELECT NOW()`);
+      log('Database connection successful!');
+      return true;
+    } catch (error) {
+      log(`Database connection attempt ${i + 1} failed: ${error}`);
+      if (i < retries - 1) {
+        log(`Retrying in ${delay/1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  return false;
+}
+
 async function startServer() {
   try {
-    // Initialize database connection first
+    // Initialize database connection first with retries
     log('Initializing database connection...');
-    await db.execute(sql`SELECT 1`);
+    const isConnected = await testDatabaseConnection();
+    if (!isConnected) {
+      throw new Error('Failed to establish database connection after multiple attempts');
+    }
     log('Database connection established successfully');
 
     // Initialize express app
