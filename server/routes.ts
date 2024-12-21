@@ -162,6 +162,50 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Player Statistics
+  app.get("/api/players/:playerId/stats", requireAuth, async (req, res) => {
+    try {
+      const playerId = parseInt(req.params.playerId);
+
+      // Get goals
+      const goals = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(matchScorers)
+        .where(eq(matchScorers.playerId, playerId));
+
+      // Get yellow cards
+      const yellowCards = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(matchCards)
+        .where(
+          and(
+            eq(matchCards.playerId, playerId),
+            eq(matchCards.cardType, 'yellow')
+          )
+        );
+
+      // Get red cards
+      const redCards = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(matchCards)
+        .where(
+          and(
+            eq(matchCards.playerId, playerId),
+            eq(matchCards.cardType, 'red')
+          )
+        );
+
+      res.json({
+        goals: goals[0].count || 0,
+        yellowCards: yellowCards[0].count || 0,
+        redCards: redCards[0].count || 0
+      });
+    } catch (error: any) {
+      console.error('Error fetching player stats:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch player statistics" });
+    }
+  });
+
   // Events
   app.get("/api/teams/:teamId/events", requireAuth, async (req, res) => {
     const teamEvents = await db.select().from(events)

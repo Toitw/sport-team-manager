@@ -62,6 +62,10 @@ export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfil
                 </div>
               </dl>
             </div>
+            <div>
+              <h3 className="font-semibold mb-2">Statistics</h3>
+              <PlayerStats playerId={player.id} />
+            </div>
           </div>
         </div>
       </DialogContent>
