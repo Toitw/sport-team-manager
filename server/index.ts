@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
-import { db, sql } from "../db";
+import { db, initializeDatabase, sql } from "../db";
 import type { QueryResult } from '@neondatabase/serverless';
 
 function log(message: string) {
@@ -19,12 +19,24 @@ async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolea
   for (let i = 0; i < retries; i++) {
     try {
       log(`Attempting database connection (attempt ${i + 1}/${retries})...`);
-      const result = await db.execute(sql`SELECT NOW()`) as QueryResult<{ now: Date }>;
+
+      // Wait for database initialization
+      const dbInstance = await initializeDatabase();
+
+      // Basic connectivity test
+      const result = await dbInstance.execute(sql`SELECT NOW()`) as QueryResult<{ now: Date }>;
       log('Database connection successful!');
       log(`Connection timestamp: ${result.rows[0]?.now}`);
+
       return true;
-    } catch (error) {
-      log(`Database connection attempt ${i + 1} failed: ${error}`);
+    } catch (error: any) {
+      const errorMessage = error.message || error.toString();
+      log(`Database connection attempt ${i + 1} failed: ${errorMessage}`);
+
+      if (error.code === 'ECONNRESET' || error.code === 'EPIPE') {
+        log('Connection was reset. This might be due to network issues or firewall settings.');
+      }
+
       if (i < retries - 1) {
         log(`Retrying in ${delay/1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -51,16 +63,6 @@ async function startServer() {
     // Basic middleware
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
-
-    // Logging middleware
-    app.use((req, res, next) => {
-      const start = Date.now();
-      res.on("finish", () => {
-        const duration = Date.now() - start;
-        log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-      });
-      next();
-    });
 
     // Register API routes
     log('Registering API routes...');
@@ -105,28 +107,10 @@ async function startServer() {
       });
     });
 
-    // Graceful shutdown handlers
-    const shutdown = () => {
-      server.close(() => {
-        log('Server shut down gracefully');
-        process.exit(0);
-      });
-    };
-
-    process.on('SIGTERM', () => {
-      log('Received SIGTERM signal');
-      shutdown();
-    });
-
-    process.on('SIGINT', () => {
-      log('Received SIGINT signal');
-      shutdown();
-    });
-
     return server;
   } catch (error) {
     log(`Failed to initialize server: ${error}`);
-    process.exit(1); // Exit if we can't start the server
+    process.exit(1);
   }
 }
 
