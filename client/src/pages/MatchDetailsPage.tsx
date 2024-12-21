@@ -66,8 +66,8 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
   };
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-[2/3] bg-[#005500]/90 rounded-lg p-4">
-      <div className="absolute inset-0 flex flex-col justify-between py-8">
+    <div className="relative w-full aspect-[2/3] bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
+      <div className="absolute inset-0 flex flex-col justify-between py-4">
         {/* Forwards */}
         <div className="flex justify-center gap-16 px-4">
           {positions.FWD.map((player) => (
@@ -75,7 +75,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 key={player.id} 
                 className="flex flex-col items-center p-2"
               >
-                <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+                <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
                   {player.player?.photoUrl ? (
                     <img 
                       src={player.player.photoUrl} 
@@ -104,7 +104,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
               key={player.id} 
               className="flex flex-col items-center p-2"
             >
-              <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+              <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
                     src={player.player.photoUrl} 
@@ -133,7 +133,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
               key={player.id} 
               className="flex flex-col items-center p-2"
             >
-              <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+              <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
                     src={player.player.photoUrl} 
@@ -162,7 +162,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
               key={player.id} 
               className="flex flex-col items-center p-2"
             >
-              <div className="w-12 h-12 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+              <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
                     src={player.player.photoUrl} 
@@ -363,21 +363,27 @@ export default function MatchDetailsPage() {
           </CardContent>
         </Card>
 
-        {/* Lineup Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShirtIcon className="w-5 h-5" />
-              Starting Lineup
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LineupGrid lineup={matchDetails.lineup} />
-          </CardContent>
-        </Card>
-
-        {/* Match Events (Scorers, Cards, Substitutions) */}
-        <MatchEvents event={event} matchDetails={matchDetails} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Lineup Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShirtIcon className="w-5 h-5" />
+                Starting Lineup
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-xs mx-auto">
+                <LineupGrid lineup={matchDetails.lineup} />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Match Events */}
+          <div className="space-y-6">
+            <MatchEvents event={event} matchDetails={matchDetails} />
+          </div>
+        </div>
       </div>
     </Layout>
   );
