@@ -1,6 +1,5 @@
 import * as React from "react";
-import { useParams } from "wouter";
-import { Link } from "@wouter/react";
+import { useParams, Link } from "wouter";
 
 // Hooks
 import { usePlayers } from "@/hooks/use-players";

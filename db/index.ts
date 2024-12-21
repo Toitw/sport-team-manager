@@ -20,19 +20,32 @@ try {
   neonConfig.useSecureWebSocket = true;
   neonConfig.pipelineConnect = false;
 
+  // Set up the WebSocket proxy with fallback port
+  const wsProxyPort = process.env.PGPORT || '5432';
+  neonConfig.wsProxy = (host) => {
+    console.log(`Creating WebSocket proxy for host: ${host} with port: ${wsProxyPort}`);
+    return `${host}:${wsProxyPort}`;
+  };
+
   // Parse and validate database URL
   const dbUrl = new URL(process.env.DATABASE_URL);
-  const host = dbUrl.hostname;
-  const port = dbUrl.port || "5432";
-  console.log('Database connection details:', { host, port });
+  console.log('Database connection details:', {
+    host: dbUrl.hostname,
+    port: dbUrl.port || wsProxyPort,
+    ssl: true
+  });
 
   // Initialize the connection pool with all necessary configurations
   const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
-    ssl: true,
-    max: 20, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
+    ssl: {
+      rejectUnauthorized: true,
+      requestCert: true
+    },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    allowExitOnIdle: true
   });
 
   console.log('Initializing Drizzle with pool...');
@@ -44,7 +57,7 @@ try {
       try {
         console.log(`Testing database connection (attempt ${i + 1}/${retries})...`);
 
-        // Test basic connectivity
+        // Basic connectivity test
         const result = await pool.query('SELECT NOW()');
         console.log('Basic connectivity test successful:', result.rows[0]);
 
@@ -52,21 +65,15 @@ try {
         const sslResult = await pool.query('SHOW ssl');
         console.log('SSL Status:', sslResult.rows[0]);
 
-        // Test schema access
-        const schemaResult = await pool.query(`
-          SELECT table_name 
-          FROM information_schema.tables 
-          WHERE table_schema = 'public'
-        `);
-        console.log('Available tables:', schemaResult.rows.map(row => row.table_name));
-
         // Test connection parameters
         const paramResult = await pool.query(`
           SELECT 
             current_database() as database,
             current_user as user,
             inet_server_addr() as server_addr,
-            inet_server_port() as server_port
+            inet_server_port() as server_port,
+            ssl_is_used() as using_ssl,
+            version() as version
         `);
         console.log('Connection parameters:', paramResult.rows[0]);
 
@@ -83,6 +90,15 @@ try {
     }
     return false;
   };
+
+  // Add event handlers for the pool
+  pool.on('connect', () => {
+    console.log('New client connected to the pool');
+  });
+
+  pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+  });
 
   // Test connection on startup
   testConnection()

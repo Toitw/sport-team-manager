@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
 import { db, sql } from "../db";
+import type { QueryResult } from '@neondatabase/serverless';
 
 function log(message: string) {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -18,9 +19,9 @@ async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolea
   for (let i = 0; i < retries; i++) {
     try {
       log(`Attempting database connection (attempt ${i + 1}/${retries})...`);
-      const result = await db.execute(sql`SELECT NOW()`);
+      const result = await db.execute(sql`SELECT NOW()`) as QueryResult<{ now: Date }>;
       log('Database connection successful!');
-      log(`Connection timestamp: ${result?.[0]?.now}`);
+      log(`Connection timestamp: ${result.rows[0]?.now}`);
       return true;
     } catch (error) {
       log(`Database connection attempt ${i + 1} failed: ${error}`);
