@@ -12,5 +12,7 @@ export const events = pgTable("events", {
   type: eventTypeEnum("type").notNull(),
   homeScore: integer("home_score"),
   awayScore: integer("away_score"),
+  opponent: text("opponent"),
+  location: text("location"),
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });

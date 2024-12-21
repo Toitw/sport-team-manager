@@ -22,5 +22,7 @@ export type Event = {
   type: "training" | "match" | "meeting";
   homeScore: number | null;
   awayScore: number | null;
+  opponent: string | null;
+  location: string | null;
   createdAt: string;
 };
