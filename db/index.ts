@@ -26,16 +26,6 @@ try {
   const port = dbUrl.port || "5432";
   console.log('Database connection details:', { host, port });
 
-  // Configure WebSocket proxy with proper URL handling
-  neonConfig.wsProxy = (host: string) => {
-    // Ensure we don't have protocol in the host
-    const cleanHost = host.replace(/^(wss?:\/\/)?/, '');
-    // Construct the WebSocket URL with the correct protocol
-    const wsUrl = `wss://${cleanHost}`;
-    console.log('WebSocket URL:', wsUrl);
-    return wsUrl;
-  };
-
   // Initialize the connection pool with all necessary configurations
   const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
@@ -53,8 +43,33 @@ try {
     for (let i = 0; i < retries; i++) {
       try {
         console.log(`Testing database connection (attempt ${i + 1}/${retries})...`);
+
+        // Test basic connectivity
         const result = await pool.query('SELECT NOW()');
-        console.log('Database connection successful:', result.rows[0]);
+        console.log('Basic connectivity test successful:', result.rows[0]);
+
+        // Test SSL status
+        const sslResult = await pool.query('SHOW ssl');
+        console.log('SSL Status:', sslResult.rows[0]);
+
+        // Test schema access
+        const schemaResult = await pool.query(`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public'
+        `);
+        console.log('Available tables:', schemaResult.rows.map(row => row.table_name));
+
+        // Test connection parameters
+        const paramResult = await pool.query(`
+          SELECT 
+            current_database() as database,
+            current_user as user,
+            inet_server_addr() as server_addr,
+            inet_server_port() as server_port
+        `);
+        console.log('Connection parameters:', paramResult.rows[0]);
+
         return true;
       } catch (error) {
         console.error(`Database connection attempt ${i + 1} failed:`, error);

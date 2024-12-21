@@ -18,8 +18,9 @@ async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolea
   for (let i = 0; i < retries; i++) {
     try {
       log(`Attempting database connection (attempt ${i + 1}/${retries})...`);
-      await db.execute(sql`SELECT NOW()`);
+      const result = await db.execute(sql`SELECT NOW()`);
       log('Database connection successful!');
+      log(`Connection timestamp: ${result?.[0]?.now}`);
       return true;
     } catch (error) {
       log(`Database connection attempt ${i + 1} failed: ${error}`);
@@ -55,9 +56,7 @@ async function startServer() {
       const start = Date.now();
       res.on("finish", () => {
         const duration = Date.now() - start;
-        if (req.path.startsWith("/api")) {
-          log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-        }
+        log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
       });
       next();
     });
@@ -71,9 +70,16 @@ async function startServer() {
     const server = createServer(app);
 
     if (process.env.NODE_ENV === "development") {
-      await setupVite(app, server);
+      try {
+        await setupVite(app, server);
+        log('Vite middleware setup completed');
+      } catch (error) {
+        log(`Failed to setup Vite middleware: ${error}`);
+        throw error;
+      }
     } else {
       serveStatic(app);
+      log('Static serving setup completed');
     }
 
     // Error handling middleware
@@ -86,8 +92,16 @@ async function startServer() {
 
     // Start server
     const port = 3000;
-    server.listen(port, "0.0.0.0", () => {
-      log(`Server started successfully on port ${port}`);
+    await new Promise<void>((resolve, reject) => {
+      server.listen(port, "0.0.0.0", () => {
+        log(`Server started successfully on port ${port}`);
+        resolve();
+      });
+
+      server.on('error', (error: any) => {
+        log(`Failed to start server: ${error}`);
+        reject(error);
+      });
     });
 
     // Graceful shutdown handlers
