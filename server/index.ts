@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
+import { db, sql } from "../db";
 
 function log(message: string) {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -15,6 +16,11 @@ function log(message: string) {
 
 async function startServer() {
   try {
+    // Initialize database connection first
+    log('Initializing database connection...');
+    await db.execute(sql`SELECT 1`);
+    log('Database connection established successfully');
+
     // Initialize express app
     log('Initializing express application...');
     const app = express();
@@ -26,31 +32,16 @@ async function startServer() {
     // Logging middleware
     app.use((req, res, next) => {
       const start = Date.now();
-      const path = req.path;
-      let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-      // Capture JSON responses for logging
-      const originalResJson = res.json;
-      res.json = function (bodyJson, ...args) {
-        capturedJsonResponse = bodyJson;
-        return originalResJson.apply(res, [bodyJson, ...args]);
-      };
-
       res.on("finish", () => {
         const duration = Date.now() - start;
-        if (path.startsWith("/api")) {
-          let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-          if (capturedJsonResponse) {
-            logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-          }
-          log(logLine);
+        if (req.path.startsWith("/api")) {
+          log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
         }
       });
-
       next();
     });
 
-    // Register API routes before error handling
+    // Register API routes
     log('Registering API routes...');
     await registerRoutes(app);
 
@@ -64,7 +55,7 @@ async function startServer() {
       serveStatic(app);
     }
 
-    // Error handling middleware must be after all other middleware and routes
+    // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -74,13 +65,8 @@ async function startServer() {
 
     // Start server
     const port = 3000;
-    await new Promise<void>((resolve) => {
-      server.listen(port, "0.0.0.0", () => {
-        const address = server.address();
-        const actualPort = typeof address === 'object' && address ? address.port : port;
-        log(`Server started successfully on port ${actualPort}`);
-        resolve();
-      });
+    server.listen(port, "0.0.0.0", () => {
+      log(`Server started successfully on port ${port}`);
     });
 
     // Graceful shutdown handlers
@@ -101,13 +87,14 @@ async function startServer() {
       shutdown();
     });
 
+    return server;
   } catch (error) {
     log(`Failed to initialize server: ${error}`);
-    throw error;
+    process.exit(1); // Exit if we can't start the server
   }
 }
 
-// Start the server with better error handling
+// Start the server
 startServer().catch((error) => {
   log(`Server startup failed: ${error}`);
   process.exit(1);
