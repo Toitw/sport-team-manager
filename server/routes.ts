@@ -168,15 +168,10 @@ export function registerRoutes(app: Express) {
       const playerId = parseInt(req.params.playerId);
 
       // Get games played and calculate minutes
-      const games = await db
-        .select({ count: sql<number>`count(DISTINCT ${matchLineups.matchId})` })
-        .from(matchLineups)
-        .where(eq(matchLineups.playerId, playerId));
-
       // Get all matches where player was involved (either as starter or substitute)
       const matchesPlayed = await db
         .select({
-          matchId: matchLineups.matchId,
+          matchId: sql<number>`COALESCE(${matchLineups.matchId}, ${matchSubstitutions.matchId})`,
           // When they started and got subbed out
           subOutMinute: sql<number>`CASE 
             WHEN ${matchSubstitutions.playerOutId} = ${playerId} 
@@ -188,10 +183,15 @@ export function registerRoutes(app: Express) {
             WHEN ${matchSubstitutions.playerInId} = ${playerId} 
             THEN ${matchSubstitutions.minute}
             ELSE NULL 
+          END`,
+          isStarter: sql<boolean>`CASE 
+            WHEN ${matchLineups.playerId} IS NOT NULL 
+            THEN true 
+            ELSE false 
           END`
         })
         .from(matchLineups)
-        .fullOuterJoin(
+        .leftJoin(
           matchSubstitutions,
           and(
             eq(matchSubstitutions.matchId, matchLineups.matchId),
@@ -201,11 +201,24 @@ export function registerRoutes(app: Express) {
             )
           )
         )
-        .where(
-          or(
-            eq(matchLineups.playerId, playerId),
-            eq(matchSubstitutions.playerInId, playerId)
-          )
+        .where(eq(matchLineups.playerId, playerId))
+        .union(
+          db.select({
+            matchId: matchSubstitutions.matchId,
+            subOutMinute: sql<number>`CASE 
+              WHEN ${matchSubstitutions.playerOutId} = ${playerId} 
+              THEN ${matchSubstitutions.minute}
+              ELSE NULL 
+            END`,
+            subInMinute: sql<number>`CASE 
+              WHEN ${matchSubstitutions.playerInId} = ${playerId} 
+              THEN ${matchSubstitutions.minute}
+              ELSE NULL 
+            END`,
+            isStarter: sql<boolean>`false`
+          })
+          .from(matchSubstitutions)
+          .where(eq(matchSubstitutions.playerInId, playerId))
         );
 
       let totalMinutes = 0;
