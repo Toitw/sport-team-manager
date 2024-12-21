@@ -270,7 +270,7 @@ export function registerRoutes(app: Express) {
         );
 
       res.json({
-        gamesPlayed: games[0].count || 0,
+        gamesPlayed: uniqueMatchIds.size,
         minutesPlayed: totalMinutes,
         goals: goals[0].count || 0,
         yellowCards: yellowCards[0].count || 0,
