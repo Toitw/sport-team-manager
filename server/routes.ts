@@ -167,6 +167,12 @@ export function registerRoutes(app: Express) {
     try {
       const playerId = parseInt(req.params.playerId);
 
+      // Get games played
+      const games = await db
+        .select({ count: sql<number>`count(DISTINCT ${matchLineups.matchId})` })
+        .from(matchLineups)
+        .where(eq(matchLineups.playerId, playerId));
+
       // Get goals
       const goals = await db
         .select({ count: sql<number>`count(*)` })
@@ -196,6 +202,7 @@ export function registerRoutes(app: Express) {
         );
 
       res.json({
+        gamesPlayed: games[0].count || 0,
         goals: goals[0].count || 0,
         yellowCards: yellowCards[0].count || 0,
         redCards: redCards[0].count || 0
