@@ -146,11 +146,41 @@ export default function TeamPage() {
   }
 
   // Render methods
+  const [sortBy, setSortBy] = React.useState<'number' | 'name' | 'position'>('number');
+
+  const getSortedPlayers = () => {
+    if (!players) return [];
+    return [...players].sort((a, b) => {
+      if (sortBy === 'number') {
+        return a.number - b.number;
+      }
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      // Position order: GK -> DEF -> MID -> FWD
+      const posOrder = { GK: 1, DEF: 2, MID: 3, FWD: 4 };
+      return (posOrder[a.position as keyof typeof posOrder] || 0) - 
+             (posOrder[b.position as keyof typeof posOrder] || 0);
+    });
+  };
+
   const renderPlayers = () => (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Players</CardTitle>
-        {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
+        <div className="flex items-center gap-4">
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="number">Sort by Number</SelectItem>
+              <SelectItem value="name">Sort by Name</SelectItem>
+              <SelectItem value="position">Sort by Position</SelectItem>
+            </SelectContent>
+          </Select>
+          {canManageTeam && <CreatePlayerDialog teamId={parsedTeamId} />}
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -164,14 +194,14 @@ export default function TeamPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {players.length === 0 ? (
+            {players?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={canManageTeam ? 5 : 4} className="text-center text-muted-foreground">
                   No players added yet
                 </TableCell>
               </TableRow>
             ) : (
-              players.map(player => (
+              getSortedPlayers().map(player => (
                 <TableRow
                   key={player.id}
                   className="cursor-pointer hover:bg-accent/50"
