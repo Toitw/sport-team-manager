@@ -15,6 +15,7 @@ interface MatchDetails {
     player?: {
       name: string;
       number: number;
+      photoUrl?: string;
     };
   }>;
   scorers: Array<{
@@ -25,6 +26,7 @@ interface MatchDetails {
     player?: {
       name: string;
       number: number;
+      photoUrl?: string;
     };
   }>;
   cards: Array<{
@@ -36,6 +38,7 @@ interface MatchDetails {
     player?: {
       name: string;
       number: number;
+      photoUrl?: string;
     };
   }>;
   substitutions: Array<{
