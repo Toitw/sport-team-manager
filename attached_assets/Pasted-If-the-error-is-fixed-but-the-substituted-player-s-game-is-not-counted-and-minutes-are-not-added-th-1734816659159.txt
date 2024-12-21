@@ -1,0 +1,79 @@
+If the error is fixed but the substituted player’s game is not counted and minutes are not added, that points to a logic issue in how you’re calculating or storing minutes. Essentially, your current code (server-side or client-side) is probably ignoring players who are subbed in or subbed out.
+
+Below are the most common reasons this happens, along with how to fix them:
+
+1. The Minutes Calculation Logic Ignores Subs
+Typically, you have something like:
+
+Starter: from minute 0 until sub-out minute or until the match ends.
+Subbed-In Player: from sub-in minute until sub-out or match end.
+Subbed-Out Player: from start or sub-in minute until sub-out minute.
+Example of Proper Logic for 90-Minute Match
+Starter, no sub out: 0 → 90 minutes.
+Starter, sub out at minute 60: 0 → 60 minutes.
+Subbed in at minute 60, no sub out: 60 → 90 minutes. (30 minutes total)
+Subbed out after sub in is more complex. E.g., subbed in at minute 30, subbed out at minute 70 → 40 minutes total (30→70).
+If your code currently only counts “starters” or only uses isStarter to decide minutes, it won’t see players who start on the bench. You need explicit logic for both starters and bench players.
+
+2. You’re Not Counting the Game If the Player Didn’t Start
+Sometimes the code checks something like:
+
+js
+Copiar código
+if (player.isStarter) {
+  minutesPlayed = ...
+  appearances++
+}
+…and does nothing if isStarter is false. This will cause bench players never to appear in the stats. Make sure your logic increments “games played” for any player who sets foot on the field (i.e., subbed in).
+
+3. The Substitutions Aren’t Reflected in the Database (or Client) When Calculating
+If you’re storing the minutes or the “in/out” times in the DB but never updating them for substituted players, the calculation will see the player as “did not play.” Make sure:
+
+After you save the substitutions, your code that calculates minutes is using the updated data from /api/matches/:matchId/details or wherever you’re storing them.
+
+If you do something like “player.wasInLineup = false unless isStarter,” you must also set “true” for any subbed-in players.
+
+4. The Final Logic to Sum Up the Player’s Minutes Is Missing the Subbed-In Window
+In your server (or client code) that aggregates minutes, do something like:
+
+js
+Copiar código
+function calculateMinutesPlayed(lineup, substitutions, matchLength = 90) {
+  // For each player in lineup or subs, figure out their "in" minute and "out" minute
+  // Then sum (outMinute - inMinute)
+}
+If a player is subbed in at minute 30, their inMinute = 30.
+If they never get subbed out, outMinute = 90.
+If they do get subbed out at 75, outMinute = 75.
+Be sure you handle “starter => subbed out => subbed in again” if your rules allow it, or at least assume it can’t happen.
+
+5. Double-Check the Frontend vs. Backend Responsibility
+Do you calculate minutes in the frontend after loading all substitutions?
+- If so, ensure you iterate over both starters and bench.
+Do you rely on a server endpoint (/api/player/:id/stats or /api/matches/:matchId/details) to return the total minutes?
+- If so, ensure the server code sees subbed-in players.
+How to Fix It
+Identify where you calculate total minutes played. It might be on the server or in a React hook.
+Update that logic to handle subbed-in players:
+js
+Copiar código
+// Pseudocode example
+if (player.isStarter) {
+  inMinute = 0
+  outMinute = getSubOutMinuteOrMatchEnd(match, player) // e.g., 60 or 90
+} else if (wasSubbedIn(match, player)) {
+  inMinute = getSubInMinute(match, player) // e.g., 60
+  outMinute = getSubOutMinuteOrMatchEnd(match, player) // e.g., 90
+}
+
+minutesPlayed = outMinute - inMinute
+if (minutesPlayed > 0) {
+  gamesPlayed++
+}
+Check if the DB or your code is ignoring sub players (like a WHERE isStarter = true) or if you only store minutesPlayed for starters.
+Confirm that your “substitutions” array is saved and reloaded next time you view the player details. Possibly you show updated substitutions in the UI, but the code that calculates minutes still references old data.
+Summary
+The immediate JS error is gone, so you’ve fixed the .toString() crash.
+Now it’s strictly a logic problem: you must incorporate subbed-in/subbed-out logic into your minutes calculation.
+Ensure the code or DB queries that produce “games played” and “minutes played” doesn’t skip bench appearances.
+If you share the code that actually counts or calculates minutes for each player, we can suggest a more precise fix. But generally, you need to treat subs as actual participants in the match for the minutes to be added.
