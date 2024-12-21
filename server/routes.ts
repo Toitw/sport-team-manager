@@ -656,4 +656,23 @@ export function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message || "Failed to add match commentary" });
     }
   });
+
+  // Get specific match details
+  app.get("/api/teams/:teamId/events/:eventId", requireAuth, async (req, res) => {
+    try {
+      const event = await db.select()
+        .from(events)
+        .where(eq(events.id, parseInt(req.params.eventId)))
+        .limit(1);
+
+      if (!event.length) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      res.json(event[0]);
+    } catch (error: any) {
+      console.error('Error fetching event:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch event" });
+    }
+  });
 }

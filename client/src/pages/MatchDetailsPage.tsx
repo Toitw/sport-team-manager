@@ -1,9 +1,9 @@
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "../components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Layout } from "../components/Layout";
-import { Separator } from "../components/ui/separator";
+import { Layout } from "@/components/Layout";
+import { ArrowDownIcon, ArrowUpIcon, ShirtIcon, Timer } from "lucide-react";
 
 interface MatchDetails {
   lineup: Array<{
@@ -59,6 +59,39 @@ interface MatchDetails {
   }>;
 }
 
+const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
+  // Group players by position
+  const positions = {
+    GK: lineup.filter(p => p.position === 'GK'),
+    DEF: lineup.filter(p => p.position === 'DEF'),
+    MID: lineup.filter(p => p.position === 'MID'),
+    FWD: lineup.filter(p => p.position === 'FWD')
+  };
+
+  return (
+    <div className="grid grid-cols-1 gap-8 py-4">
+      {Object.entries(positions).map(([position, players]) => (
+        <div key={position} className="flex flex-col items-center gap-4">
+          <h4 className="text-sm font-semibold text-muted-foreground">{position}</h4>
+          <div className="flex justify-center gap-8 flex-wrap">
+            {players.map((player) => (
+              <div key={player.id} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ShirtIcon className="w-6 h-6 text-primary" />
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-medium">#{player.player?.number}</div>
+                  <div className="text-sm text-muted-foreground">{player.player?.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function MatchDetailsPage() {
   const { teamId, matchId } = useParams();
 
@@ -80,113 +113,117 @@ export default function MatchDetailsPage() {
     }
   });
 
-  if (eventLoading || detailsLoading) return <div>Loading...</div>;
-  if (!event || !matchDetails) return <div>Match not found</div>;
+  if (eventLoading || detailsLoading) {
+    return (
+      <Layout teamId={teamId}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-pulse">Loading match details...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!event || !matchDetails) {
+    return (
+      <Layout teamId={teamId}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-destructive">Failed to load match details</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const isPastMatch = new Date(event.startDate) < new Date();
 
   return (
     <Layout teamId={teamId}>
       <div className="container mx-auto p-4 space-y-6">
-        <h1 className="text-2xl font-bold mb-4">{event.title}</h1>
-
-        {/* Match Overview */}
-        <Card className="p-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Date</p>
-              <p>{format(new Date(event.startDate), 'PPP')}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Score</p>
-              <p className="text-xl font-bold">{event.homeScore ?? 0} - {event.awayScore ?? 0}</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Starting Lineup */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-4">Starting Lineup</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {matchDetails.lineup.map((player) => (
-              <div key={player.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-                <span className="text-sm font-medium">{player.position}</span>
-                <span className="text-sm">
-                  #{player.player?.number} - {player.player?.name || `Player ${player.playerId}`}
-                </span>
+        {/* Match Header */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4">
+              <h1 className="text-3xl font-bold text-center">{event.title}</h1>
+              <div className="text-lg text-muted-foreground">
+                {format(new Date(event.startDate), 'PPP')}
               </div>
-            ))}
-          </div>
+              {isPastMatch && (
+                <div className="text-4xl font-bold text-primary">
+                  {event.homeScore ?? 0} - {event.awayScore ?? 0}
+                </div>
+              )}
+            </div>
+          </CardContent>
         </Card>
 
-        {/* Scorers */}
-        {matchDetails.scorers.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">Scorers</h3>
-            <div className="space-y-2">
-              {matchDetails.scorers.map((scorer) => (
-                <div key={scorer.id} className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">{scorer.minute}'</span>
-                  <span className="text-sm">
-                    {scorer.player?.name || `Player ${scorer.playerId}`}
-                    {scorer.eventType !== 'goal' && ` (${scorer.eventType.replace('_', ' ')})`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+        {/* Lineup Section */}
+        <Card>
+          <CardContent className="pt-6">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+              <ShirtIcon className="w-6 h-6" />
+              Starting Lineup
+            </h2>
+            <LineupGrid lineup={matchDetails.lineup} />
+          </CardContent>
+        </Card>
 
-        {/* Cards */}
-        {matchDetails.cards.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">Cards</h3>
-            <div className="space-y-2">
-              {matchDetails.cards.map((card) => (
-                <div key={card.id} className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">{card.minute}'</span>
-                  <div className={`w-3 h-3 rounded-sm ${card.cardType === 'yellow' ? 'bg-yellow-400' : 'bg-red-500'}`} />
-                  <span className="text-sm">
-                    {card.player?.name || `Player ${card.playerId}`}
-                    {card.reason && ` - ${card.reason}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Substitutions */}
-        {matchDetails.substitutions.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">Substitutions</h3>
-            <div className="space-y-2">
-              {matchDetails.substitutions.map((sub) => (
-                <div key={sub.id} className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">{sub.minute}'</span>
-                  <span className="text-sm">
-                    ↑ {sub.playerIn?.name || `Player ${sub.playerInId}`}
-                    <Separator className="mx-2" orientation="vertical" />
-                    ↓ {sub.playerOut?.name || `Player ${sub.playerOutId}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Commentary */}
-        {matchDetails.commentary.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">Match Commentary</h3>
-            <div className="space-y-4">
-              {matchDetails.commentary.map((comment) => (
-                <div key={comment.id} className="flex gap-4">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">{comment.minute}'</span>
-                  <p className={`text-sm ${comment.type === 'highlight' ? 'font-medium' : ''}`}>
-                    {comment.content}
-                  </p>
-                </div>
-              ))}
-            </div>
+        {isPastMatch && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Timer className="w-6 h-6" />
+                Match Events
+              </h2>
+              <div className="space-y-4">
+                {[
+                  ...matchDetails.scorers.map(s => ({
+                    minute: s.minute,
+                    type: 'goal',
+                    content: (
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">⚽</span>
+                        <span>
+                          {s.player?.name}
+                          {s.eventType !== 'goal' && ` (${s.eventType.replace('_', ' ')})`}
+                        </span>
+                      </div>
+                    )
+                  })),
+                  ...matchDetails.cards.map(c => ({
+                    minute: c.minute,
+                    type: 'card',
+                    content: (
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-4 rounded-sm ${c.cardType === 'yellow' ? 'bg-yellow-400' : 'bg-red-500'}`} />
+                        <span>{c.player?.name}{c.reason && ` - ${c.reason}`}</span>
+                      </div>
+                    )
+                  })),
+                  ...matchDetails.substitutions.map(s => ({
+                    minute: s.minute,
+                    type: 'substitution',
+                    content: (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-green-500">
+                          <ArrowUpIcon className="w-4 h-4" />
+                          <span>{s.playerIn?.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-red-500">
+                          <ArrowDownIcon className="w-4 h-4" />
+                          <span>{s.playerOut?.name}</span>
+                        </div>
+                      </div>
+                    )
+                  }))
+                ].sort((a, b) => a.minute - b.minute).map((event, idx) => (
+                  <div key={idx} className="flex items-start gap-4">
+                    <div className="min-w-[40px] text-sm font-medium text-muted-foreground">
+                      {event.minute}'
+                    </div>
+                    {event.content}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
         )}
       </div>
