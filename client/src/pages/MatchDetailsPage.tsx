@@ -75,7 +75,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 key={player.id} 
                 className="flex flex-col items-center p-2"
               >
-                <div className="w-8 h-8 rounded-md bg-black/50 flex items-center justify-center mb-1 overflow-hidden">
+                <div className="w-8 h-8 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                   {player.player?.photoUrl ? (
                     <img 
                       src={player.player.photoUrl} 
@@ -83,14 +83,14 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <ShirtIcon className="w-6 h-6 text-white" />
+                    <ShirtIcon className="w-6 h-6 text-foreground" />
                   )}
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-white">
+                  <div className="text-sm font-bold text-foreground">
                     #{player.player?.number || ''}
                   </div>
-                  <div className="text-xs text-white/90">
+                  <div className="text-xs text-muted-foreground">
                     {player.player?.name?.split(' ')[0] || 'Unknown'}
                   </div>
                 </div>
@@ -112,7 +112,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ShirtIcon className="w-6 h-6 text-white" />
+                  <ShirtIcon className="w-6 h-6 text-foreground" />
                 )}
               </div>
               <div className="text-center">
@@ -141,7 +141,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ShirtIcon className="w-6 h-6 text-white" />
+                  <ShirtIcon className="w-6 h-6 text-foreground" />
                 )}
               </div>
               <div className="text-center">
@@ -170,7 +170,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ShirtIcon className="w-6 h-6 text-white" />
+                  <ShirtIcon className="w-6 h-6 text-foreground" />
                 )}
               </div>
               <div className="text-center">
