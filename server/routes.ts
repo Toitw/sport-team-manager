@@ -470,7 +470,8 @@ export function registerRoutes(app: Express) {
           playerOutId: matchSubstitutions.playerOutId,
           playerIn: {
             name: players.name,
-            number: players.number
+            number: players.number,
+            photoUrl: players.photoUrl
           }
         })
         .from(matchSubstitutions)
@@ -483,7 +484,8 @@ export function registerRoutes(app: Express) {
           const [playerOut] = await db
             .select({
               name: players.name,
-              number: players.number
+              number: players.number,
+              photoUrl: players.photoUrl
             })
             .from(players)
             .where(eq(players.id, sub.playerOutId));
