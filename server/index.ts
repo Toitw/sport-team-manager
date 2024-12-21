@@ -50,22 +50,21 @@ async function startServer() {
       next();
     });
 
-    // Register API routes
+    // Register API routes before error handling
     log('Registering API routes...');
-    registerRoutes(app);
-
-    // Create HTTP server
-    const server = createServer(app);
+    await registerRoutes(app);
 
     // Set up Vite or static serving
     log('Setting up Vite/static serving...');
-    if (app.get("env") === "development") {
+    const server = createServer(app);
+
+    if (process.env.NODE_ENV === "development") {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
 
-    // Error handling middleware
+    // Error handling middleware must be after all other middleware and routes
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -74,11 +73,14 @@ async function startServer() {
     });
 
     // Start server
-    const port = 3002;
-    server.listen(port, "0.0.0.0", () => {
-      const address = server.address();
-      const actualPort = typeof address === 'object' && address ? address.port : port;
-      log(`Server started successfully on port ${actualPort}`);
+    const port = 3000;
+    await new Promise<void>((resolve) => {
+      server.listen(port, "0.0.0.0", () => {
+        const address = server.address();
+        const actualPort = typeof address === 'object' && address ? address.port : port;
+        log(`Server started successfully on port ${actualPort}`);
+        resolve();
+      });
     });
 
     // Graceful shutdown handlers
@@ -105,7 +107,7 @@ async function startServer() {
   }
 }
 
-// Start the server
+// Start the server with better error handling
 startServer().catch((error) => {
   log(`Server startup failed: ${error}`);
   process.exit(1);

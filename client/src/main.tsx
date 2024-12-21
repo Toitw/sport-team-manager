@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import TeamPage from "./pages/TeamPage";
 import AdminPage from "./pages/AdminPage";
+import MatchDetailsPage from "./pages/MatchDetailsPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/admin">
         {user?.role === "admin" ? <AdminPage /> : <Redirect to="/" />}
       </Route>
+      <Route path="/team/:teamId/matches/:matchId" component={MatchDetailsPage} />
       <Route path="/team/:teamId/:section?" component={TeamPage} />
       <Route path="/team/:teamId" component={TeamPage} />
       <Route>404 Page Not Found</Route>
