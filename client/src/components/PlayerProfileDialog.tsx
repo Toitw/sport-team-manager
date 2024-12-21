@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { type Player } from "@db/schema";
+import { PlayerStats } from "./PlayerStats";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 

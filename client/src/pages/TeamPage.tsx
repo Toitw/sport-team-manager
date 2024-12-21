@@ -4,6 +4,7 @@ import { useParams, Link } from "wouter";
 // Hooks
 import { usePlayers } from "@/hooks/use-players";
 import { useEvents } from "@/hooks/use-events";
+import { type Event } from "@db/schema";
 import { useUser } from "@/hooks/use-user";
 import { useNews } from "@/hooks/use-news";
 
