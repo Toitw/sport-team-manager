@@ -273,12 +273,26 @@ export default function TeamPage() {
                         {format(new Date(match.startDate), "PPP p")}
                       </div>
                     </div>
-                    {canManageTeam && (
-                      <div className="flex items-center gap-2">
-                        <EditEventDialog event={match} teamId={parsedTeamId} />
-                        <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {canManageTeam && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedMatchId(match.id);
+                              setLineupDialogOpen(true);
+                            }}
+                          >
+                            Lineup
+                          </Button>
+                          <EditEventDialog event={match} teamId={parsedTeamId} />
+                          <DeleteEventDialog eventId={match.id} teamId={parsedTeamId} />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
