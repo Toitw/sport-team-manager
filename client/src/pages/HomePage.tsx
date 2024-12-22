@@ -18,7 +18,7 @@ export default function HomePage() {
     <Layout>
       <div className="container py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Welcome, {user?.username}</h1>
+          <h1 className="text-3xl font-bold">Welcome, {user?.email}</h1>
           <Button variant="outline" onClick={() => logout()}>Logout</Button>
         </div>
 

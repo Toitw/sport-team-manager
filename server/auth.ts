@@ -38,14 +38,44 @@ declare global {
 
 // Configure SendGrid with error handling
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-if (!SENDGRID_API_KEY || !SENDGRID_API_KEY.startsWith('SG.')) {
-  console.error('Invalid or missing SendGrid API key. Email functionality will not work.');
+let emailFunctionalityAvailable = false;
+
+if (!SENDGRID_API_KEY) {
+  console.warn('SendGrid API key is not set. Email functionality will be disabled.');
 } else {
-  sgMail.setApiKey(SENDGRID_API_KEY);
+  try {
+    sgMail.setApiKey(SENDGRID_API_KEY);
+    emailFunctionalityAvailable = true;
+    console.log('Email functionality is enabled.');
+  } catch (error) {
+    console.error('Error configuring SendGrid:', error);
+  }
 }
 
 // Set APP_URL for local development
-const APP_URL = process.env.APP_URL || 'http://localhost:3000';
+const APP_URL = 'http://localhost:3000';
+
+async function sendEmail(to: string, subject: string, text: string, html: string) {
+  if (!emailFunctionalityAvailable) {
+    console.warn('Attempted to send email but email functionality is disabled.');
+    return;
+  }
+
+  const msg = {
+    to,
+    from: 'noreply@sportsteammanager.com',
+    subject,
+    text,
+    html,
+  };
+
+  try {
+    await sgMail.send(msg);
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error('Failed to send email');
+  }
+}
 
 export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
@@ -83,7 +113,7 @@ export function setupAuth(app: Express) {
             return done(null, false, { message: "Incorrect email." });
           }
 
-          if (!user.emailVerified) {
+          if (!user.emailVerified && emailFunctionalityAvailable) {
             return done(null, false, { message: "Please verify your email first." });
           }
 
@@ -116,7 +146,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Register endpoint with email verification
+  // Register endpoint with optional email verification
   app.post("/api/register", async (req, res, next) => {
     try {
       const result = insertUserSchema.safeParse(req.body);
@@ -147,30 +177,35 @@ export function setupAuth(app: Express) {
           email,
           password: hashedPassword,
           role: role || "reader",
-          verificationToken,
-          emailVerified: false
+          verificationToken: emailFunctionalityAvailable ? verificationToken : null,
+          emailVerified: !emailFunctionalityAvailable // Auto-verify if email functionality is disabled
         })
         .returning();
 
-      // Send verification email using SendGrid
-      const verificationUrl = `${APP_URL}/verify-email?token=${verificationToken}`;
-      const msg = {
-        to: email,
-        from: 'noreply@sportsteammanager.com', // Replace with your verified sender
-        subject: 'Verify your email',
-        text: `Welcome to Sports Team Manager! Please verify your email by clicking: ${verificationUrl}`,
-        html: `
-          <h1>Welcome to Sports Team Manager!</h1>
-          <p>Please click the link below to verify your email address:</p>
-          <a href="${verificationUrl}">${verificationUrl}</a>
-          <p>This link will expire in 24 hours.</p>
-        `,
-      };
-
-      await sgMail.send(msg);
+      if (emailFunctionalityAvailable) {
+        try {
+          const verificationUrl = `${APP_URL}/verify-email?token=${verificationToken}`;
+          await sendEmail(
+            email,
+            'Verify your email',
+            `Welcome to Sports Team Manager! Please verify your email by clicking: ${verificationUrl}`,
+            `
+              <h1>Welcome to Sports Team Manager!</h1>
+              <p>Please click the link below to verify your email address:</p>
+              <a href="${verificationUrl}">${verificationUrl}</a>
+              <p>This link will expire in 24 hours.</p>
+            `
+          );
+        } catch (error) {
+          console.error('Failed to send verification email:', error);
+          // Continue with registration even if email fails
+        }
+      }
 
       res.json({
-        message: "Registration successful. Please check your email to verify your account.",
+        message: emailFunctionalityAvailable
+          ? "Registration successful. Please check your email to verify your account."
+          : "Registration successful. Email verification is currently disabled.",
         user: { id: newUser.id, email: newUser.email, role: newUser.role },
       });
     } catch (error) {
@@ -240,21 +275,18 @@ export function setupAuth(app: Express) {
         .where(eq(users.id, user.id));
 
       const resetUrl = `${APP_URL}/reset-password?token=${resetToken}`;
-      const msg = {
-        to: email,
-        from: 'noreply@sportsteammanager.com', // Replace with your verified sender
-        subject: 'Password Reset Request',
-        text: `You requested a password reset. Click this link to reset your password: ${resetUrl}`,
-        html: `
+      await sendEmail(
+        email,
+        'Password Reset Request',
+        `You requested a password reset. Click this link to reset your password: ${resetUrl}`,
+        `
           <h1>Password Reset Request</h1>
           <p>You requested a password reset. Click the link below to reset your password:</p>
           <a href="${resetUrl}">${resetUrl}</a>
           <p>This link will expire in 24 hours.</p>
           <p>If you didn't request this, please ignore this email.</p>
-        `,
-      };
-
-      await sgMail.send(msg);
+        `
+      );
 
       res.json({ message: "If your email is registered, you'll receive a password reset link." });
     } catch (error) {
@@ -350,7 +382,7 @@ export function setupAuth(app: Express) {
       const result = await db
         .select({
           id: users.id,
-          email: users.email, // Changed to email
+          email: users.email, 
           role: users.role,
         })
         .from(users);

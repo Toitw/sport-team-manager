@@ -21,7 +21,7 @@ import { useUser } from "../hooks/use-user";
 
 type User = {
   id: number;
-  username: string;
+  email: string;
   role: string;
 };
 
@@ -97,7 +97,7 @@ export default function AdminPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Username</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Current Role</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -118,7 +118,7 @@ export default function AdminPage() {
               ) : (
                 users.map((currentUser) => (
                   <TableRow key={currentUser.id}>
-                    <TableCell>{currentUser.username}</TableCell>
+                    <TableCell>{currentUser.email}</TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset">
                         {currentUser.role}
