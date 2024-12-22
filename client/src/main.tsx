@@ -1,3 +1,4 @@
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Router as WouterRouter, Switch, Route } from "wouter"; 
@@ -15,7 +16,18 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-function AppRouter(): JSX.Element {
+export default function App() {
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AppRouter />
+        <Toaster />
+      </QueryClientProvider>
+    </StrictMode>
+  );
+}
+
+function AppRouter() {
   const { user, isLoading, error } = useUser();
 
   if (isLoading) {
@@ -31,11 +43,9 @@ function AppRouter(): JSX.Element {
     return <AuthPage />;
   }
 
-  // For public routes that don't require authentication
   const publicRoutes = ["/auth", "/verify-email", "/reset-password"];
   const currentPath = window.location.pathname;
 
-  // Always allow access to public routes
   if (!user && !publicRoutes.some(route => currentPath.startsWith(route))) {
     window.location.href = "/auth";
     return null;
@@ -68,11 +78,4 @@ if (!rootElement) {
   throw new Error("Failed to find the root element");
 }
 
-createRoot(rootElement).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AppRouter />
-      <Toaster />
-    </QueryClientProvider>
-  </StrictMode>
-);
+createRoot(rootElement).render(<App />);
