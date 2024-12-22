@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "../client/dist");
   app.use(express.static(distPath));
-  app.use("*", (_req, res) => {
+  app.get("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

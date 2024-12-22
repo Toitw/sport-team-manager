@@ -18,7 +18,8 @@ export default defineConfig({
   root: 'client',
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    manifest: true
   },
   server: {
     host: '0.0.0.0',
