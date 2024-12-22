@@ -11,9 +11,13 @@ export default defineConfig({
   plugins: [react(), runtimeErrorModal()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './client/src'),
-      '@db': path.resolve(__dirname, './db')
+      '@': path.resolve(__dirname, 'client/src'),
+      '@db': path.resolve(__dirname, 'db')
     }
+  },
+  build: {
+    outDir: path.resolve(__dirname, 'dist'),
+    emptyOutDir: true
   },
   server: {
     host: '0.0.0.0',

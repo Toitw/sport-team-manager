@@ -15,7 +15,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-function AppRouter() {
+const AppRouter = () => {
   const { user, isLoading, error } = useUser();
 
   if (isLoading) {
