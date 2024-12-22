@@ -1,6 +1,6 @@
 import { useUser } from "../hooks/use-user";
 import { useTeams } from "../hooks/use-teams";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { CreateTeamDialog } from "../components/CreateTeamDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Layout } from "../components/Layout";
