@@ -89,7 +89,7 @@ export async function sendEmail({ to, subject, text, html }: SendEmailParams): P
 
 export function sendVerificationEmail(email: string, token: string) {
   console.log(`Preparing verification email for: ${email}`);
-  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.APP_URL || `https://${process.env.REPL_SLUG}.repl.co`;
   const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
   return sendEmail({
@@ -116,7 +116,7 @@ export function sendVerificationEmail(email: string, token: string) {
 
 export function sendPasswordResetEmail(email: string, token: string) {
   console.log(`Preparing password reset email for: ${email}`);
-  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.APP_URL || `https://${process.env.REPL_SLUG}.repl.co`;
   const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
   return sendEmail({
