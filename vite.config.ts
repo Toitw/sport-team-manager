@@ -16,10 +16,10 @@ export default defineConfig({
     themePlugin(),
   ],
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "client", "src"),
-      "@db": path.resolve(__dirname, "db"),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, 'client/src') },
+      { find: '@db', replacement: path.resolve(__dirname, 'db') }
+    ]
   },
   root: path.resolve(__dirname, "client"),
   build: {
