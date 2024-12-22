@@ -66,10 +66,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-type NextMatch = Event & {
-  type: "match";
-};
-
 export default function TeamPage() {
   // Route params
   const { teamId = "", section = "news" } = useParams();
@@ -85,14 +81,6 @@ export default function TeamPage() {
   const [cardsDialogOpen, setCardsDialogOpen] = React.useState(false);
   const [substitutionsDialogOpen, setSubstitutionsDialogOpen] = React.useState(false);
   const [commentaryDialogOpen, setCommentaryDialogOpen] = React.useState(false);
-
-  // Reset match selection when dialog closes
-  const handleLineupDialogChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      setSelectedMatchId(null);
-    }
-    setLineupDialogOpen(open);
-  }, []);
 
   // Reset states when teamId changes
   React.useEffect(() => {
@@ -125,10 +113,6 @@ export default function TeamPage() {
   const selectedPlayer = React.useMemo(() => players.find(p => p.id === selectedPlayerId), [players, selectedPlayerId]);
 
   // Callbacks
-  const handleEventClick = React.useCallback((e: React.MouseEvent) => {
-    // Removed preventDefault and stopPropagation
-  }, []);
-
   const handlePlayerClick = React.useCallback((playerId: number) => {
     setSelectedPlayerId(playerId);
   }, []);

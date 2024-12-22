@@ -15,10 +15,9 @@ interface ReservesDialogProps {
 export function ReservesDialog({ matchId, teamId, open, onOpenChange }: ReservesDialogProps) {
   const { players = [] } = usePlayers(teamId);
   const [reserves, setReserves] = React.useState<number[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
-    let mounted = true;
     if (open && matchId) {
       setIsLoading(true);
       fetch(`/api/matches/${matchId}/details`)
