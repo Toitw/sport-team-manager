@@ -8,7 +8,7 @@ import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email";
+import { sendVerificationEmail, sendPasswordResetEmail, sendEmail } from "./services/email";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -306,6 +306,7 @@ export function setupAuth(app: Express) {
     }
     res.status(401).send("Not logged in");
   });
+
   // Get all users (admin only)
   app.get("/api/users", async (req, res) => {
     if (!req.isAuthenticated() || req.user?.role !== "admin") {
@@ -315,7 +316,7 @@ export function setupAuth(app: Express) {
       const result = await db
         .select({
           id: users.id,
-          email: users.email, 
+          email: users.email,
           role: users.role,
         })
         .from(users);
@@ -354,6 +355,31 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).send("Internal server error");
+    }
+  });
+
+  // Test endpoint for email functionality (temporary, remove in production)
+  app.post("/api/test-email", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== "admin") {
+      return res.status(403).send("Unauthorized");
+    }
+
+    try {
+      const result = await sendEmail({
+        to: req.user.email,
+        subject: "Test Email from Sports Team Manager",
+        text: "This is a test email to verify the SendGrid integration.",
+        html: "<h1>Test Email</h1><p>This is a test email to verify the SendGrid integration.</p>"
+      });
+
+      if (result.success) {
+        res.json({ message: "Test email sent successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to send test email", error: result.error });
+      }
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ message: "Error sending test email", error });
     }
   });
 }

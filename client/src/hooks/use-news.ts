@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { News, InsertNews } from "@db/schema";
+import type { Event } from "@db/types";
+
+type NextMatch = Event & {
+  type: "match";
+};
 
 export function useNews(teamId: number) {
   const queryClient = useQueryClient();
@@ -13,12 +18,13 @@ export function useNews(teamId: number) {
     }
   });
 
-  const { data: nextMatch, isLoading: isLoadingNextMatch } = useQuery<{ id: number } & Event>({
+  const { data: nextMatch, isLoading: isLoadingNextMatch } = useQuery<NextMatch | null>({
     queryKey: ['nextMatch', teamId],
     queryFn: async () => {
       const response = await fetch(`/api/teams/${teamId}/next-match`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch next match');
-      return response.json();
+      const data = await response.json();
+      return data.type === 'match' ? data as NextMatch : null;
     }
   });
 

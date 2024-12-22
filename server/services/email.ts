@@ -13,7 +13,14 @@ type SendEmailParams = {
   html?: string;
 };
 
-export async function sendEmail({ to, subject, text, html }: SendEmailParams) {
+type SendEmailResult = {
+  success: true;
+} | {
+  success: false;
+  error: unknown;
+};
+
+export async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<SendEmailResult> {
   try {
     await sgMail.send({
       to,
@@ -22,16 +29,22 @@ export async function sendEmail({ to, subject, text, html }: SendEmailParams) {
       text,
       html: html || text,
     });
+    console.log('Email sent successfully to:', to);
     return { success: true };
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return { success: false, error };
+  } catch (err: unknown) {
+    console.error("Error sending email:", err);
+    if (err && typeof err === 'object' && 'response' in err) {
+      // Log SendGrid's response for debugging
+      console.error('SendGrid error response:', (err as { response: { body: unknown } }).response.body);
+    }
+    return { success: false, error: err };
   }
 }
 
 export function sendVerificationEmail(email: string, token: string) {
-  const verificationLink = `${process.env.APP_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
-  
+  const baseUrl = process.env.APP_URL || 'http://0.0.0.0:3000';
+  const verificationLink = `${baseUrl}/verify-email?token=${token}`;
+
   return sendEmail({
     to: email,
     subject: "Verify your email address",
@@ -46,8 +59,9 @@ export function sendVerificationEmail(email: string, token: string) {
 }
 
 export function sendPasswordResetEmail(email: string, token: string) {
-  const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-  
+  const baseUrl = process.env.APP_URL || 'http://0.0.0.0:3000';
+  const resetLink = `${baseUrl}/reset-password?token=${token}`;
+
   return sendEmail({
     to: email,
     subject: "Reset your password",
@@ -57,7 +71,7 @@ export function sendPasswordResetEmail(email: string, token: string) {
       <p>You requested to reset your password. Click the link below to set a new password:</p>
       <p><a href="${resetLink}">Reset Password</a></p>
       <p>If you didn't request this, you can safely ignore this email.</p>
-      <p>This link will expire in 1 hour.</p>
+      <p>This link will expire in 24 hours.</p>
     `
   });
 }
