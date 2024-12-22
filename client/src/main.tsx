@@ -16,17 +16,6 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-export default function App() {
-  return (
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AppRouter />
-        <Toaster />
-      </QueryClientProvider>
-    </StrictMode>
-  );
-}
-
 function AppRouter() {
   const { user, isLoading, error } = useUser();
 
@@ -70,6 +59,17 @@ function AppRouter() {
         <Route>404 Page Not Found</Route>
       </Switch>
     </WouterRouter>
+  );
+}
+
+function App() {
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AppRouter />
+        <Toaster />
+      </QueryClientProvider>
+    </StrictMode>
   );
 }
 
