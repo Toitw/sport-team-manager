@@ -77,18 +77,17 @@ async function startServer() {
     log('Setting up Vite/static serving...');
     const server = createServer(app);
 
-    const isDev = process.env.NODE_ENV !== "production";
-    if (isDev) {
+    if (process.env.NODE_ENV === "development") {
       try {
         await setupVite(app, server);
-        log('Vite middleware setup completed (Development mode)');
+        log('Vite middleware setup completed');
       } catch (error) {
         log(`Failed to setup Vite middleware: ${error}`);
         throw error;
       }
     } else {
       serveStatic(app);
-      log('Static serving setup completed (Production mode)');
+      log('Static serving setup completed');
     }
 
     // Error handling middleware
