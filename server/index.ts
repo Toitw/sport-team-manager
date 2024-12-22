@@ -4,6 +4,7 @@ import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
 import { db, initializeDatabase, sql } from "../db";
 import type { QueryResult } from '@neondatabase/serverless';
+import { setupAuth } from "./auth";
 
 function log(message: string) {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -63,6 +64,10 @@ async function startServer() {
     // Basic middleware
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
+
+    // Set up authentication
+    log('Setting up authentication...');
+    setupAuth(app);
 
     // Register API routes
     log('Registering API routes...');
