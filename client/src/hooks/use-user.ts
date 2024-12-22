@@ -11,7 +11,7 @@ type RequestResult = {
 async function handleRequest(
   url: string,
   method: string,
-  body?: InsertUser
+  body?: InsertUser | { email: string } | { token: string; newPassword: string }
 ): Promise<RequestResult> {
   try {
     const response = await fetch(url, {
@@ -87,6 +87,14 @@ export function useUser() {
     },
   });
 
+  const forgotPasswordMutation = useMutation<RequestResult, Error, { email: string }>({
+    mutationFn: (data) => handleRequest('/api/forgot-password', 'POST', data),
+  });
+
+  const resetPasswordMutation = useMutation<RequestResult, Error, { token: string; newPassword: string }>({
+    mutationFn: (data) => handleRequest('/api/reset-password', 'POST', data),
+  });
+
   return {
     user,
     isLoading,
@@ -94,5 +102,7 @@ export function useUser() {
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
     register: registerMutation.mutateAsync,
+    forgotPassword: forgotPasswordMutation.mutateAsync,
+    resetPassword: resetPasswordMutation.mutateAsync,
   };
 }

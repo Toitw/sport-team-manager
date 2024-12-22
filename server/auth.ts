@@ -8,7 +8,7 @@ import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import sgMail from '@sendgrid/mail';
+import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -33,47 +33,6 @@ const crypto = {
 declare global {
   namespace Express {
     interface User extends SelectUser {}
-  }
-}
-
-// Configure SendGrid with error handling
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-let emailFunctionalityAvailable = false;
-
-if (!SENDGRID_API_KEY) {
-  console.warn('SendGrid API key is not set. Email functionality will be disabled.');
-} else {
-  try {
-    sgMail.setApiKey(SENDGRID_API_KEY);
-    emailFunctionalityAvailable = true;
-    console.log('Email functionality is enabled.');
-  } catch (error) {
-    console.error('Error configuring SendGrid:', error);
-  }
-}
-
-// Set APP_URL for local development
-const APP_URL = 'http://localhost:3000';
-
-async function sendEmail(to: string, subject: string, text: string, html: string) {
-  if (!emailFunctionalityAvailable) {
-    console.warn('Attempted to send email but email functionality is disabled.');
-    return;
-  }
-
-  const msg = {
-    to,
-    from: 'noreply@sportsteammanager.com',
-    subject,
-    text,
-    html,
-  };
-
-  try {
-    await sgMail.send(msg);
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Failed to send email');
   }
 }
 
@@ -113,7 +72,7 @@ export function setupAuth(app: Express) {
             return done(null, false, { message: "Incorrect email." });
           }
 
-          if (!user.emailVerified && emailFunctionalityAvailable) {
+          if (!user.emailVerified) {
             return done(null, false, { message: "Please verify your email first." });
           }
 
@@ -146,7 +105,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Register endpoint with optional email verification
   app.post("/api/register", async (req, res, next) => {
     try {
       const result = insertUserSchema.safeParse(req.body);
@@ -177,35 +135,20 @@ export function setupAuth(app: Express) {
           email,
           password: hashedPassword,
           role: role || "reader",
-          verificationToken: emailFunctionalityAvailable ? verificationToken : null,
-          emailVerified: !emailFunctionalityAvailable // Auto-verify if email functionality is disabled
+          verificationToken,
+          emailVerified: false
         })
         .returning();
 
-      if (emailFunctionalityAvailable) {
-        try {
-          const verificationUrl = `${APP_URL}/verify-email?token=${verificationToken}`;
-          await sendEmail(
-            email,
-            'Verify your email',
-            `Welcome to Sports Team Manager! Please verify your email by clicking: ${verificationUrl}`,
-            `
-              <h1>Welcome to Sports Team Manager!</h1>
-              <p>Please click the link below to verify your email address:</p>
-              <a href="${verificationUrl}">${verificationUrl}</a>
-              <p>This link will expire in 24 hours.</p>
-            `
-          );
-        } catch (error) {
-          console.error('Failed to send verification email:', error);
-          // Continue with registration even if email fails
-        }
+      try {
+        await sendVerificationEmail(email, verificationToken);
+      } catch (error) {
+        console.error('Failed to send verification email:', error);
+        // Continue with registration even if email fails
       }
 
       res.json({
-        message: emailFunctionalityAvailable
-          ? "Registration successful. Please check your email to verify your account."
-          : "Registration successful. Email verification is currently disabled.",
+        message: "Registration successful. Please check your email to verify your account.",
         user: { id: newUser.id, email: newUser.email, role: newUser.role },
       });
     } catch (error) {
@@ -213,7 +156,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Email verification endpoint
   app.get("/api/verify-email", async (req, res) => {
     try {
       const { token } = req.query;
@@ -247,7 +189,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Password reset request endpoint
   app.post("/api/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
@@ -274,19 +215,12 @@ export function setupAuth(app: Express) {
         })
         .where(eq(users.id, user.id));
 
-      const resetUrl = `${APP_URL}/reset-password?token=${resetToken}`;
-      await sendEmail(
-        email,
-        'Password Reset Request',
-        `You requested a password reset. Click this link to reset your password: ${resetUrl}`,
-        `
-          <h1>Password Reset Request</h1>
-          <p>You requested a password reset. Click the link below to reset your password:</p>
-          <a href="${resetUrl}">${resetUrl}</a>
-          <p>This link will expire in 24 hours.</p>
-          <p>If you didn't request this, please ignore this email.</p>
-        `
-      );
+      try {
+        await sendPasswordResetEmail(email, resetToken);
+      } catch (error) {
+        console.error('Failed to send password reset email:', error);
+        return res.status(500).send("Failed to send password reset email");
+      }
 
       res.json({ message: "If your email is registered, you'll receive a password reset link." });
     } catch (error) {
@@ -295,7 +229,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Reset password endpoint
   app.post("/api/reset-password", async (req, res) => {
     try {
       const { token, newPassword } = req.body;

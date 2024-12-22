@@ -66,6 +66,19 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
+type NextMatch = Event & {
+  id: number;
+  title: string;
+  description?: string | null;
+  startDate: string;
+  endDate: string;
+  type: 'match';
+  homeScore?: number | null;
+  awayScore?: number | null;
+  opponent?: string | null;
+  location?: string | null;
+};
+
 export default function TeamPage() {
   // Route params
   const { teamId = "", section = "news" } = useParams();
@@ -468,12 +481,12 @@ export default function TeamPage() {
                 }}
               >
                 <div className="space-y-2">
-                  <div className="font-semibold text-lg">{nextMatch.title}</div>
-                  {nextMatch.description && (
-                    <div className="text-sm text-muted-foreground">{nextMatch.description}</div>
+                  <div className="font-semibold text-lg">{(nextMatch as NextMatch).title}</div>
+                  {(nextMatch as NextMatch).description && (
+                    <div className="text-sm text-muted-foreground">{(nextMatch as NextMatch).description}</div>
                   )}
                   <div className="text-sm font-medium text-primary">
-                    {format(new Date(nextMatch.startDate), "PPP p")}
+                    {format(new Date((nextMatch as NextMatch).startDate), "PPP p")}
                   </div>
                 </div>
               </div>
