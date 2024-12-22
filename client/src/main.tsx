@@ -3,16 +3,16 @@ import { createRoot } from "react-dom/client";
 import { Router as WouterRouter, Switch, Route } from "wouter"; 
 import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import HomePage from "@/pages/HomePage";
-import AuthPage from "@/pages/AuthPage";
-import TeamPage from "@/pages/TeamPage";
-import AdminPage from "@/pages/AdminPage";
-import MatchDetailsPage from "@/pages/MatchDetailsPage";
-import VerifyEmailPage from "@/pages/VerifyEmailPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import { useUser } from "@/hooks/use-user";
+import { queryClient } from "./lib/queryClient";
+import { Toaster } from "./components/ui/toaster";
+import HomePage from "./pages/HomePage";
+import AuthPage from "./pages/AuthPage";
+import TeamPage from "./pages/TeamPage";
+import AdminPage from "./pages/AdminPage";
+import MatchDetailsPage from "./pages/MatchDetailsPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
 function AppRouter() {
