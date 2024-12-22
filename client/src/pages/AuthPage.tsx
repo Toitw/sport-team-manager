@@ -10,17 +10,28 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 
+type ResetPasswordData = {
+  email: string;
+};
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { login, register } = useUser();
   const { toast } = useToast();
 
   const form = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
       role: "reader"
+    }
+  });
+
+  const resetForm = useForm<ResetPasswordData>({
+    defaultValues: {
+      email: ""
     }
   });
 
@@ -37,7 +48,7 @@ export default function AuthPage() {
       }
       toast({
         title: "Success",
-        description: isLogin ? "Logged in successfully" : "Registered successfully"
+        description: isLogin ? "Logged in successfully" : "Registered successfully. Please check your email to verify your account."
       });
     } catch (error: any) {
       toast({
@@ -47,6 +58,80 @@ export default function AuthPage() {
       });
     }
   };
+
+  const onResetPassword = async (data: ResetPasswordData) => {
+    try {
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      toast({
+        title: "Success",
+        description: "If your email is registered, you'll receive password reset instructions."
+      });
+
+      setIsForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  };
+
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-[url('https://images.unsplash.com/photo-1556056504-5c7696c4c28d')] bg-cover bg-center bg-no-repeat flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50"></div>
+        <Card className="w-[400px] relative bg-white/95 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Reset Password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...resetForm}>
+              <form onSubmit={resetForm.handleSubmit(onResetPassword)} className="space-y-4">
+                <FormField
+                  control={resetForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="space-y-2">
+                  <Button type="submit" className="w-full">
+                    Send Reset Link
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setIsForgotPassword(false)}
+                  >
+                    Back to Login
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[url('https://images.unsplash.com/photo-1556056504-5c7696c4c28d')] bg-cover bg-center bg-no-repeat flex items-center justify-center">
@@ -66,12 +151,12 @@ export default function AuthPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="username"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input type="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -90,9 +175,21 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
-                    {isLogin ? "Login" : "Register"}
-                  </Button>
+                  <div className="space-y-2">
+                    <Button type="submit" className="w-full">
+                      {isLogin ? "Login" : "Register"}
+                    </Button>
+                    {isLogin && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="w-full"
+                        onClick={() => setIsForgotPassword(true)}
+                      >
+                        Forgot Password?
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </Form>
             </TabsContent>

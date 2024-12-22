@@ -7,7 +7,8 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
 import { db } from "../db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import sgMail from '@sendgrid/mail';
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -26,13 +27,25 @@ const crypto = {
     )) as Buffer;
     return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
   },
+  generateToken: () => randomBytes(32).toString("hex"),
 };
 
 declare global {
   namespace Express {
-    interface User extends SelectUser { }
+    interface User extends SelectUser {}
   }
 }
+
+// Configure SendGrid with error handling
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+if (!SENDGRID_API_KEY || !SENDGRID_API_KEY.startsWith('SG.')) {
+  console.error('Invalid or missing SendGrid API key. Email functionality will not work.');
+} else {
+  sgMail.setApiKey(SENDGRID_API_KEY);
+}
+
+// Set APP_URL for local development
+const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
@@ -56,26 +69,34 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.username, username))
-          .limit(1);
+    new LocalStrategy(
+      { usernameField: 'email' },
+      async (email, password, done) => {
+        try {
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
 
-        if (!user) {
-          return done(null, false, { message: "Incorrect username." });
+          if (!user) {
+            return done(null, false, { message: "Incorrect email." });
+          }
+
+          if (!user.emailVerified) {
+            return done(null, false, { message: "Please verify your email first." });
+          }
+
+          const isMatch = await crypto.compare(password, user.password);
+          if (!isMatch) {
+            return done(null, false, { message: "Incorrect password." });
+          }
+          return done(null, user);
+        } catch (err) {
+          return done(err);
         }
-        const isMatch = await crypto.compare(password, user.password);
-        if (!isMatch) {
-          return done(null, false, { message: "Incorrect password." });
-        }
-        return done(null, user);
-      } catch (err) {
-        return done(err);
       }
-    })
+    )
   );
 
   passport.serializeUser((user, done) => {
@@ -95,6 +116,7 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Register endpoint with email verification
   app.post("/api/register", async (req, res, next) => {
     try {
       const result = insertUserSchema.safeParse(req.body);
@@ -104,43 +126,183 @@ export function setupAuth(app: Express) {
           .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
       }
 
-      const { username, password, role } = result.data;
+      const { email, password, role } = result.data;
 
       const [existingUser] = await db
         .select()
         .from(users)
-        .where(eq(users.username, username))
+        .where(eq(users.email, email))
         .limit(1);
 
       if (existingUser) {
-        return res.status(400).send("Username already exists");
+        return res.status(400).send("Email already registered");
       }
 
       const hashedPassword = await crypto.hash(password);
+      const verificationToken = crypto.generateToken();
 
-      // For the initial user, set role as admin, others as reader
-      const [existingUsers] = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(users);
-      
       const [newUser] = await db
         .insert(users)
         .values({
-          username,
+          email,
           password: hashedPassword,
-          role: existingUsers.count === 0 ? "admin" : (role || "reader")
+          role: role || "reader",
+          verificationToken,
+          emailVerified: false
         })
         .returning();
 
-      req.login(newUser, (err) => {
-        if (err) return next(err);
-        return res.json({
-          message: "Registration successful",
-          user: { id: newUser.id, username: newUser.username, role: newUser.role },
-        });
+      // Send verification email using SendGrid
+      const verificationUrl = `${APP_URL}/verify-email?token=${verificationToken}`;
+      const msg = {
+        to: email,
+        from: 'noreply@sportsteammanager.com', // Replace with your verified sender
+        subject: 'Verify your email',
+        text: `Welcome to Sports Team Manager! Please verify your email by clicking: ${verificationUrl}`,
+        html: `
+          <h1>Welcome to Sports Team Manager!</h1>
+          <p>Please click the link below to verify your email address:</p>
+          <a href="${verificationUrl}">${verificationUrl}</a>
+          <p>This link will expire in 24 hours.</p>
+        `,
+      };
+
+      await sgMail.send(msg);
+
+      res.json({
+        message: "Registration successful. Please check your email to verify your account.",
+        user: { id: newUser.id, email: newUser.email, role: newUser.role },
       });
     } catch (error) {
       next(error);
+    }
+  });
+
+  // Email verification endpoint
+  app.get("/api/verify-email", async (req, res) => {
+    try {
+      const { token } = req.query;
+
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send("Invalid verification token");
+      }
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.verificationToken, token))
+        .limit(1);
+
+      if (!user) {
+        return res.status(400).send("Invalid or expired verification token");
+      }
+
+      await db
+        .update(users)
+        .set({
+          emailVerified: true,
+          verificationToken: null
+        })
+        .where(eq(users.id, user.id));
+
+      res.send("Email verified successfully. You can now log in.");
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      res.status(500).send("Error verifying email");
+    }
+  });
+
+  // Password reset request endpoint
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (!user) {
+        // Don't reveal whether a user exists
+        return res.json({ message: "If your email is registered, you'll receive a password reset link." });
+      }
+
+      const resetToken = crypto.generateToken();
+      const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      await db
+        .update(users)
+        .set({
+          passwordResetToken: resetToken,
+          passwordResetExpires: resetExpires.toISOString()
+        })
+        .where(eq(users.id, user.id));
+
+      const resetUrl = `${APP_URL}/reset-password?token=${resetToken}`;
+      const msg = {
+        to: email,
+        from: 'noreply@sportsteammanager.com', // Replace with your verified sender
+        subject: 'Password Reset Request',
+        text: `You requested a password reset. Click this link to reset your password: ${resetUrl}`,
+        html: `
+          <h1>Password Reset Request</h1>
+          <p>You requested a password reset. Click the link below to reset your password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        `,
+      };
+
+      await sgMail.send(msg);
+
+      res.json({ message: "If your email is registered, you'll receive a password reset link." });
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      res.status(500).send("Error requesting password reset");
+    }
+  });
+
+  // Reset password endpoint
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).send("Missing token or new password");
+      }
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.passwordResetToken, token))
+        .limit(1);
+
+      if (!user || !user.passwordResetExpires) {
+        return res.status(400).send("Invalid or expired reset token");
+      }
+
+      const now = new Date();
+      const expires = new Date(user.passwordResetExpires);
+      if (now > expires) {
+        return res.status(400).send("Reset token has expired");
+      }
+
+      const hashedPassword = await crypto.hash(newPassword);
+
+      await db
+        .update(users)
+        .set({
+          password: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpires: null
+        })
+        .where(eq(users.id, user.id));
+
+      res.json({ message: "Password reset successful. You can now log in with your new password." });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(500).send("Error resetting password");
     }
   });
 
@@ -160,7 +322,7 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         return res.json({
           message: "Login successful",
-          user: { id: user.id, username: user.username, role: user.role },
+          user: { id: user.id, email: user.email, role: user.role },
         });
       });
     })(req, res, next);
@@ -179,7 +341,6 @@ export function setupAuth(app: Express) {
     }
     res.status(401).send("Not logged in");
   });
-
   // Get all users (admin only)
   app.get("/api/users", async (req, res) => {
     if (!req.isAuthenticated() || req.user?.role !== "admin") {
@@ -189,7 +350,7 @@ export function setupAuth(app: Express) {
       const result = await db
         .select({
           id: users.id,
-          username: users.username,
+          email: users.email, // Changed to email
           role: users.role,
         })
         .from(users);

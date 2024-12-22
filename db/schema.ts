@@ -1,13 +1,17 @@
-import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { positionEnum, matchEventTypeEnum, eventTypeEnum, cardTypeEnum } from "./types";
 
 export const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  username: text("username").unique().notNull(),
+  email: text("email").unique().notNull(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("reader")
+  role: text("role").notNull().default("reader"),
+  emailVerified: boolean("email_verified").default(false),
+  verificationToken: text("verification_token"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires", { mode: 'string' })
 });
 
 export const teams = pgTable("teams", {
@@ -50,7 +54,6 @@ export const news = pgTable("news", {
   createdById: integer("created_by_id").notNull().references(() => users.id)
 });
 
-// Match Details Tables
 export const matchLineups = pgTable("match_lineups", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   matchId: integer("match_id").notNull().references(() => events.id),
@@ -104,7 +107,15 @@ export const matchCommentary = pgTable("match_commentary", {
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
 });
 
-export const insertUserSchema = createInsertSchema(users);
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["admin", "manager", "reader"]).optional(),
+  emailVerified: z.boolean().optional(),
+  verificationToken: z.string().optional(),
+  passwordResetToken: z.string().optional(),
+  passwordResetExpires: z.string().optional()
+});
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = z.infer<typeof selectUserSchema>;
