@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Router as WouterRouter, Switch, Route, Redirect } from "wouter"; 
+import { Router as WouterRouter, Switch, Route } from "wouter"; 
 import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -26,31 +26,24 @@ const AppRouter = () => {
     );
   }
 
-  // Public routes that don't require authentication
-  const publicRoutes = ["/verify-email", "/reset-password"];
+  // For public routes that don't require authentication
+  const publicRoutes = ["/auth", "/verify-email", "/reset-password"];
   const currentPath = window.location.pathname;
 
-  if (publicRoutes.includes(currentPath)) {
-    return (
-      <WouterRouter>
-        <Switch>
-          <Route path="/verify-email" component={VerifyEmailPage} />
-          <Route path="/reset-password" component={ResetPasswordPage} />
-        </Switch>
-      </WouterRouter>
-    );
-  }
-
-  if (!user) {
-    return <AuthPage />;
+  if (!user && !publicRoutes.includes(currentPath)) {
+    window.location.href = "/auth";
+    return null;
   }
 
   return (
     <WouterRouter>
       <Switch>
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/verify-email" component={VerifyEmailPage} />
+        <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/" component={HomePage} />
         <Route path="/admin">
-          {user?.role === "admin" ? <AdminPage /> : <Redirect to="/" />}
+          {user?.role === "admin" ? <AdminPage /> : <HomePage />}
         </Route>
         <Route path="/team/:teamId/matches/:matchId">
           {(params) => <MatchDetailsPage />}

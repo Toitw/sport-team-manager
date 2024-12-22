@@ -69,7 +69,7 @@ export function setupAuth(app: Express) {
             .limit(1);
 
           if (!user) {
-            return done(null, false, { message: "Incorrect email." });
+            return done(null, false, { message: "Invalid email or password." });
           }
 
           if (!user.emailVerified) {
@@ -78,7 +78,7 @@ export function setupAuth(app: Express) {
 
           const isMatch = await crypto.compare(password, user.password);
           if (!isMatch) {
-            return done(null, false, { message: "Incorrect password." });
+            return done(null, false, { message: "Invalid email or password." });
           }
           return done(null, user);
         } catch (err) {
@@ -126,7 +126,7 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Email already registered");
       }
 
-      // Generate verification token and hash password
+      // Generate magic link token and hash password
       const hashedPassword = await crypto.hash(password);
       const verificationToken = crypto.generateToken();
 
@@ -142,7 +142,7 @@ export function setupAuth(app: Express) {
         })
         .returning();
 
-      // Send verification email
+      // Send verification email with magic link
       try {
         await sendVerificationEmail(email, verificationToken);
       } catch (error) {
@@ -168,7 +168,7 @@ export function setupAuth(app: Express) {
       const { token } = req.query;
 
       if (!token || typeof token !== 'string') {
-        return res.status(400).send("Invalid verification token");
+        return res.status(400).send("Invalid verification link");
       }
 
       const [user] = await db
@@ -178,7 +178,7 @@ export function setupAuth(app: Express) {
         .limit(1);
 
       if (!user) {
-        return res.status(400).send("Invalid or expired verification token");
+        return res.status(400).send("Invalid or expired verification link");
       }
 
       if (user.emailVerified) {
@@ -220,7 +220,7 @@ export function setupAuth(app: Express) {
       }
 
       const resetToken = crypto.generateToken();
-      const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiration
 
       await db
         .update(users)

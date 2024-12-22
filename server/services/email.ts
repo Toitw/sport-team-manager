@@ -95,18 +95,18 @@ export function sendVerificationEmail(email: string, token: string) {
   return sendEmail({
     to: email,
     subject: "Verify your Sports Team Manager account",
-    text: `Welcome to Sports Team Manager! Please verify your email by clicking this link: ${verificationLink}`,
+    text: `Welcome to Sports Team Manager! Click this magic link to verify your email: ${verificationLink} (Link is valid for this verification only)`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2563eb;">Welcome to Sports Team Manager!</h1>
-        <p>Thank you for registering. To complete your account setup, please verify your email address by clicking the button below:</p>
+        <p>Click the magic link below to verify your email address:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${verificationLink}" 
              style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-            Verify Email Address
+            Verify Email with Magic Link
           </a>
         </div>
-        <p style="color: #666;">If the button doesn't work, you can copy and paste this link into your browser:</p>
+        <p style="color: #666;">This link can only be used once to verify your email address.</p>
         <p style="word-break: break-all; color: #666;">${verificationLink}</p>
         <p style="color: #666; margin-top: 30px;">If you didn't create this account, you can safely ignore this email.</p>
       </div>
@@ -122,7 +122,7 @@ export function sendPasswordResetEmail(email: string, token: string) {
   return sendEmail({
     to: email,
     subject: "Reset your Sports Team Manager password",
-    text: `You requested to reset your password. Click this link to reset it: ${resetLink}`,
+    text: `You requested to reset your password. Click this link to set a new password: ${resetLink} (Link expires in 1 hour)`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2563eb;">Reset Your Password</h1>
@@ -133,10 +133,9 @@ export function sendPasswordResetEmail(email: string, token: string) {
             Reset Password
           </a>
         </div>
-        <p style="color: #666;">If the button doesn't work, you can copy and paste this link into your browser:</p>
+        <p style="color: #666;">This link will expire in 1 hour.</p>
         <p style="word-break: break-all; color: #666;">${resetLink}</p>
         <p style="color: #666; margin-top: 30px;">If you didn't request this password reset, you can safely ignore this email.</p>
-        <p style="color: #666;">This link will expire in 24 hours.</p>
       </div>
     `
   });
