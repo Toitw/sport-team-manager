@@ -1,4 +1,3 @@
-
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Router as WouterRouter, Switch, Route } from "wouter"; 
@@ -15,6 +14,8 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
+// Import global styles
+import "./styles.css";
 
 export default function App() {
   return (
