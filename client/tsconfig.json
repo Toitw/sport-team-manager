@@ -10,12 +10,7 @@
     "module": "ESNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "paths": {
-      "@/*": ["./src/*"],
-      "@db/*": ["../db/*"]
-    }
+    "noEmit": true
   },
-  "include": ["src/**/*", "../db/**/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src/**/*", "../db/**/*"]
 }
