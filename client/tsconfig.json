@@ -11,13 +11,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@db/*": ["../db/*"]
-    },
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    }
   },
   "include": ["src/**/*", "../db/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
