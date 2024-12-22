@@ -19,7 +19,7 @@ export async function setupVite(app: Express, server: Server) {
         port: 5173
       },
       watch: {
-        ignored: ['**/server/**']
+        ignored: ['**/node_modules/**', '**/client/**', '**/dist/**']
       }
     },
     appType: 'custom'
