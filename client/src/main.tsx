@@ -15,8 +15,8 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-const AppRouter = () => {
-  const { user, isLoading } = useUser();
+function AppRouter() {
+  const { user, isLoading, error } = useUser();
 
   if (isLoading) {
     return (
@@ -26,11 +26,17 @@ const AppRouter = () => {
     );
   }
 
+  if (error) {
+    console.error('Authentication error:', error);
+    return <AuthPage />;
+  }
+
   // For public routes that don't require authentication
   const publicRoutes = ["/auth", "/verify-email", "/reset-password"];
   const currentPath = window.location.pathname;
 
-  if (!user && !publicRoutes.includes(currentPath)) {
+  // Always allow access to public routes
+  if (!user && !publicRoutes.some(route => currentPath.startsWith(route))) {
     window.location.href = "/auth";
     return null;
   }
@@ -55,9 +61,14 @@ const AppRouter = () => {
       </Switch>
     </WouterRouter>
   );
-};
+}
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AppRouter />

@@ -220,6 +220,7 @@ export function setupAuth(app: Express) {
       }
 
       const resetToken = crypto.generateToken();
+      // Explicitly set expiration to 1 hour from now
       const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiration
 
       await db
@@ -268,8 +269,10 @@ export function setupAuth(app: Express) {
 
       const now = new Date();
       const expires = new Date(user.passwordResetExpires);
+
+      // Strict check for token expiration
       if (now > expires) {
-        return res.status(400).send("Reset token has expired");
+        return res.status(400).send("Reset token has expired. Please request a new password reset.");
       }
 
       const hashedPassword = await crypto.hash(newPassword);
