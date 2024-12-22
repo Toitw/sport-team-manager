@@ -8,7 +8,7 @@ import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { sendVerificationEmail, sendPasswordResetEmail, sendEmail } from "./services/email";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -305,81 +305,5 @@ export function setupAuth(app: Express) {
       return res.json(req.user);
     }
     res.status(401).send("Not logged in");
-  });
-
-  // Get all users (admin only)
-  app.get("/api/users", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.status(403).send("Unauthorized");
-    }
-    try {
-      const result = await db
-        .select({
-          id: users.id,
-          email: users.email,
-          role: users.role,
-        })
-        .from(users);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).send("Internal server error");
-    }
-  });
-
-  // Update user role (admin only)
-  app.patch("/api/users/:id/role", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.status(403).send("Unauthorized");
-    }
-
-    const userId = parseInt(req.params.id);
-    const { role } = req.body;
-
-    if (!role || !["admin", "manager", "reader"].includes(role)) {
-      return res.status(400).send("Invalid role");
-    }
-
-    try {
-      const [updatedUser] = await db
-        .update(users)
-        .set({ role })
-        .where(eq(users.id, userId))
-        .returning();
-
-      if (!updatedUser) {
-        return res.status(404).send("User not found");
-      }
-
-      res.json(updatedUser);
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      res.status(500).send("Internal server error");
-    }
-  });
-
-  // Test endpoint for email functionality (temporary, remove in production)
-  app.post("/api/test-email", async (req, res) => {
-    if (!req.isAuthenticated() || req.user?.role !== "admin") {
-      return res.status(403).send("Unauthorized");
-    }
-
-    try {
-      const result = await sendEmail({
-        to: req.user.email,
-        subject: "Test Email from Sports Team Manager",
-        text: "This is a test email to verify the SendGrid integration.",
-        html: "<h1>Test Email</h1><p>This is a test email to verify the SendGrid integration.</p>"
-      });
-
-      if (result.success) {
-        res.json({ message: "Test email sent successfully" });
-      } else {
-        res.status(500).json({ message: "Failed to send test email", error: result.error });
-      }
-    } catch (error) {
-      console.error("Error sending test email:", error);
-      res.status(500).json({ message: "Error sending test email", error });
-    }
   });
 }

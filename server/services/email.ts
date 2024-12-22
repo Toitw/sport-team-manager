@@ -1,10 +1,25 @@
 import sgMail from "@sendgrid/mail";
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY is required");
-}
+let isInitialized = false;
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+function initializeSendGrid() {
+  if (isInitialized) return true;
+
+  if (!process.env.SENDGRID_API_KEY) {
+    console.error("SendGrid initialization failed: SENDGRID_API_KEY is missing");
+    return false;
+  }
+
+  try {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    isInitialized = true;
+    console.log("SendGrid initialized successfully");
+    return true;
+  } catch (error) {
+    console.error("Failed to initialize SendGrid:", error);
+    return false;
+  }
+}
 
 type SendEmailParams = {
   to: string;
@@ -21,6 +36,13 @@ type SendEmailResult = {
 };
 
 export async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<SendEmailResult> {
+  if (!isInitialized && !initializeSendGrid()) {
+    return { 
+      success: false, 
+      error: new Error("SendGrid is not properly initialized. Check if SENDGRID_API_KEY is set.")
+    };
+  }
+
   try {
     await sgMail.send({
       to,
