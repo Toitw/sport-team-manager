@@ -1,11 +1,11 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
   content: [
-    "./client/index.html",
     "./client/src/**/*.{js,ts,jsx,tsx}",
-    "./client/node_modules/(@radix-ui/themes|@radix-ui/colors)/**/*.{js,ts,jsx,tsx}",
+    "./client/index.html"
   ],
   prefix: "",
   theme: {
