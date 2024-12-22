@@ -88,7 +88,7 @@ async function startServer() {
     });
 
     // Start server
-    const port = process.env.NODE_ENV === 'production' ? 80 : 3001; 
+    const port = 80; 
     await new Promise<void>((resolve, reject) => {
       server.listen(port, "0.0.0.0", () => {
         log(`Server started successfully on port ${port}`);
