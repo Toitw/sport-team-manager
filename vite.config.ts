@@ -22,9 +22,9 @@ export default defineConfig({
       '@db': path.resolve(__dirname, './db')
     }
   },
-  root: path.resolve(__dirname, "client"),
+  root: path.join(__dirname, "client"),
   build: {
-    outDir: path.resolve(__dirname, "dist/public"),
+    outDir: path.join(__dirname, "dist/public"),
     emptyOutDir: true,
   },
   server: {
