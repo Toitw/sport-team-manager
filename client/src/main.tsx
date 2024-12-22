@@ -52,10 +52,10 @@ function AppRouter() {
           {user?.role === "admin" ? <AdminPage /> : <HomePage />}
         </Route>
         <Route path="/team/:teamId/matches/:matchId">
-          {(params) => <MatchDetailsPage />}
+          {() => <MatchDetailsPage />}
         </Route>
         <Route path="/team/:teamId/:section?">
-          {(params) => <TeamPage />}
+          {() => <TeamPage />}
         </Route>
         <Route>404 Page Not Found</Route>
       </Switch>

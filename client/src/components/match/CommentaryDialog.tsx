@@ -20,7 +20,7 @@ interface Commentary {
   content: string;
 }
 
-export function CommentaryDialog({ matchId, teamId, open, onOpenChange }: CommentaryDialogProps) {
+export function CommentaryDialog({ matchId, open, onOpenChange }: CommentaryDialogProps) {
   const { toast } = useToast();
   const [commentary, setCommentary] = React.useState<Commentary[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
