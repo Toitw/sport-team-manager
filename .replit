@@ -12,7 +12,7 @@ NODE_ENV = "development"
 [deployment]
 deploymentTarget = "cloudrun"
 build = ["npm", "run", "build"]
-run = ["sh", "-c", "cd client && npm run dev"]
+run = ["sh", "-c", "npm run dev:server"]
 
 [languages]
 [languages.typescript]
@@ -29,12 +29,16 @@ language = "nodejs"
 requiredFiles = [".replit", "replit.nix", ".config"]
 
 [[ports]]
+localPort = 80
+externalPort = 80
+
+[[ports]]
 localPort = 3000
 externalPort = 4200
 
 [[ports]]
-localPort = 80
-externalPort = 80
+localPort = 3001
+externalPort = 3001
 
 [[ports]]
 localPort = 5173
@@ -50,10 +54,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
+args = "Backend Server"
 
 [[workflows.workflow]]
-name = "Start application"
+name = "Backend Server"
 author = "agent"
 
 [workflows.workflow.metadata]
@@ -64,5 +68,5 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd client && npm run dev"
-waitForPort = 5173
+args = "npm run dev:server"
+waitForPort = 3001
