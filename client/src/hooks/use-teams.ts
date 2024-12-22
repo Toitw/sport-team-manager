@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Team, InsertTeam } from "@db/schema";
+import type { Team } from "@db/schema";
 
 export function useTeams() {
   const queryClient = useQueryClient();

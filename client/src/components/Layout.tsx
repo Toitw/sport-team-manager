@@ -1,8 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Users, Calendar, Trophy, Home, Newspaper } from "lucide-react";
 import { useUser } from "../hooks/use-user";
-import { cn } from "@/lib/utils";
-
 import {
   Sidebar,
   SidebarContent,
@@ -12,7 +10,6 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarInset,
-  SidebarSeparator,
   SidebarGroupLabel,
   SidebarGroup
 } from "@/components/ui/sidebar";

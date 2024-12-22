@@ -5,7 +5,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function VerifyEmailPage() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 

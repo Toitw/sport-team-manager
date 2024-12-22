@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useNews } from "@/hooks/use-news";
-import { insertNewsSchema } from "@db/schema";
+
 import { ImagePlus, Loader2 } from "lucide-react";
 
 const formSchema = z.object({

@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 export function CreatePlayerDialog({ teamId }: { teamId: number }) {

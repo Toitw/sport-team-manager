@@ -18,6 +18,7 @@ export function ReservesDialog({ matchId, teamId, open, onOpenChange }: Reserves
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
+    let mounted = true;
     if (open && matchId) {
       setIsLoading(true);
       fetch(`/api/matches/${matchId}/details`)

@@ -20,8 +20,10 @@ import { format } from "date-fns";
 
 // Custom Components
 import { LineupDialog } from "@/components/match/LineupDialog";
-import { ReservesDialog } from "@/components/match/ReservesDialog";
 import { ScorersDialog } from "@/components/match/ScorersDialog";
+import { CardsDialog } from "@/components/match/CardsDialog";
+import { SubstitutionsDialog } from "@/components/match/SubstitutionsDialog";
+import { CommentaryDialog } from "@/components/match/CommentaryDialog";
 import { Layout } from "@/components/Layout";
 import { CreatePlayerDialog } from "@/components/CreatePlayerDialog";
 import { EditPlayerDialog } from "@/components/EditPlayerDialog";
@@ -33,9 +35,7 @@ import { DeleteEventDialog } from "@/components/DeleteEventDialog";
 import { CreateNewsDialog } from "@/components/CreateNewsDialog";
 import { EditNewsDialog } from "@/components/EditNewsDialog";
 import { DeleteNewsDialog } from "@/components/DeleteNewsDialog";
-import { CardsDialog } from "@/components/match/CardsDialog";
-import { SubstitutionsDialog } from "@/components/match/SubstitutionsDialog";
-import { CommentaryDialog } from "@/components/match/CommentaryDialog";
+
 
 // ErrorBoundary component for handling errors gracefully
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
