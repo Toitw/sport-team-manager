@@ -99,7 +99,7 @@ async function startServer() {
     });
 
     // Start server
-    const port = 3000;
+    const port = process.env.PORT || 80;
     await new Promise<void>((resolve, reject) => {
       server.listen(port, "0.0.0.0", () => {
         log(`Server started successfully on port ${port}`);
