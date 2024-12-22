@@ -14,10 +14,10 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-// Import global styles
+// Import global styles first
 import "./styles.css";
 
-export default function App() {
+function App() {
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -54,18 +54,24 @@ function AppRouter() {
 
   return (
     <WouterRouter>
-      <Switch>
-        <Route path="/auth" component={AuthPage} />
-        <Route path="/verify-email" component={VerifyEmailPage} />
-        <Route path="/reset-password" component={ResetPasswordPage} />
-        <Route path="/" component={HomePage} />
-        <Route path="/admin">
-          {user?.role === "admin" ? <AdminPage /> : <HomePage />}
-        </Route>
-        <Route path="/team/:teamId/matches/:matchId" component={MatchDetailsPage} />
-        <Route path="/team/:teamId/:section?" component={TeamPage} />
-        <Route>404 Page Not Found</Route>
-      </Switch>
+      <div className="min-h-screen bg-background">
+        <Switch>
+          <Route path="/auth" component={AuthPage} />
+          <Route path="/verify-email" component={VerifyEmailPage} />
+          <Route path="/reset-password" component={ResetPasswordPage} />
+          <Route path="/" component={HomePage} />
+          <Route path="/admin">
+            {user?.role === "admin" ? <AdminPage /> : <HomePage />}
+          </Route>
+          <Route path="/team/:teamId/matches/:matchId" component={MatchDetailsPage} />
+          <Route path="/team/:teamId/:section?" component={TeamPage} />
+          <Route>
+            <div className="flex items-center justify-center min-h-screen">
+              <h1 className="text-2xl font-bold">404 Page Not Found</h1>
+            </div>
+          </Route>
+        </Switch>
+      </div>
     </WouterRouter>
   );
 }

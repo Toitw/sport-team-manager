@@ -5,6 +5,7 @@ export default {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
     "./index.html",
+    "./src/components/**/*.{ts,tsx}",
   ],
   prefix: "",
   theme: {
@@ -72,5 +73,8 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography")
+  ],
 } satisfies Config;

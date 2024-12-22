@@ -20,11 +20,13 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        ws: true,
+        rewrite: (path) => path
       }
     }
   },
   css: {
-    postcss: true
+    postcss: path.resolve(__dirname, "postcss.config.js")
   }
 });
