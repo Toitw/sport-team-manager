@@ -19,10 +19,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@db/*": ["../db/*"],
       "@components/*": ["./src/components/*"],
       "@hooks/*": ["./src/hooks/*"],
-      "@lib/*": ["./src/lib/*"]
+      "@lib/*": ["./src/lib/*"],
+      "@db/*": ["../db/*"]
     },
 
     /* Linting */
@@ -31,6 +31,6 @@
     "noUnusedParameters": true,
     "noFallthrough": true
   },
-  "include": ["src"],
+  "include": ["src", "../db/schema.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
