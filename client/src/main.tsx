@@ -16,6 +16,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
+// Named function components for better Fast Refresh support
 function AppRouter() {
   const { user, isLoading, error } = useUser();
 
@@ -50,19 +51,15 @@ function AppRouter() {
         <Route path="/admin">
           {user?.role === "admin" ? <AdminPage /> : <HomePage />}
         </Route>
-        <Route path="/team/:teamId/matches/:matchId">
-          {() => <MatchDetailsPage />}
-        </Route>
-        <Route path="/team/:teamId/:section?">
-          {() => <TeamPage />}
-        </Route>
+        <Route path="/team/:teamId/matches/:matchId" component={MatchDetailsPage} />
+        <Route path="/team/:teamId/:section?" component={TeamPage} />
         <Route>404 Page Not Found</Route>
       </Switch>
     </WouterRouter>
   );
 }
 
-function Root() {
+function App() {
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -78,4 +75,4 @@ if (!rootElement) {
   throw new Error("Failed to find the root element");
 }
 
-createRoot(rootElement).render(<Root />);
+createRoot(rootElement).render(<App />);
