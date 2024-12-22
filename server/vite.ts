@@ -4,6 +4,20 @@ import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export async function setupVite(app: Express, server: Server) {
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: 'custom'
+  });
+
+  app.use(vite.middlewares);
+}
+
+export function serveStatic(app: Express) {
+  app.use(express.static(path.resolve(__dirname, '../client/dist')));
+}
 const __dirname = dirname(__filename);
 import { type Server } from "http";
 import viteConfig from "../vite.config";

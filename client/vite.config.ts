@@ -7,16 +7,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [
-    react({
-      include: /\.[jt]sx?$/,
-      babel: {
-        plugins: [
-          ["@babel/plugin-transform-react-jsx", { runtime: "automatic" }]
-        ]
-      }
-    })
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
