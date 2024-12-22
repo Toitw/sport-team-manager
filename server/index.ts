@@ -73,22 +73,11 @@ async function startServer() {
     log('Registering API routes...');
     await registerRoutes(app);
 
-    // Set up Vite or static serving
-    log('Setting up Vite/static serving...');
+    // Set up static serving
+    log('Setting up static serving...');
     const server = createServer(app);
-
-    if (process.env.NODE_ENV === "development") {
-      try {
-        await setupVite(app, server);
-        log('Vite middleware setup completed');
-      } catch (error) {
-        log(`Failed to setup Vite middleware: ${error}`);
-        throw error;
-      }
-    } else {
-      serveStatic(app);
-      log('Static serving setup completed');
-    }
+    serveStatic(app);
+    log('Static serving setup completed');
 
     // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
