@@ -1,12 +1,6 @@
+
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@db/*": ["../db/*"]
-    }
-  },
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
@@ -23,8 +17,7 @@
       "@db/*": ["../db/*"]
     },
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthrough": true
+    "noUnusedParameters": true
   },
   "include": ["src/**/*", "../db/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
