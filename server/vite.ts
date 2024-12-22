@@ -11,16 +11,18 @@ const __dirname = path.dirname(__filename);
 
 export async function setupVite(app: Express, server: Server) {
   const vite = await createViteServer({
-    configFile: path.resolve(__dirname, '../client/vite.config.ts'),
+    configFile: false,
+    root: path.resolve(__dirname, '../client'),
     server: { 
       middlewareMode: true,
       hmr: { 
         server,
-        port: 5173
-      },
-      watch: {
-        ignored: ['**/node_modules/**', '**/client/**', '**/dist/**']
+        port: 5173,
+        clientPort: 5173
       }
+    },
+    optimizeDeps: {
+      force: true
     },
     appType: 'custom'
   });
