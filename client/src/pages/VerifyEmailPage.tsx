@@ -19,7 +19,7 @@ export default function VerifyEmailPage() {
       return;
     }
 
-    fetch(`/api/verify-email?token=${token}`)
+    fetch(`${window.location.origin}/api/verify-email?token=${token}`)
       .then(async (res) => {
         if (!res.ok) {
           throw new Error(await res.text());
