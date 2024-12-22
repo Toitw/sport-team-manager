@@ -18,10 +18,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["src/*"],
       "@db/*": ["../db/*"]
     }
   },
-  "include": ["src/**/*", "../db/**/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src/**/*", "../db/**/*"]
 }
