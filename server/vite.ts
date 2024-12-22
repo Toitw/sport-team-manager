@@ -14,7 +14,13 @@ export async function setupVite(app: Express, server: Server) {
     configFile: path.resolve(__dirname, '../client/vite.config.ts'),
     server: { 
       middlewareMode: true,
-      hmr: { server }
+      hmr: { 
+        server,
+        port: 5173
+      },
+      watch: {
+        ignored: ['**/server/**']
+      }
     },
     appType: 'custom'
   });
@@ -23,7 +29,6 @@ export async function setupVite(app: Express, server: Server) {
   
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
-
     try {
       const template = await fs.promises.readFile(
         path.resolve(__dirname, "../client/index.html"),
