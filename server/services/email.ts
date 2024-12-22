@@ -46,7 +46,7 @@ export async function sendEmail({ to, subject, text, html }: SendEmailParams): P
   try {
     await sgMail.send({
       to,
-      from: "noreply@sportsteam.com", // Update this with your verified sender
+      from: process.env.SENDGRID_FROM_EMAIL || "noreply@sportsteammanager.com",
       subject,
       text,
       html: html || text,
@@ -56,7 +56,6 @@ export async function sendEmail({ to, subject, text, html }: SendEmailParams): P
   } catch (err: unknown) {
     console.error("Error sending email:", err);
     if (err && typeof err === 'object' && 'response' in err) {
-      // Log SendGrid's response for debugging
       console.error('SendGrid error response:', (err as { response: { body: unknown } }).response.body);
     }
     return { success: false, error: err };
@@ -64,7 +63,7 @@ export async function sendEmail({ to, subject, text, html }: SendEmailParams): P
 }
 
 export function sendVerificationEmail(email: string, token: string) {
-  const baseUrl = process.env.APP_URL || 'http://0.0.0.0:3000';
+  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
   const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
   return sendEmail({
@@ -81,7 +80,7 @@ export function sendVerificationEmail(email: string, token: string) {
 }
 
 export function sendPasswordResetEmail(email: string, token: string) {
-  const baseUrl = process.env.APP_URL || 'http://0.0.0.0:3000';
+  const baseUrl = process.env.APP_URL || 'http://localhost:3000';
   const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
   return sendEmail({

@@ -8,7 +8,7 @@ import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email";
+import { sendVerificationEmail } from "./services/email";
 
 const scryptAsync = promisify(scrypt);
 const crypto = {
@@ -186,88 +186,6 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error("Error verifying email:", error);
       res.status(500).send("Error verifying email");
-    }
-  });
-
-  app.post("/api/forgot-password", async (req, res) => {
-    try {
-      const { email } = req.body;
-
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-
-      if (!user) {
-        // Don't reveal whether a user exists
-        return res.json({ message: "If your email is registered, you'll receive a password reset link." });
-      }
-
-      const resetToken = crypto.generateToken();
-      const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-      await db
-        .update(users)
-        .set({
-          passwordResetToken: resetToken,
-          passwordResetExpires: resetExpires.toISOString()
-        })
-        .where(eq(users.id, user.id));
-
-      try {
-        await sendPasswordResetEmail(email, resetToken);
-      } catch (error) {
-        console.error('Failed to send password reset email:', error);
-        return res.status(500).send("Failed to send password reset email");
-      }
-
-      res.json({ message: "If your email is registered, you'll receive a password reset link." });
-    } catch (error) {
-      console.error("Error requesting password reset:", error);
-      res.status(500).send("Error requesting password reset");
-    }
-  });
-
-  app.post("/api/reset-password", async (req, res) => {
-    try {
-      const { token, newPassword } = req.body;
-
-      if (!token || !newPassword) {
-        return res.status(400).send("Missing token or new password");
-      }
-
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.passwordResetToken, token))
-        .limit(1);
-
-      if (!user || !user.passwordResetExpires) {
-        return res.status(400).send("Invalid or expired reset token");
-      }
-
-      const now = new Date();
-      const expires = new Date(user.passwordResetExpires);
-      if (now > expires) {
-        return res.status(400).send("Reset token has expired");
-      }
-
-      const hashedPassword = await crypto.hash(newPassword);
-
-      await db
-        .update(users)
-        .set({
-          password: hashedPassword,
-          passwordResetToken: null,
-          passwordResetExpires: null
-        })
-        .where(eq(users.id, user.id));
-
-      res.json({ message: "Password reset successful. You can now log in with your new password." });
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      res.status(500).send("Error resetting password");
     }
   });
 
