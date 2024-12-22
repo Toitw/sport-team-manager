@@ -29,8 +29,12 @@ language = "nodejs"
 requiredFiles = [".replit", "replit.nix", ".config"]
 
 [[ports]]
-localPort = 80
+localPort = 3000
 externalPort = 4200
+
+[[ports]]
+localPort = 80
+externalPort = 80
 
 [[ports]]
 localPort = 5173
