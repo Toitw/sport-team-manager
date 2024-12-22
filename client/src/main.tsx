@@ -16,7 +16,18 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-const AppRouter = () => {
+export default function App() {
+  return (
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AppRouter />
+        <Toaster />
+      </QueryClientProvider>
+    </StrictMode>
+  );
+}
+
+function AppRouter() {
   const { user, isLoading, error } = useUser();
 
   if (isLoading) {
@@ -56,22 +67,11 @@ const AppRouter = () => {
       </Switch>
     </WouterRouter>
   );
-};
-
-const Root = () => {
-  return (
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AppRouter />
-        <Toaster />
-      </QueryClientProvider>
-    </StrictMode>
-  );
-};
+}
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("Failed to find the root element");
 }
 
-createRoot(rootElement).render(<Root />);
+createRoot(rootElement).render(<App />);
