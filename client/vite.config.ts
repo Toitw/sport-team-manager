@@ -18,11 +18,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'
+          : 'http://0.0.0.0:80',
         changeOrigin: true,
         secure: false,
-        ws: true,
-        rewrite: (path) => path
+        ws: true
       }
     }
   },
