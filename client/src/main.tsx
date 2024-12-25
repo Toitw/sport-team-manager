@@ -14,8 +14,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useUser } from "./hooks/use-user";
 import { Loader2 } from "lucide-react";
 
-// Import global styles first
-import "./styles.css";
+import "./index.css";
 
 function App() {
   return (
