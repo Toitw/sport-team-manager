@@ -1,8 +1,8 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+/* Optional: Extra layer for CSS variables or global styles */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -27,9 +27,11 @@
     --radius: 0.5rem;
   }
 
+  /* Demo: apply your custom properties / classes */
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

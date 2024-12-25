@@ -1,4 +1,3 @@
-
 modules = ["nodejs-20", "web", "postgresql-16"]
 run = "npm run dev:server"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
@@ -33,13 +32,6 @@ localPort = 80
 externalPort = 80
 
 [[ports]]
-localPort = 3000
-externalPort = 4200
-
-[[ports]]
-localPort = 3001
-
-[[ports]]
 localPort = 5173
 externalPort = 5173
 
@@ -71,7 +63,7 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:server"
-waitForPort = 3001
+waitForPort = 80            # If your server is on port 80
 
 [[workflows.workflow]]
 name = "Start application"

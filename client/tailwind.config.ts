@@ -1,12 +1,12 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
+  // If you prefer dark mode by adding a 'dark' class on <html> or <body>, use this array syntax
   darkMode: ["class"],
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+
+  // IMPORTANT: Make sure this matches where your .html and .tsx/.ts/.jsx/.js files live
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+
   theme: {
     container: {
       center: true,
