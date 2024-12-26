@@ -40,6 +40,7 @@ localPort = 5173
 externalPort = 5173
 
 [workflows]
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -67,7 +68,7 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:server"
-waitForPort = 80            # If your server is on port 80
+waitForPort = 3000
 
 [[workflows.workflow]]
 name = "Start application"
