@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { db, initializeDatabase, sql } from "../db";
 import type { QueryResult } from '@neondatabase/serverless';
 import { setupAuth } from "./auth";
+import cors from 'cors';
 
 function log(message: string) {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -20,24 +21,15 @@ async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolea
   for (let i = 0; i < retries; i++) {
     try {
       log(`Attempting database connection (attempt ${i + 1}/${retries})...`);
-
-      // Wait for database initialization
       const dbInstance = await initializeDatabase();
-
-      // Basic connectivity test
+      log('Database instance created successfully');
       const result = await dbInstance.execute(sql`SELECT NOW()`) as QueryResult<{ now: Date }>;
       log('Database connection successful!');
       log(`Connection timestamp: ${result.rows[0]?.now}`);
-
       return true;
     } catch (error: any) {
       const errorMessage = error.message || error.toString();
       log(`Database connection attempt ${i + 1} failed: ${errorMessage}`);
-
-      if (error.code === 'ECONNRESET' || error.code === 'EPIPE') {
-        log('Connection was reset. This might be due to network issues or firewall settings.');
-      }
-
       if (i < retries - 1) {
         log(`Retrying in ${delay/1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -49,7 +41,6 @@ async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolea
 
 async function startServer() {
   try {
-    // Initialize database connection first with retries
     log('Initializing database connection...');
     const isConnected = await testDatabaseConnection();
     if (!isConnected) {
@@ -57,9 +48,17 @@ async function startServer() {
     }
     log('Database connection established successfully');
 
-    // Initialize express app
-    log('Initializing express application...');
     const app = express();
+    const isDev = process.env.NODE_ENV !== 'production';
+    const clientOrigin = isDev ? 'http://localhost:5173' : process.env.CLIENT_URL || '';
+
+    // CORS configuration
+    app.use(cors({
+      origin: clientOrigin,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }));
 
     // Basic middleware
     app.use(express.json());
@@ -88,7 +87,7 @@ async function startServer() {
     });
 
     // Start server
-    const port = 3000;
+    const port = process.env.PORT || 3000;
     await new Promise<void>((resolve, reject) => {
       server.listen(port, "0.0.0.0", () => {
         log(`Server started successfully on port ${port}`);
