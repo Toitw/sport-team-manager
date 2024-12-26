@@ -17,18 +17,17 @@ function log(message: string) {
   console.log(`${formattedTime} [express] ${message}`);
 }
 
-async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolean> {
+async function testDatabaseConnection(retries = 3, delay = 2000): Promise<boolean> {
   for (let i = 0; i < retries; i++) {
     try {
       log(`Attempting database connection (attempt ${i + 1}/${retries})...`);
       const db = await getDb();
       const result = await db.execute(sql`SELECT NOW()`) as QueryResult<{ now: Date }>;
       log('Database connection successful!');
-      log(`Connection timestamp: ${result.rows[0]?.now}`);
+      log(`Server timestamp: ${result.rows[0]?.now}`);
       return true;
     } catch (error: any) {
-      const errorMessage = error.message || error.toString();
-      log(`Database connection attempt ${i + 1} failed: ${errorMessage}`);
+      log(`Database connection attempt ${i + 1} failed: ${error.message}`);
       if (i < retries - 1) {
         log(`Retrying in ${delay/1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -40,12 +39,11 @@ async function testDatabaseConnection(retries = 5, delay = 2000): Promise<boolea
 
 async function startServer() {
   try {
-    log('Initializing database connection...');
+    // Test database connection first
     const isConnected = await testDatabaseConnection();
     if (!isConnected) {
       throw new Error('Failed to establish database connection after multiple attempts');
     }
-    log('Database connection established successfully');
 
     const app = express();
     const isDev = process.env.NODE_ENV !== 'production';
@@ -56,7 +54,7 @@ async function startServer() {
       origin: clientOrigin,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     }));
 
     // Basic middleware
@@ -64,24 +62,20 @@ async function startServer() {
     app.use(express.urlencoded({ extended: false }));
 
     // Set up authentication
-    log('Setting up authentication...');
     setupAuth(app);
 
     // Register API routes
-    log('Registering API routes...');
     await registerRoutes(app);
 
     // Set up static serving
-    log('Setting up static serving...');
     const server = createServer(app);
     serveStatic(app);
-    log('Static serving setup completed');
 
     // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      console.error('Server error:', err);
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-      log(`Error: ${status} - ${message}`);
       res.status(status).json({ message });
     });
 
@@ -89,25 +83,25 @@ async function startServer() {
     const port = process.env.PORT || 3000;
     await new Promise<void>((resolve, reject) => {
       server.listen(port, "0.0.0.0", () => {
-        log(`Server started successfully on port ${port}`);
+        log(`Server started on port ${port}`);
         resolve();
       });
 
       server.on('error', (error: any) => {
-        log(`Failed to start server: ${error}`);
+        log(`Failed to start server: ${error.message}`);
         reject(error);
       });
     });
 
     return server;
-  } catch (error) {
-    log(`Failed to initialize server: ${error}`);
-    process.exit(1);
+  } catch (error: any) {
+    log(`Server initialization failed: ${error.message}`);
+    throw error;
   }
 }
 
 // Start the server
 startServer().catch((error) => {
-  log(`Server startup failed: ${error}`);
+  log(`Fatal server error: ${error.message}`);
   process.exit(1);
 });

@@ -1,6 +1,6 @@
 import express, { type Express } from "express";
 import { setupAuth } from "./auth";
-import { db } from "../db";
+import { getDb } from "../db";
 import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards, matchSubstitutions, matchCommentary } from "@db/schema";
 import { eq, sql, and, or } from "drizzle-orm";
 import multer from "multer";
@@ -26,18 +26,15 @@ function requireRole(roles: string[]) {
   };
 }
 
-export function registerRoutes(app: Express) {
+export async function registerRoutes(app: Express) {
   // Set up authentication first
-  setupAuth(app);
+  await setupAuth(app);
 
   // Create uploads directory if it doesn't exist
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)){
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
-
-  // Serve uploaded files statically
-  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Configure multer after authentication is set up
   const storage = multer.diskStorage({
@@ -56,7 +53,6 @@ export function registerRoutes(app: Express) {
       fileSize: 5 * 1024 * 1024 // 5MB limit
     },
     fileFilter: (req, file, cb) => {
-      // Accept all common image formats
       if (file.mimetype.startsWith('image/')) {
         cb(null, true);
       } else {
@@ -88,8 +84,14 @@ export function registerRoutes(app: Express) {
 
   // Teams
   app.get("/api/teams", requireAuth, async (req, res) => {
-    const allTeams = await db.select().from(teams);
-    res.json(allTeams);
+    try {
+      const db = await getDb();
+      const allTeams = await db.select().from(teams);
+      res.json(allTeams);
+    } catch (error: any) {
+      console.error('Error fetching teams:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch teams" });
+    }
   });
 
   app.post("/api/teams", requireRole(["admin"]), async (req, res) => {
@@ -97,12 +99,13 @@ export function registerRoutes(app: Express) {
       if (!req.user) {
         return res.status(401).send("User not authenticated");
       }
-      
+
+      const db = await getDb();
       const newTeam = await db.insert(teams).values({
         name: req.body.name,
         createdById: req.user.id
       }).returning();
-      
+
       res.json(newTeam[0]);
     } catch (error: any) {
       console.error('Error creating team:', error);
@@ -112,20 +115,33 @@ export function registerRoutes(app: Express) {
 
   // Players
   app.get("/api/teams/:teamId/players", requireAuth, async (req, res) => {
-    const teamPlayers = await db.select().from(players)
-      .where(eq(players.teamId, parseInt(req.params.teamId)));
-    res.json(teamPlayers);
+    try {
+      const db = await getDb();
+      const teamPlayers = await db.select().from(players)
+        .where(eq(players.teamId, parseInt(req.params.teamId)));
+      res.json(teamPlayers);
+    } catch (error: any) {
+      console.error('Error fetching players:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch players" });
+    }
   });
 
   app.post("/api/teams/:teamId/players", requireRole(["admin", "editor"]), async (req, res) => {
-    const newPlayer = await db.insert(players).values({
-      ...req.body,
-      teamId: parseInt(req.params.teamId)
-    }).returning();
-    res.json(newPlayer[0]);
+    try {
+      const db = await getDb();
+      const newPlayer = await db.insert(players).values({
+        ...req.body,
+        teamId: parseInt(req.params.teamId)
+      }).returning();
+      res.json(newPlayer[0]);
+    } catch (error: any) {
+      console.error('Error creating player:', error);
+      res.status(500).json({ message: error.message || "Failed to create player" });
+    }
   });
   app.put("/api/teams/:teamId/players/:playerId", requireRole(["admin", "editor"]), async (req, res) => {
     try {
+      const db = await getDb();
       const updatedPlayer = await db.update(players)
         .set({
           ...req.body,
@@ -147,6 +163,7 @@ export function registerRoutes(app: Express) {
 
   app.delete("/api/teams/:teamId/players/:playerId", requireRole(["admin", "editor"]), async (req, res) => {
     try {
+      const db = await getDb();
       const deleted = await db.delete(players)
         .where(eq(players.id, parseInt(req.params.playerId)))
         .returning();
@@ -166,6 +183,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/players/:playerId/stats", requireAuth, async (req, res) => {
     try {
       const playerId = parseInt(req.params.playerId);
+      const db = await getDb();
 
       // Get games played and calculate minutes
       // Get all matches where player was involved (either as starter or substitute)
@@ -224,9 +242,11 @@ export function registerRoutes(app: Express) {
       let totalMinutes = 0;
       const uniqueMatchIds = new Set();
       
+
       matchesPlayed.forEach(match => {
         uniqueMatchIds.add(match.matchId);
         
+
         if (match.subInMinute !== null) {
           // Player came on as a substitute
           totalMinutes += 90 - match.subInMinute;
@@ -284,22 +304,30 @@ export function registerRoutes(app: Express) {
 
   // Events
   app.get("/api/teams/:teamId/events", requireAuth, async (req, res) => {
-    const teamEvents = await db.select().from(events)
-      .where(eq(events.teamId, parseInt(req.params.teamId)));
-    res.json(teamEvents);
+    try {
+      const db = await getDb();
+      const teamEvents = await db.select().from(events)
+        .where(eq(events.teamId, parseInt(req.params.teamId)));
+      res.json(teamEvents);
+    } catch (error: any) {
+      console.error('Error fetching events:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch events" });
+    }
   });
 
   app.post("/api/teams/:teamId/events", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const { startDate, endDate, ...rest } = req.body;
-      
+      const db = await getDb();
       // Validate dates
       const startDateObj = new Date(startDate);
       const endDateObj = new Date(endDate);
       
+
       if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         return res.status(400).json({ message: "Invalid date format" });
       }
+      
 
       const newEvent = await db.insert(events).values({
         ...rest,
@@ -308,6 +336,7 @@ export function registerRoutes(app: Express) {
         endDate: endDateObj.toISOString(),
         type: rest.type
       }).returning();
+      
 
       res.json(newEvent[0]);
     } catch (error: any) {
@@ -320,14 +349,16 @@ export function registerRoutes(app: Express) {
   app.put("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const { startDate, endDate, ...rest } = req.body;
-      
+      const db = await getDb();
       // Validate dates
       const startDateObj = new Date(startDate);
       const endDateObj = new Date(endDate);
       
+
       if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         return res.status(400).json({ message: "Invalid date format" });
       }
+      
 
       const updatedEvent = await db.update(events)
         .set({
@@ -342,10 +373,12 @@ export function registerRoutes(app: Express) {
         })
         .where(eq(events.id, parseInt(req.params.eventId)))
         .returning();
+      
 
       if (!updatedEvent.length) {
         return res.status(404).json({ message: "Event not found" });
       }
+      
 
       res.json(updatedEvent[0]);
     } catch (error: any) {
@@ -357,6 +390,7 @@ export function registerRoutes(app: Express) {
   // Delete event
   app.delete("/api/teams/:teamId/events/:eventId", requireRole(["admin", "editor"]), async (req, res) => {
     try {
+      const db = await getDb();
       const deleted = await db.delete(events)
         .where(eq(events.id, parseInt(req.params.eventId)))
         .returning();
@@ -374,9 +408,15 @@ export function registerRoutes(app: Express) {
 
   // News
   app.get("/api/teams/:teamId/news", requireAuth, async (req, res) => {
-    const teamNews = await db.select().from(news)
-      .where(eq(news.teamId, parseInt(req.params.teamId)));
-    res.json(teamNews);
+    try {
+      const db = await getDb();
+      const teamNews = await db.select().from(news)
+        .where(eq(news.teamId, parseInt(req.params.teamId)));
+      res.json(teamNews);
+    } catch (error: any) {
+      console.error('Error fetching news:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch news" });
+    }
   });
 
   app.post("/api/teams/:teamId/news", requireRole(["admin"]), async (req, res) => {
@@ -384,13 +424,14 @@ export function registerRoutes(app: Express) {
       if (!req.user) {
         return res.status(401).send("User not authenticated");
       }
-
+      const db = await getDb();
       const newNews = await db.insert(news).values({
         ...req.body,
         teamId: parseInt(req.params.teamId),
         createdById: req.user.id
       }).returning();
       
+
       res.json(newNews[0]);
     } catch (error: any) {
       console.error('Error creating news:', error);
@@ -400,6 +441,7 @@ export function registerRoutes(app: Express) {
 
   app.put("/api/teams/:teamId/news/:newsId", requireRole(["admin"]), async (req, res) => {
     try {
+      const db = await getDb();
       const updatedNews = await db.update(news)
         .set(req.body)
         .where(eq(news.id, parseInt(req.params.newsId)))
@@ -418,6 +460,7 @@ export function registerRoutes(app: Express) {
 
   app.delete("/api/teams/:teamId/news/:newsId", requireRole(["admin"]), async (req, res) => {
     try {
+      const db = await getDb();
       const deleted = await db.delete(news)
         .where(eq(news.id, parseInt(req.params.newsId)))
         .returning();
@@ -438,7 +481,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/matches/:matchId/details", requireAuth, async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-
+      const db = await getDb();
       // Get lineup with player details
       const lineup = await db
         .select({
@@ -550,12 +593,15 @@ export function registerRoutes(app: Express) {
   app.post("/api/matches/:matchId/lineup", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const { players } = req.body; // Array of { playerId, position }
       
+
       // First, remove existing lineup
       await db.delete(matchLineups)
         .where(eq(matchLineups.matchId, matchId));
       
+
       // Then insert new lineup
       const lineup = await db.insert(matchLineups)
         .values(players.map((p: any) => ({
@@ -565,6 +611,7 @@ export function registerRoutes(app: Express) {
         })))
         .returning();
       
+
       res.json(lineup);
     } catch (error: any) {
       console.error('Error updating match lineup:', error);
@@ -576,12 +623,15 @@ export function registerRoutes(app: Express) {
   app.post("/api/matches/:matchId/reserves", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const { players } = req.body; // Array of playerIds
       
+
       // First, remove existing reserves
       await db.delete(matchReserves)
         .where(eq(matchReserves.matchId, matchId));
       
+
       // Then insert new reserves
       const reserves = await db.insert(matchReserves)
         .values(players.map((playerId: number) => ({
@@ -590,6 +640,7 @@ export function registerRoutes(app: Express) {
         })))
         .returning();
       
+
       res.json(reserves);
     } catch (error: any) {
       console.error('Error updating match reserves:', error);
@@ -601,8 +652,10 @@ export function registerRoutes(app: Express) {
   app.post("/api/matches/:matchId/scorers", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const { playerId, minute, eventType = 'goal' } = req.body;
       
+
       const scorer = await db.insert(matchScorers)
         .values({
           matchId,
@@ -612,6 +665,7 @@ export function registerRoutes(app: Express) {
         })
         .returning();
       
+
       res.json(scorer[0]);
     } catch (error: any) {
       console.error('Error adding match scorer:', error);
@@ -623,10 +677,11 @@ export function registerRoutes(app: Express) {
   app.delete("/api/matches/:matchId/scorers", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
-      
+      const db = await getDb();
       await db.delete(matchScorers)
         .where(eq(matchScorers.matchId, matchId));
       
+
       res.json({ message: "Scorers deleted successfully" });
     } catch (error: any) {
       console.error('Error deleting match scorers:', error);
@@ -636,29 +691,39 @@ export function registerRoutes(app: Express) {
 
   // Next match endpoint
   app.get("/api/teams/:teamId/next-match", requireAuth, async (req, res) => {
-    const now = new Date().toISOString();
-    const nextMatch = await db.select()
-      .from(events)
-      .where(
-        sql`${events.teamId} = ${parseInt(req.params.teamId)} AND 
-            ${events.type} = 'match' AND 
-            ${events.startDate} > ${now}`
-      )
-      .orderBy(events.startDate)
-      .limit(1);
-    
-    res.json(nextMatch[0] || null);
+    try {
+      const db = await getDb();
+      const now = new Date().toISOString();
+      const nextMatch = await db.select()
+        .from(events)
+        .where(
+          sql`${events.teamId} = ${parseInt(req.params.teamId)} AND 
+              ${events.type} = 'match' AND 
+              ${events.startDate} > ${now}`
+        )
+        .orderBy(events.startDate)
+        .limit(1);
+      
+
+      res.json(nextMatch[0] || null);
+    } catch (error: any) {
+      console.error('Error fetching next match:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch next match" });
+    }
   });
 
   // Add match card
   app.post("/api/matches/:matchId/cards", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const { cards } = req.body; // Array of { playerId, minute, cardType, reason? }
+      
 
       // First, remove existing cards
       await db.delete(matchCards)
         .where(eq(matchCards.matchId, matchId));
+      
 
       // Then insert new cards
       if (cards.length > 0) {
@@ -671,6 +736,7 @@ export function registerRoutes(app: Express) {
             reason: card.reason
           })))
           .returning();
+        
 
         res.json(newCards);
       } else {
@@ -686,17 +752,21 @@ export function registerRoutes(app: Express) {
   app.post("/api/matches/:matchId/substitutions", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const { substitutions } = req.body; // Array of { playerOutId, playerInId, minute, half }
+      
 
       if (!substitutions || !Array.isArray(substitutions)) {
         return res.status(400).json({ message: "Invalid substitutions data format" });
       }
+      
 
       // Validate substitutions data
       const invalidSubs = substitutions.filter(
         sub => !sub.playerOutId || !sub.playerInId || sub.minute < 0 || 
                sub.minute > 120 || ![1, 2].includes(sub.half)
       );
+      
 
       if (invalidSubs.length > 0) {
         return res.status(400).json({ 
@@ -704,11 +774,13 @@ export function registerRoutes(app: Express) {
           details: "All substitutions must have valid player IDs, minute (0-120), and half (1 or 2)"
         });
       }
+      
 
       console.log('Removing existing substitutions for match:', matchId);
       // First, remove existing substitutions
       await db.delete(matchSubstitutions)
         .where(eq(matchSubstitutions.matchId, matchId));
+      
 
       console.log('Adding new substitutions:', substitutions);
       // Then insert new substitutions
@@ -722,6 +794,7 @@ export function registerRoutes(app: Express) {
             half: sub.half
           })))
           .returning();
+        
 
         console.log('Successfully added substitutions:', newSubstitutions);
         res.json(newSubstitutions);
@@ -741,6 +814,7 @@ export function registerRoutes(app: Express) {
   app.get("/api/matches/:matchId/commentary", requireAuth, async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const commentary = await db.select()
         .from(matchCommentary)
         .where(eq(matchCommentary.matchId, matchId))
@@ -756,6 +830,7 @@ export function registerRoutes(app: Express) {
   app.post("/api/matches/:matchId/commentary", requireRole(["admin", "editor"]), async (req, res) => {
     try {
       const matchId = parseInt(req.params.matchId);
+      const db = await getDb();
       const { minute, type, content } = req.body;
 
       if (!["highlight", "commentary"].includes(type)) {
@@ -785,6 +860,7 @@ export function registerRoutes(app: Express) {
   // Get specific match details
   app.get("/api/teams/:teamId/events/:eventId", requireAuth, async (req, res) => {
     try {
+      const db = await getDb();
       const event = await db.select()
         .from(events)
         .where(eq(events.id, parseInt(req.params.eventId)))
@@ -800,4 +876,5 @@ export function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message || "Failed to fetch event" });
     }
   });
+  return app;
 }

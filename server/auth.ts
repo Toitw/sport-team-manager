@@ -6,7 +6,7 @@ import createMemoryStore from "memorystore";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
-import { db } from "../db";
+import { getDb } from "../db";
 import { eq } from "drizzle-orm";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./services/email";
 
@@ -36,7 +36,7 @@ declare global {
   }
 }
 
-export function setupAuth(app: Express) {
+export async function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "sports-team-manager",
@@ -62,6 +62,7 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
+          const db = await getDb();
           const [user] = await db
             .select()
             .from(users)
@@ -94,6 +95,7 @@ export function setupAuth(app: Express) {
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      const db = await getDb();
       const [user] = await db
         .select()
         .from(users)
@@ -115,6 +117,7 @@ export function setupAuth(app: Express) {
       }
 
       const { email, password, role } = result.data;
+      const db = await getDb();
 
       const [existingUser] = await db
         .select()
@@ -126,11 +129,9 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Email already registered");
       }
 
-      // Generate magic link token and hash password
       const hashedPassword = await crypto.hash(password);
       const verificationToken = crypto.generateToken();
 
-      // Create new user with verification token
       const [newUser] = await db
         .insert(users)
         .values({
@@ -142,12 +143,10 @@ export function setupAuth(app: Express) {
         })
         .returning();
 
-      // Send verification email with magic link
       try {
         await sendVerificationEmail(email, verificationToken);
       } catch (error) {
         console.error('Failed to send verification email:', error);
-        // Delete the user if email sending fails
         await db
           .delete(users)
           .where(eq(users.id, newUser.id));
@@ -171,6 +170,7 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Invalid verification link");
       }
 
+      const db = await getDb();
       const [user] = await db
         .select()
         .from(users)
@@ -208,6 +208,7 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Email is required");
       }
 
+      const db = await getDb();
       const [user] = await db
         .select()
         .from(users)
@@ -215,13 +216,11 @@ export function setupAuth(app: Express) {
         .limit(1);
 
       if (!user) {
-        // Don't reveal whether a user exists
         return res.json({ message: "If your email is registered, you'll receive a password reset link." });
       }
 
       const resetToken = crypto.generateToken();
-      // Explicitly set expiration to 1 hour from now
-      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiration
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000);
 
       await db
         .update(users)
@@ -257,6 +256,7 @@ export function setupAuth(app: Express) {
         return res.status(400).send("Missing token or new password");
       }
 
+      const db = await getDb();
       const [user] = await db
         .select()
         .from(users)
@@ -270,7 +270,6 @@ export function setupAuth(app: Express) {
       const now = new Date();
       const expires = new Date(user.passwordResetExpires);
 
-      // Strict check for token expiration
       if (now > expires) {
         return res.status(400).send("Reset token has expired. Please request a new password reset.");
       }

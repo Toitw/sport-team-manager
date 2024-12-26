@@ -1,87 +1,97 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { sql } from "drizzle-orm";
 import { Pool, neonConfig } from '@neondatabase/serverless';
-import * as schema from "@db/schema";
+import * as schema from "./schema";
 import WebSocket from 'ws';
 
+// Configure WebSocket for Neon
+neonConfig.webSocketConstructor = WebSocket;
+
 // Ensure DATABASE_URL is present
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is not set");
 }
 
-console.log('Initializing database connection...');
+// Singleton instances
+let pool: Pool | null = null;
+let db: ReturnType<typeof drizzle> | null = null;
 
-// Create and export a single database instance
-let db: ReturnType<typeof drizzle>;
+// Create database pool with retries
+async function createPool(retries = 3): Promise<Pool> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (!pool) {
+        console.log(`Creating database pool (attempt ${attempt}/${retries})...`);
+        pool = new Pool({
+          connectionString: DATABASE_URL,
+          connectionTimeoutMillis: 5000,
+          maxUses: 10000,
+          max: 10
+        });
 
-// Initialize the database connection
-export async function getDb() {
-  if (!db) {
-    db = await initializeDatabase();
-  }
-  return db;
-}
-
-// Initialize database connection
-async function initializeDatabase() {
-  try {
-    const databaseUrl = process.env.DATABASE_URL;
-    if (!databaseUrl) {
-      throw new Error("DATABASE_URL is not defined");
+        // Test the pool
+        const client = await pool.connect();
+        try {
+          await client.query('SELECT 1');
+          console.log('Database pool created successfully');
+          return pool;
+        } finally {
+          client.release();
+        }
+      }
+      return pool;
+    } catch (error) {
+      console.error(`Failed to create pool (attempt ${attempt}/${retries}):`, error);
+      if (pool) {
+        await pool.end();
+        pool = null;
+      }
+      if (attempt === retries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
+  }
+  throw new Error('Failed to create database pool after retries');
+}
 
-    // Log the connection attempt
-    console.log('Attempting to initialize database connection...');
-    const url = new URL(databaseUrl);
-    console.log('Database connection details:', {
-      host: url.hostname,
-      database: url.pathname.slice(1),
-      ssl: true
-    });
+// Get database instance with connection handling
+export async function getDb() {
+  try {
+    if (db) return db;
 
-    // Configure WebSocket for Neon
-    console.log('Configuring WebSocket for Neon...');
-    neonConfig.webSocketConstructor = WebSocket;
-    // @ts-ignore - Known type issue with neonConfig
-    neonConfig.useSecureWebSocket = true;
-
-    // Create pool with minimal config
-    console.log('Creating connection pool...');
-    const pool = new Pool({ 
-      connectionString: databaseUrl,
-      connectionTimeoutMillis: 10000, // Increased timeout to 10 seconds
-      max: 20 // Maximum number of clients in the pool
-    });
+    // Create pool if needed
+    const pool = await createPool();
 
     // Initialize Drizzle
     console.log('Initializing Drizzle ORM...');
-    const dbInstance = drizzle(pool, { schema });
+    db = drizzle(pool, { schema });
 
-    // Test Drizzle connection with timeout
-    console.log('Testing Drizzle connection...');
-    const drizzleTest = await Promise.race([
-      dbInstance.execute(sql`SELECT current_database(), current_user, version()`),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Drizzle connection test timeout')), 5000)
-      )
-    ]);
-
+    // Verify Drizzle connection
+    await db.execute(sql`SELECT current_database(), current_user`);
     console.log('Database connection established successfully');
-    return dbInstance;
+
+    return db;
   } catch (error) {
-    console.error('Critical database initialization error:', error);
-    // Log additional connection details (without sensitive info)
-    if (process.env.DATABASE_URL) {
-      const url = new URL(process.env.DATABASE_URL);
-      console.error('Connection details:', {
-        host: url.hostname,
-        database: url.pathname.slice(1),
-        ssl: true
-      });
+    console.error('Database initialization error:', error);
+
+    // Clean up on error
+    if (pool) {
+      await pool.end();
+      pool = null;
     }
+    db = null;
     throw error;
   }
 }
 
+// Graceful shutdown helper
+export async function closeDatabase() {
+  if (pool) {
+    console.log('Closing database pool...');
+    await pool.end();
+    pool = null;
+    db = null;
+  }
+}
+
 export { sql };
-export default { getDb };
