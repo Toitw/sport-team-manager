@@ -23,7 +23,7 @@ async function handleRequest(
 
     if (!response.ok) {
       if (response.status >= 500) {
-        return { ok: false, message: response.statusText };
+        return { ok: false, message: "Server error. Please try again later." };
       }
 
       const message = await response.text();
@@ -32,67 +32,79 @@ async function handleRequest(
 
     return { ok: true };
   } catch (e: any) {
-    return { ok: false, message: e.toString() };
+    return { ok: false, message: "Network error. Please check your connection." };
   }
 }
 
 async function fetchUser(): Promise<User | null> {
-  const response = await fetch('/api/user', {
-    credentials: 'include'
-  });
+  try {
+    const response = await fetch('/api/user', {
+      credentials: 'include'
+    });
 
-  if (!response.ok) {
-    if (response.status === 401) {
-      return null;
+    if (!response.ok) {
+      if (response.status === 401) {
+        return null;
+      }
+
+      throw new Error(await response.text());
     }
 
-    if (response.status >= 500) {
-      throw new Error(`${response.status}: ${response.statusText}`);
-    }
-
-    throw new Error(`${response.status}: ${await response.text()}`);
+    return response.json();
+  } catch (error: any) {
+    console.error('Error fetching user:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export function useUser() {
   const queryClient = useQueryClient();
 
-  const { data: user, error, isLoading } = useQuery<User | null, Error>({
+  const { data: user, error, isLoading } = useQuery({
     queryKey: ['user'],
     queryFn: fetchUser,
-    staleTime: Infinity,
-    retry: false
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 60000, // Keep in cache for 1 minute (renamed from cacheTime)
+    retry: (failureCount, error) => {
+      // Don't retry on 401 (unauthorized)
+      if (error instanceof Error && error.message.includes('401')) {
+        return false;
+      }
+      // Only retry twice for other errors
+      return failureCount < 2;
+    },
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
+    refetchOnReconnect: true // Refetch on reconnection
   });
 
-  const loginMutation = useMutation<RequestResult, Error, InsertUser>({
-    mutationFn: (userData) => handleRequest('/api/login', 'POST', userData),
+  const loginMutation = useMutation({
+    mutationFn: (userData: InsertUser) => handleRequest('/api/login', 'POST', userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 
-  const logoutMutation = useMutation<RequestResult, Error>({
+  const logoutMutation = useMutation({
     mutationFn: () => handleRequest('/api/logout', 'POST'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 
-  const registerMutation = useMutation<RequestResult, Error, InsertUser>({
-    mutationFn: (userData) => handleRequest('/api/register', 'POST', userData),
+  const registerMutation = useMutation({
+    mutationFn: (userData: InsertUser) => handleRequest('/api/register', 'POST', userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 
-  const forgotPasswordMutation = useMutation<RequestResult, Error, { email: string }>({
-    mutationFn: (data) => handleRequest('/api/forgot-password', 'POST', data),
+  const forgotPasswordMutation = useMutation({
+    mutationFn: (data: { email: string }) => handleRequest('/api/forgot-password', 'POST', data),
   });
 
-  const resetPasswordMutation = useMutation<RequestResult, Error, { token: string; newPassword: string }>({
-    mutationFn: (data) => handleRequest('/api/reset-password', 'POST', data),
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: { token: string; newPassword: string }) => 
+      handleRequest('/api/reset-password', 'POST', data),
   });
 
   return {

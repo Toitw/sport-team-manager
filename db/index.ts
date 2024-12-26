@@ -10,15 +10,20 @@ if (!process.env.DATABASE_URL) {
 }
 
 console.log('Initializing database connection...');
+
+// Create and export a single database instance
 let db: ReturnType<typeof drizzle>;
 
-// Initialize database connection
-export async function initializeDatabase() {
-  if (db) {
-    console.log('Using existing database connection');
-    return db;
+// Initialize the database connection
+export async function getDb() {
+  if (!db) {
+    db = await initializeDatabase();
   }
+  return db;
+}
 
+// Initialize database connection
+async function initializeDatabase() {
   try {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
@@ -48,55 +53,21 @@ export async function initializeDatabase() {
       max: 20 // Maximum number of clients in the pool
     });
 
-    // Test basic connection first
-    console.log('Testing database connection...');
-    const client = await pool.connect();
+    // Initialize Drizzle
+    console.log('Initializing Drizzle ORM...');
+    const dbInstance = drizzle(pool, { schema });
 
-    try {
-      // Test basic connectivity
-      console.log('Executing basic query test...');
-      const result = await client.query('SELECT current_database(), current_user, version()');
-      console.log('Database connection test successful:', {
-        database: result.rows[0].current_database,
-        user: result.rows[0].current_user,
-        version: result.rows[0].version
-      });
+    // Test Drizzle connection with timeout
+    console.log('Testing Drizzle connection...');
+    const drizzleTest = await Promise.race([
+      dbInstance.execute(sql`SELECT current_database(), current_user, version()`),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Drizzle connection test timeout')), 5000)
+      )
+    ]);
 
-      // Initialize Drizzle
-      console.log('Initializing Drizzle ORM...');
-      db = drizzle(pool, { schema });
-
-      // Test Drizzle connection with timeout
-      console.log('Testing Drizzle connection...');
-      interface TableQueryResult {
-        rows: { table_name: string }[];
-      }
-
-      const drizzleTest = await Promise.race([
-        db.execute(sql`
-          SELECT table_name 
-          FROM information_schema.tables 
-          WHERE table_schema = 'public'
-          LIMIT 1
-        `) as Promise<TableQueryResult>,
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Drizzle connection test timeout')), 5000)
-        )
-      ]);
-
-      console.log('Drizzle connection test successful:', {
-        tableCount: drizzleTest.rows.length,
-        firstTable: drizzleTest.rows[0]?.table_name
-      });
-
-      return db;
-    } catch (error) {
-      console.error('Error during database initialization:', error);
-      throw error;
-    } finally {
-      console.log('Releasing test connection...');
-      client.release();
-    }
+    console.log('Database connection established successfully');
+    return dbInstance;
   } catch (error) {
     console.error('Critical database initialization error:', error);
     // Log additional connection details (without sensitive info)
@@ -112,4 +83,5 @@ export async function initializeDatabase() {
   }
 }
 
-export { db, sql };
+export { sql };
+export default { getDb };
