@@ -26,20 +26,18 @@ export default defineConfig({
     },
   },
   server: {
-    host: "0.0.0.0",
+    host: true,
+    strictPort: true,
     port: 5173,
     hmr: {
-      clientPort: 443,
-      protocol: 'wss',
-      host: process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'
+      clientPort: process.env.REPL_SLUG ? 443 : 5173,
+      protocol: process.env.REPL_SLUG ? 'wss' : 'ws',
     },
     proxy: {
       '/api': {
         target: 'http://0.0.0.0:3000',
         changeOrigin: true,
-        secure: false,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false
       }
     }
   }
