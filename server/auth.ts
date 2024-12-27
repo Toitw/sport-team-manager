@@ -322,6 +322,17 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
+    // In development mode, return a mock user
+    if (process.env.NODE_ENV === 'development') {
+      return res.json({
+        id: 1,
+        email: "dev@example.com",
+        role: "admin",
+        emailVerified: true,
+        createdAt: new Date().toISOString()
+      });
+    }
+
     if (req.isAuthenticated()) {
       return res.json(req.user);
     }

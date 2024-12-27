@@ -8,6 +8,11 @@ import path from "path";
 import fs from "fs";
 
 function requireAuth(req: any, res: any, next: any) {
+  // Allow all requests in development mode
+  if (process.env.NODE_ENV !== 'production') {
+    return next();
+  }
+
   if (!req.isAuthenticated()) {
     return res.status(401).send("Unauthorized");
   }
@@ -16,6 +21,11 @@ function requireAuth(req: any, res: any, next: any) {
 
 function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
+    // Allow all requests in development mode
+    if (process.env.NODE_ENV !== 'production') {
+      return next();
+    }
+
     if (!req.isAuthenticated()) {
       return res.status(401).send("Unauthorized");
     }

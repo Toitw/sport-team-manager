@@ -11,7 +11,7 @@ NODE_ENV = "development"
 [deployment]
 deploymentTarget = "cloudrun"
 build = ["npm", "run", "build"]
-run = ["sh", "-c", "PORT=3000 tsx watch --clear-screen=false server/index.ts"]
+run = ["sh", "-c", "PORT=3000 NODE_ENV=development tsx watch --clear-screen=false server/index.ts"]
 
 [languages]
 [languages.typescript]
@@ -86,5 +86,4 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=3000 tsx watch --clear-screen=false server/index.ts"
-waitForPort = 3000
+args = "PORT=3000 NODE_ENV=development tsx watch --clear-screen=false server/index.ts"

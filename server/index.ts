@@ -63,12 +63,20 @@ async function startServer() {
           'http://localhost:5173',
           'http://localhost:3000',
           'http://0.0.0.0:5173',
-          'http://0.0.0.0:3000'
+          'http://0.0.0.0:3000',
+          'http://localhost:5174',  // Add additional Vite ports
+          'http://0.0.0.0:5174'
         ];
 
         // Allow all replit.dev subdomains including the current repl's domain
         if (origin.match(/^https?:\/\/.*\.replit\.dev(:\d+)?$/)) {
           log(`Allowing Replit domain: ${origin}`);
+          return callback(null, true);
+        }
+
+        // In development mode, allow all local origins
+        if (process.env.NODE_ENV === 'development') {
+          log(`Development mode: allowing origin ${origin}`);
           return callback(null, true);
         }
 

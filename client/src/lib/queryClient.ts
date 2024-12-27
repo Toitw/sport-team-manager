@@ -38,6 +38,11 @@ export const queryClient = new QueryClient({
             timestamp: new Date().toISOString()
           });
 
+          // Skip authentication errors in development mode
+          if (!res.ok && res.status === 401 && process.env.NODE_ENV === 'development') {
+            return null;
+          }
+
           if (!res.ok) {
             // Handle authentication errors
             if (res.status === 401) {
@@ -91,8 +96,8 @@ export const queryClient = new QueryClient({
         }
       },
       retry: (failureCount, error: any) => {
-        // Don't retry on authentication errors
-        if (error.name === 'AuthError') {
+        // Don't retry on authentication errors in production
+        if (error.name === 'AuthError' && process.env.NODE_ENV === 'production') {
           return false;
         }
         // Retry connection errors more times
@@ -109,8 +114,8 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: (failureCount, error: any) => {
-        // Don't retry on authentication errors
-        if (error.name === 'AuthError') {
+        // Don't retry on authentication errors in production
+        if (error.name === 'AuthError' && process.env.NODE_ENV === 'production') {
           return false;
         }
         // Only retry once for mutations
