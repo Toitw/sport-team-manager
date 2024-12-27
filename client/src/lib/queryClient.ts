@@ -27,7 +27,8 @@ export const queryClient = new QueryClient({
             credentials: "include",
             headers: {
               "Content-Type": "application/json",
-              "X-Requested-With": "XMLHttpRequest"
+              "X-Requested-With": "XMLHttpRequest",
+              "X-Requested-By": "frontend"
             },
           });
 

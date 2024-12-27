@@ -18,20 +18,32 @@ async function handleRequest(
       method,
       headers: {
         ...(body ? { "Content-Type": "application/json" } : {}),
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
+        "X-Requested-By": "frontend"
       },
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include",
     });
 
     if (!response.ok) {
+      // Handle server errors with detailed logging
       if (response.status >= 500) {
         console.error('Server error:', {
           status: response.status,
           statusText: response.statusText,
-          url
+          url,
+          timestamp: new Date().toISOString()
         });
         return { ok: false, message: "Server error. Please try again later." };
+      }
+
+      // Handle connection errors
+      if (response.status === 0 || !response.status) {
+        console.error('Connection error:', {
+          url,
+          timestamp: new Date().toISOString()
+        });
+        return { ok: false, message: "Connection failed. Please check your connection and try again." };
       }
 
       const message = await response.text();
@@ -42,7 +54,8 @@ async function handleRequest(
   } catch (e: any) {
     console.error('Network error:', {
       url,
-      error: e.message
+      error: e.message,
+      timestamp: new Date().toISOString()
     });
     return { ok: false, message: "Network error. Please check your connection." };
   }
@@ -50,10 +63,12 @@ async function handleRequest(
 
 async function fetchUser(): Promise<User | null> {
   try {
-    const response = await fetch('/api/user', {
+    // Add a random query parameter to prevent caching
+    const response = await fetch(`/api/user?_=${Date.now()}`, {
       credentials: 'include',
       headers: {
-        "X-Requested-With": "XMLHttpRequest"
+        "X-Requested-With": "XMLHttpRequest",
+        "X-Requested-By": "frontend"
       }
     });
 
@@ -65,7 +80,8 @@ async function fetchUser(): Promise<User | null> {
       if (response.status >= 500) {
         console.error('Server error while fetching user:', {
           status: response.status,
-          statusText: response.statusText
+          statusText: response.statusText,
+          timestamp: new Date().toISOString()
         });
       }
 
@@ -75,7 +91,8 @@ async function fetchUser(): Promise<User | null> {
     return response.json();
   } catch (error: any) {
     console.error('Error fetching user:', {
-      error: error.message
+      error: error.message,
+      timestamp: new Date().toISOString()
     });
     throw error;
   }
