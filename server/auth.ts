@@ -57,48 +57,54 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Create test user in development mode
+  // Create test users in development mode
   if (process.env.NODE_ENV === 'development') {
     try {
       const db = await getDb();
-      const testEmail = "test@example.com";
+      const testUsers = [
+        { email: "test@example.com", role: "admin" },
+        { email: "manager@example.com", role: "manager" },
+        { email: "reader@example.com", role: "reader" }
+      ];
 
-      console.log('Checking for test user existence...');
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, testEmail))
-        .limit(1);
+      for (const testUser of testUsers) {
+        console.log(`Checking for test user existence: ${testUser.email}`);
+        const [existingUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, testUser.email))
+          .limit(1);
 
-      if (!existingUser) {
-        console.log('Creating test user...');
-        const hashedPassword = await crypto.hash("testpass123");
-        const [newUser] = await db
-          .insert(users)
-          .values({
-            email: testEmail,
-            password: hashedPassword,
-            role: "admin",
-            emailVerified: true,
-            verificationToken: null,
-            createdAt: new Date().toISOString()
-          })
-          .returning();
+        if (!existingUser) {
+          console.log(`Creating test user: ${testUser.email}`);
+          const hashedPassword = await crypto.hash("testpass123");
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              email: testUser.email,
+              password: hashedPassword,
+              role: testUser.role,
+              emailVerified: true,
+              verificationToken: null,
+              createdAt: new Date().toISOString()
+            })
+            .returning();
 
-        console.log('Test user created successfully:', {
-          email: testEmail,
-          id: newUser.id,
-          role: newUser.role
-        });
-      } else {
-        console.log('Test user already exists:', {
-          email: testEmail,
-          id: existingUser.id,
-          role: existingUser.role
-        });
+          console.log('Test user created successfully:', {
+            email: testUser.email,
+            id: newUser.id,
+            role: newUser.role
+          });
+        } else {
+          console.log('Test user already exists:', {
+            email: testUser.email,
+            id: existingUser.id,
+            role: existingUser.role
+          });
+        }
       }
     } catch (error) {
-      console.error('Error setting up test user:', error);
+      console.error('Error setting up test users:', error);
     }
   }
 
