@@ -84,7 +84,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
                 <div className="w-8 h-8 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                   {player.player?.photoUrl ? (
                     <img 
-                      src={player.player.photoUrl} 
+                      src={`${import.meta.env.VITE_API_URL || ''}${player.player.photoUrl}`} 
                       alt={player.player?.name || 'Player'} 
                       className="w-full h-full object-cover"
                     />
@@ -113,7 +113,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
               <div className="w-7 h-7 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
-                    src={player.player.photoUrl} 
+                    src={`${import.meta.env.VITE_API_URL || ''}${player.player.photoUrl}`} 
                     alt={player.player?.name || 'Player'} 
                     className="w-full h-full object-cover"
                   />
@@ -142,7 +142,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
               <div className="w-7 h-7 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
-                    src={player.player.photoUrl} 
+                    src={`${import.meta.env.VITE_API_URL || ''}${player.player.photoUrl}`} 
                     alt={player.player?.name || 'Player'} 
                     className="w-full h-full object-cover"
                   />
@@ -171,7 +171,7 @@ const LineupGrid = ({ lineup }: { lineup: MatchDetails['lineup'] }) => {
               <div className="w-7 h-7 rounded-md bg-black/20 flex items-center justify-center mb-1 overflow-hidden">
                 {player.player?.photoUrl ? (
                   <img 
-                    src={player.player.photoUrl} 
+                    src={`${import.meta.env.VITE_API_URL || ''}${player.player.photoUrl}`} 
                     alt={player.player?.name || 'Player'} 
                     className="w-full h-full object-cover"
                   />

@@ -93,14 +93,20 @@ export function ReservesDialog({ matchId, teamId, open, onOpenChange }: Reserves
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reserves.map((playerId, index) => (
-                <TableRow key={index}>
+              {players.map((player) => (
+                <TableRow key={player.id}>
                   <TableCell>
+                    <img src={`${import.meta.env.VITE_API_URL || ''}${player.photoUrl}`} alt={player.name} />
                     <Select
-                      value={playerId.toString()}
+                      value={player.id.toString()}
                       onValueChange={(value) => {
                         const newReserves = [...reserves];
-                        newReserves[index] = parseInt(value);
+                        const index = reserves.indexOf(player.id);
+                        if (index > -1) {
+                          newReserves[index] = parseInt(value);
+                        } else {
+                          newReserves.push(parseInt(value));
+                        }
                         setReserves(newReserves);
                       }}
                     >
@@ -108,9 +114,9 @@ export function ReservesDialog({ matchId, teamId, open, onOpenChange }: Reserves
                         <SelectValue placeholder="Select player" />
                       </SelectTrigger>
                       <SelectContent>
-                        {players.map((player) => (
-                          <SelectItem key={player.id} value={player.id.toString()}>
-                            {player.name} ({player.position} - #{player.number})
+                        {players.map((p) => (
+                          <SelectItem key={p.id} value={p.id.toString()}>
+                            {p.name} ({p.position} - #{p.number})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -121,7 +127,7 @@ export function ReservesDialog({ matchId, teamId, open, onOpenChange }: Reserves
                       variant="destructive"
                       size="sm"
                       onClick={() => {
-                        setReserves(reserves.filter((_, i) => i !== index));
+                        setReserves(reserves.filter((id) => id !== player.id));
                       }}
                     >
                       Remove
