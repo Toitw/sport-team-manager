@@ -24,12 +24,19 @@ export default defineConfig({
     },
   },
   server: {
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     port: 5173,
     strictPort: true,
     hmr: {
-      clientPort: 443,
-      host: process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'localhost'
+      clientPort: process.env.REPL_SLUG ? 443 : 5173,
+      protocol: process.env.REPL_SLUG ? 'wss' : 'ws',
+      host: process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : '0.0.0.0'
+    },
+    proxy: {
+      '/api': {
+        target: 'http://0.0.0.0:3000',
+        changeOrigin: true
+      }
     }
   }
 });

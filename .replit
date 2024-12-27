@@ -28,20 +28,12 @@ language = "nodejs"
 requiredFiles = [".replit", "replit.nix", ".config"]
 
 [[ports]]
-localPort = 80
-externalPort = 80
-
-[[ports]]
 localPort = 3000
 externalPort = 3000
 
 [[ports]]
 localPort = 5173
 externalPort = 5173
-
-[[ports]]
-localPort = 5174
-externalPort = 3001
 
 [workflows]
 runButton = "Project"
