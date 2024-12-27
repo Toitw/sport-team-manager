@@ -5,8 +5,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         try {
-          const baseUrl = '';  // Empty base URL will use relative paths
-          const url = `${baseUrl}${queryKey[0]}`;
+          const baseUrl = '/api';  // Always use /api prefix
+          const url = `${baseUrl}${queryKey[0].startsWith('/') ? queryKey[0] : `/${queryKey[0]}`}`;
+          console.log('Sending Request:', url);
 
           const res = await fetch(url, {
             credentials: "include",
@@ -15,6 +16,8 @@ export const queryClient = new QueryClient({
               "X-Requested-With": "XMLHttpRequest"
             },
           });
+
+          console.log('Received Response:', res.status, url);
 
           if (!res.ok) {
             // Handle authentication errors
@@ -28,22 +31,22 @@ export const queryClient = new QueryClient({
 
             // Handle server errors
             if (res.status >= 500) {
-              console.error(`Server error: ${res.status}`, {
+              console.error('Server error:', {
                 status: res.status,
                 statusText: res.statusText,
-                url: queryKey[0]
+                url
               });
-              throw new Error(`Server error: ${res.status}`);
+              throw new Error(`Server error (${res.status}): Please try again later`);
             }
 
             // Handle other client errors
             const errorText = await res.text();
-            throw new Error(`${res.status}: ${errorText}`);
+            throw new Error(`Request failed (${res.status}): ${errorText}`);
           }
 
           return res.json();
         } catch (error) {
-          console.error("Query error:", {
+          console.error('Query error:', {
             queryKey: queryKey[0],
             error: error instanceof Error ? error.message : "Unknown error"
           });
@@ -56,8 +59,8 @@ export const queryClient = new QueryClient({
             (error.message.includes("401") || error.message.includes("403"))) {
           return false;
         }
-        // Retry up to 3 times for other errors
-        return failureCount < 3;
+        // Only retry twice for network/server errors
+        return failureCount < 2;
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
@@ -71,8 +74,8 @@ export const queryClient = new QueryClient({
             (error.message.includes("401") || error.message.includes("403"))) {
           return false;
         }
-        // Retry up to 2 times for other errors
-        return failureCount < 2;
+        // Only retry once for mutations
+        return failureCount < 1;
       },
     }
   },

@@ -39,11 +39,7 @@ async function testDatabaseConnection(retries = 3, delay = 2000): Promise<boolea
 
 async function startServer() {
   try {
-    const isConnected = await testDatabaseConnection();
-    if (!isConnected) {
-      throw new Error('Failed to establish database connection after multiple attempts');
-    }
-
+    // Initialize express app first
     const app = express();
     const isDev = process.env.NODE_ENV !== 'production';
 
@@ -51,28 +47,56 @@ async function startServer() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
-    // CORS configuration with more detailed settings
-    app.use(cors({
-      origin: true, // Allow all origins in development
+    // Enhanced CORS configuration with support for both HTTP and HTTPS
+    const corsOptions = {
+      origin: isDev 
+        ? [
+            'https://127.0.0.1:5173', 
+            'https://localhost:5173', 
+            'http://127.0.0.1:5173', 
+            'http://localhost:5173',
+            // Add Replit-specific domains
+            /\.replit\.dev$/
+          ]
+        : true,
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       exposedHeaders: ['Set-Cookie'],
-    }));
+      optionsSuccessStatus: 204
+    };
 
-    // Pre-flight OPTIONS handler
-    app.options('*', cors());
+    // Apply CORS before any routes
+    app.use(cors(corsOptions));
+    app.options('*', cors(corsOptions));
 
-    // Set up authentication
-    await setupAuth(app);
+    // Log all requests for debugging
+    app.use((req, res, next) => {
+      log(`${req.method} ${req.path} - Origin: ${req.headers.origin || 'unknown'}`);
+      next();
+    });
 
-    // Health check endpoint
+    // Health check endpoint that doesn't require database
     app.get('/api/health', (req, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
+    // Test database connection
+    log('Testing database connection...');
+    const isConnected = await testDatabaseConnection();
+    if (!isConnected) {
+      throw new Error('Failed to establish database connection after multiple attempts');
+    }
+
+    // Set up authentication after database connection is confirmed
+    log('Setting up authentication...');
+    await setupAuth(app);
+    log('Authentication setup complete');
+
     // Register API routes
+    log('Registering routes...');
     await registerRoutes(app);
+    log('Routes registered successfully');
 
     // Set up static serving
     const server = createServer(app);
@@ -80,12 +104,14 @@ async function startServer() {
 
     // Enhanced error handling middleware
     app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
-      console.error('Server error:', {
+      const errorDetails = {
         message: err.message,
-        stack: err.stack,
         path: req.path,
-        method: req.method
-      });
+        method: req.method,
+        timestamp: new Date().toISOString()
+      };
+
+      log(`Error: ${JSON.stringify(errorDetails)}`);
 
       if (err.status === 401) {
         res.status(401).json({ message: "Unauthorized: Please log in" });
@@ -93,7 +119,8 @@ async function startServer() {
         res.status(403).json({ message: "Forbidden: Insufficient permissions" });
       } else {
         res.status(err.status || 500).json({ 
-          message: isDev ? err.message : "Internal Server Error"
+          message: isDev ? err.message : "Internal Server Error",
+          ...(isDev ? { details: errorDetails } : {})
         });
       }
     });
