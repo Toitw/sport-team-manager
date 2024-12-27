@@ -5,7 +5,7 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: async ({ queryKey }) => {
         try {
-          const baseUrl = import.meta.env.DEV ? 'http://localhost:3000' : '';
+          const baseUrl = '';  // Empty base URL will use relative paths
           const url = `${baseUrl}${queryKey[0]}`;
 
           const res = await fetch(url, {

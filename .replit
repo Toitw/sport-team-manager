@@ -11,7 +11,7 @@ NODE_ENV = "development"
 [deployment]
 deploymentTarget = "cloudrun"
 build = ["npm", "run", "build"]
-run = ["sh", "-c", "npm run dev:server"]
+run = ["sh", "-c", "PORT=3000 tsx watch --clear-screen=false server/index.ts"]
 
 [languages]
 [languages.typescript]
@@ -57,10 +57,6 @@ args = "Backend Server"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "Frontend Server"
 
 [[workflows.workflow]]
@@ -75,23 +71,8 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev:server"
+args = "PORT=3000 tsx watch --clear-screen=false server/index.ts"
 waitForPort = 3000
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[workflows.workflow.metadata]
-agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "packager.installForAll"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd client && npm run dev"
-waitForPort = 5173
 
 [[workflows.workflow]]
 name = "Frontend Server"
