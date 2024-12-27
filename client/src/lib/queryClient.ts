@@ -23,6 +23,7 @@ export const queryClient = new QueryClient({
               "X-Requested-With": "XMLHttpRequest",
               "X-Requested-By": "frontend"
             },
+            redirect: 'follow'
           });
 
           // Handle development mode
