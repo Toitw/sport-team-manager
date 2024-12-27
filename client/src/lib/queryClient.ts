@@ -41,18 +41,21 @@ export const queryClient = new QueryClient({
 
           if (!res.ok) {
             if (res.status === 401) {
+              console.warn('Unauthorized request:', url);
               return null;
             }
 
-            // Log error details but return null instead of throwing
-            console.error('Request failed:', {
+            const errorDetails = {
               status: res.status,
               statusText: res.statusText,
               url,
               timestamp: new Date().toISOString()
-            });
+            };
 
-            return null;
+            console.error('Request failed:', errorDetails);
+
+            // Throw error for non-401 status codes
+            throw new Error(`API request failed: ${res.status} ${res.statusText}`);
           }
 
           return res.json();
