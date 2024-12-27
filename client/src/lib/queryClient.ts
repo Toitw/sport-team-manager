@@ -19,6 +19,7 @@ export const queryClient = new QueryClient({
         console.log('Sending Request:', {
           url,
           queryKey,
+          mode: process.env.NODE_ENV,
           timestamp: new Date().toISOString()
         });
 
@@ -35,12 +36,25 @@ export const queryClient = new QueryClient({
           console.log('Received Response:', {
             status: res.status,
             url,
+            mode: process.env.NODE_ENV,
             timestamp: new Date().toISOString()
           });
 
-          // Skip authentication errors in development mode
-          if (!res.ok && res.status === 401 && process.env.NODE_ENV === 'development') {
-            return null;
+          // Handle development mode
+          if (process.env.NODE_ENV === 'development') {
+            if (!res.ok && res.status === 401) {
+              // In development, return mock data for unauthorized requests
+              if (endpoint === 'user') {
+                return {
+                  id: 1,
+                  email: "dev@example.com",
+                  role: "admin",
+                  emailVerified: true,
+                  createdAt: new Date().toISOString()
+                };
+              }
+              return null;
+            }
           }
 
           if (!res.ok) {
@@ -59,6 +73,10 @@ export const queryClient = new QueryClient({
 
             // Handle connection errors
             if (res.status === 0 || !res.status) {
+              console.error('Connection error:', {
+                url,
+                timestamp: new Date().toISOString()
+              });
               const error = new Error("Connection failed: Please check your internet connection");
               error.name = 'ConnectionError';
               throw error;
@@ -79,6 +97,12 @@ export const queryClient = new QueryClient({
 
             // Handle other client errors
             const errorText = await res.text();
+            console.error('Client error:', {
+              status: res.status,
+              text: errorText,
+              url,
+              timestamp: new Date().toISOString()
+            });
             const error = new Error(`Request failed (${res.status}): ${errorText}`);
             error.name = 'ClientError';
             throw error;
@@ -90,6 +114,7 @@ export const queryClient = new QueryClient({
             queryKey: endpoint,
             error: error.message,
             name: error.name,
+            mode: process.env.NODE_ENV,
             timestamp: new Date().toISOString()
           });
           throw error;

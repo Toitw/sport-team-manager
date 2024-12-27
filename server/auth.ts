@@ -57,11 +57,57 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Create test user in development mode
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const db = await getDb();
+      const testEmail = "test@example.com";
+
+      console.log('Checking for test user existence...');
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, testEmail))
+        .limit(1);
+
+      if (!existingUser) {
+        console.log('Creating test user...');
+        const hashedPassword = await crypto.hash("testpass123");
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            email: testEmail,
+            password: hashedPassword,
+            role: "admin",
+            emailVerified: true,
+            verificationToken: null,
+            createdAt: new Date().toISOString()
+          })
+          .returning();
+
+        console.log('Test user created successfully:', {
+          email: testEmail,
+          id: newUser.id,
+          role: newUser.role
+        });
+      } else {
+        console.log('Test user already exists:', {
+          email: testEmail,
+          id: existingUser.id,
+          role: existingUser.role
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up test user:', error);
+    }
+  }
+
   passport.use(
     new LocalStrategy(
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
+          console.log('Attempting authentication for:', email);
           const db = await getDb();
           const [user] = await db
             .select()
@@ -70,19 +116,25 @@ export async function setupAuth(app: Express) {
             .limit(1);
 
           if (!user) {
+            console.log('User not found:', email);
             return done(null, false, { message: "Invalid email or password." });
           }
 
           if (!user.emailVerified) {
+            console.log('Email not verified for:', email);
             return done(null, false, { message: "Please verify your email first." });
           }
 
           const isMatch = await crypto.compare(password, user.password);
           if (!isMatch) {
+            console.log('Invalid password for:', email);
             return done(null, false, { message: "Invalid email or password." });
           }
+
+          console.log('Authentication successful for:', email);
           return done(null, user);
         } catch (err) {
+          console.error('Authentication error:', err);
           return done(err);
         }
       }
@@ -292,26 +344,30 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
-    const result = insertUserSchema.safeParse(req.body);
-    if (!result.success) {
-      return res
-        .status(400)
-        .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
-    }
+  app.post("/api/login", async (req, res, next) => {
+    try {
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res
+          .status(400)
+          .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
+      }
 
-    passport.authenticate("local", (err: any, user: Express.User, info: IVerifyOptions) => {
-      if (err) return next(err);
-      if (!user) return res.status(400).send(info.message ?? "Login failed");
-
-      req.logIn(user, (err) => {
+      passport.authenticate("local", (err: any, user: Express.User, info: IVerifyOptions) => {
         if (err) return next(err);
-        return res.json({
-          message: "Login successful",
-          user: { id: user.id, email: user.email, role: user.role },
+        if (!user) return res.status(400).send(info.message ?? "Login failed");
+
+        req.logIn(user, (err) => {
+          if (err) return next(err);
+          return res.json({
+            message: "Login successful",
+            user: { id: user.id, email: user.email, role: user.role },
+          });
         });
-      });
-    })(req, res, next);
+      })(req, res, next);
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.post("/api/logout", (req, res) => {
@@ -322,11 +378,12 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    // In development mode, return a mock user
+    // In development mode, always return the test user
     if (process.env.NODE_ENV === 'development') {
+      console.log('Development mode: Returning test user');
       return res.json({
         id: 1,
-        email: "dev@example.com",
+        email: "test@example.com",
         role: "admin",
         emailVerified: true,
         createdAt: new Date().toISOString()
@@ -334,8 +391,11 @@ export async function setupAuth(app: Express) {
     }
 
     if (req.isAuthenticated()) {
+      console.log('User authenticated:', req.user.email);
       return res.json(req.user);
     }
+
+    console.log('User not authenticated');
     res.status(401).send("Not logged in");
   });
 }
