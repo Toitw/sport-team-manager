@@ -138,7 +138,7 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
               {player.photoUrl && (
                 <div className="mb-2">
                   <img 
-                    src={player.photoUrl} 
+                    src={`${import.meta.env.VITE_API_URL || ''}${player.photoUrl}`}
                     alt={player.name}
                     className="w-20 h-20 rounded-full object-cover"
                   />

@@ -46,6 +46,9 @@ export async function registerRoutes(app: Express) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(uploadsDir));
+
   // Configure multer after authentication is set up
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
