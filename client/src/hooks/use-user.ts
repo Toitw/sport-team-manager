@@ -16,13 +16,21 @@ async function handleRequest(
   try {
     const response = await fetch(url, {
       method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
+      headers: {
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        "X-Requested-With": "XMLHttpRequest"
+      },
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include",
     });
 
     if (!response.ok) {
       if (response.status >= 500) {
+        console.error('Server error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url
+        });
         return { ok: false, message: "Server error. Please try again later." };
       }
 
@@ -32,6 +40,10 @@ async function handleRequest(
 
     return { ok: true };
   } catch (e: any) {
+    console.error('Network error:', {
+      url,
+      error: e.message
+    });
     return { ok: false, message: "Network error. Please check your connection." };
   }
 }
@@ -39,7 +51,10 @@ async function handleRequest(
 async function fetchUser(): Promise<User | null> {
   try {
     const response = await fetch('/api/user', {
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"
+      }
     });
 
     if (!response.ok) {
@@ -47,12 +62,21 @@ async function fetchUser(): Promise<User | null> {
         return null;
       }
 
+      if (response.status >= 500) {
+        console.error('Server error while fetching user:', {
+          status: response.status,
+          statusText: response.statusText
+        });
+      }
+
       throw new Error(await response.text());
     }
 
     return response.json();
   } catch (error: any) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching user:', {
+      error: error.message
+    });
     throw error;
   }
 }
@@ -64,7 +88,7 @@ export function useUser() {
     queryKey: ['user'],
     queryFn: fetchUser,
     staleTime: 30000, // Cache for 30 seconds
-    gcTime: 60000, // Keep in cache for 1 minute (renamed from cacheTime)
+    gcTime: 60000, // Keep in cache for 1 minute
     retry: (failureCount, error) => {
       // Don't retry on 401 (unauthorized)
       if (error instanceof Error && error.message.includes('401')) {
@@ -73,8 +97,8 @@ export function useUser() {
       // Only retry twice for other errors
       return failureCount < 2;
     },
-    refetchOnWindowFocus: false, // Prevent refetch on window focus
-    refetchOnReconnect: true // Refetch on reconnection
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 
   const loginMutation = useMutation({

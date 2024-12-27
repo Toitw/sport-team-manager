@@ -39,7 +39,6 @@ async function testDatabaseConnection(retries = 3, delay = 2000): Promise<boolea
 
 async function startServer() {
   try {
-    // Test database connection first
     const isConnected = await testDatabaseConnection();
     if (!isConnected) {
       throw new Error('Failed to establish database connection after multiple attempts');
@@ -47,22 +46,32 @@ async function startServer() {
 
     const app = express();
     const isDev = process.env.NODE_ENV !== 'production';
-    const clientOrigin = isDev ? 'http://localhost:5173' : process.env.CLIENT_URL || '';
 
-    // CORS configuration
+    // Enhanced CORS configuration with more specific settings
     app.use(cors({
-      origin: clientOrigin,
+      origin: isDev ? ['http://localhost:5173', 'https://localhost:5173'] : true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization']
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      exposedHeaders: ['Set-Cookie'],
+      maxAge: 86400, // 24 hours
+      optionsSuccessStatus: 200
     }));
 
     // Basic middleware
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
 
+    // Pre-flight OPTIONS handler for CORS
+    app.options('*', cors());
+
     // Set up authentication
-    setupAuth(app);
+    await setupAuth(app);
+
+    // Health check endpoint
+    app.get('/api/health', (req, res) => {
+      res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    });
 
     // Register API routes
     await registerRoutes(app);
@@ -71,12 +80,36 @@ async function startServer() {
     const server = createServer(app);
     serveStatic(app);
 
-    // Error handling middleware
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      console.error('Server error:', err);
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
+    // Enhanced error handling middleware
+    app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+      const errorDetails = {
+        message: err.message || "Internal Server Error",
+        path: req.path,
+        method: req.method,
+        timestamp: new Date().toISOString(),
+        code: err.code,
+        status: err.status || err.statusCode || 500
+      };
+
+      // Log error details
+      console.error('Server error:', {
+        ...errorDetails,
+        stack: err.stack,
+        headers: req.headers,
+        query: req.query,
+        body: req.body
+      });
+
+      // Send appropriate error response
+      if (err.status === 401) {
+        res.status(401).json({ message: "Unauthorized: Please log in" });
+      } else if (err.status === 403) {
+        res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+      } else if (err.status >= 400 && err.status < 500) {
+        res.status(err.status).json({ message: errorDetails.message });
+      } else {
+        res.status(500).json({ message: "Internal Server Error" });
+      }
     });
 
     // Start server
