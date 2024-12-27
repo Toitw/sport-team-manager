@@ -6,7 +6,9 @@ export const queryClient = new QueryClient({
       queryFn: async ({ queryKey }) => {
         try {
           const baseUrl = '/api';  // Always use /api prefix
-          const url = `${baseUrl}${queryKey[0].startsWith('/') ? queryKey[0] : `/${queryKey[0]}`}`;
+          const endpoint = Array.isArray(queryKey[0]) ? queryKey[0][0] : queryKey[0];
+          const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
           console.log('Sending Request:', url);
 
           const res = await fetch(url, {
@@ -22,11 +24,22 @@ export const queryClient = new QueryClient({
           if (!res.ok) {
             // Handle authentication errors
             if (res.status === 401) {
-              throw new Error("Unauthorized: Please log in");
+              const error = new Error("Unauthorized: Please log in");
+              error.name = 'AuthError';
+              throw error;
             }
 
             if (res.status === 403) {
-              throw new Error("Forbidden: You don't have permission to access this resource");
+              const error = new Error("Forbidden: You don't have permission to access this resource");
+              error.name = 'AuthError';
+              throw error;
+            }
+
+            // Handle connection errors
+            if (res.status === 0 || !res.status) {
+              const error = new Error("Connection failed: Please check your internet connection");
+              error.name = 'ConnectionError';
+              throw error;
             }
 
             // Handle server errors
@@ -36,30 +49,38 @@ export const queryClient = new QueryClient({
                 statusText: res.statusText,
                 url
               });
-              throw new Error(`Server error (${res.status}): Please try again later`);
+              const error = new Error(`Server error (${res.status}): Please try again later`);
+              error.name = 'ServerError';
+              throw error;
             }
 
             // Handle other client errors
             const errorText = await res.text();
-            throw new Error(`Request failed (${res.status}): ${errorText}`);
+            const error = new Error(`Request failed (${res.status}): ${errorText}`);
+            error.name = 'ClientError';
+            throw error;
           }
 
           return res.json();
-        } catch (error) {
+        } catch (error: any) {
           console.error('Query error:', {
-            queryKey: queryKey[0],
-            error: error instanceof Error ? error.message : "Unknown error"
+            queryKey: endpoint,
+            error: error.message,
+            name: error.name
           });
           throw error;
         }
       },
-      retry: (failureCount, error) => {
+      retry: (failureCount, error: any) => {
         // Don't retry on authentication errors
-        if (error instanceof Error && 
-            (error.message.includes("401") || error.message.includes("403"))) {
+        if (error.name === 'AuthError') {
           return false;
         }
-        // Only retry twice for network/server errors
+        // Retry connection errors more times
+        if (error.name === 'ConnectionError') {
+          return failureCount < 3;
+        }
+        // Only retry twice for other errors
         return failureCount < 2;
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -68,10 +89,9 @@ export const queryClient = new QueryClient({
       gcTime: 300000, // Keep unused data in cache for 5 minutes
     },
     mutations: {
-      retry: (failureCount, error) => {
+      retry: (failureCount, error: any) => {
         // Don't retry on authentication errors
-        if (error instanceof Error && 
-            (error.message.includes("401") || error.message.includes("403"))) {
+        if (error.name === 'AuthError') {
           return false;
         }
         // Only retry once for mutations
