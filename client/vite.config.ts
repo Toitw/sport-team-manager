@@ -5,7 +5,7 @@ import path from "path";
 import runtimeErrorModal from "@replit/vite-plugin-runtime-error-modal";
 import checker from "vite-plugin-checker";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 export default defineConfig({
   plugins: [
@@ -30,10 +30,7 @@ export default defineConfig({
     hmr: {
       clientPort: process.env.REPL_SLUG ? 443 : 5173,
       protocol: process.env.REPL_SLUG ? 'wss' : 'ws',
-      host: process.env.REPL_SLUG ? process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co' : '0.0.0.0'
-    },
-    watch: {
-      usePolling: false
+      host: process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : '0.0.0.0'
     }
   }
 });
