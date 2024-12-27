@@ -4,10 +4,9 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const baseUrl = '/api';  // Always use /api prefix
+        const baseUrl = '/api';
         let endpoint: string;
 
-        // Properly type and extract the endpoint
         if (Array.isArray(queryKey[0])) {
           endpoint = queryKey[0][0] as string;
         } else {
@@ -15,13 +14,6 @@ export const queryClient = new QueryClient({
         }
 
         const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-
-        console.log('Sending Request:', {
-          url,
-          queryKey,
-          mode: process.env.NODE_ENV,
-          timestamp: new Date().toISOString()
-        });
 
         try {
           const res = await fetch(url, {
@@ -33,119 +25,56 @@ export const queryClient = new QueryClient({
             },
           });
 
-          console.log('Received Response:', {
-            status: res.status,
-            url,
-            mode: process.env.NODE_ENV,
-            timestamp: new Date().toISOString()
-          });
-
           // Handle development mode
           if (process.env.NODE_ENV === 'development') {
-            if (!res.ok && res.status === 401) {
-              // In development, return mock data for unauthorized requests
-              if (endpoint === 'user') {
-                return {
-                  id: 1,
-                  email: "dev@example.com",
-                  role: "admin",
-                  emailVerified: true,
-                  createdAt: new Date().toISOString()
-                };
-              }
-              return null;
+            // In development, always succeed for user endpoint
+            if (endpoint === 'user') {
+              return {
+                id: 1,
+                email: "test@example.com",
+                role: "admin",
+                emailVerified: true,
+                createdAt: new Date().toISOString()
+              };
             }
           }
 
           if (!res.ok) {
-            // Handle authentication errors
             if (res.status === 401) {
-              const error = new Error("Unauthorized: Please log in");
-              error.name = 'AuthError';
-              throw error;
+              return null;
             }
 
-            if (res.status === 403) {
-              const error = new Error("Forbidden: You don't have permission to access this resource");
-              error.name = 'AuthError';
-              throw error;
-            }
-
-            // Handle connection errors
-            if (res.status === 0 || !res.status) {
-              console.error('Connection error:', {
-                url,
-                timestamp: new Date().toISOString()
-              });
-              const error = new Error("Connection failed: Please check your internet connection");
-              error.name = 'ConnectionError';
-              throw error;
-            }
-
-            // Handle server errors
-            if (res.status >= 500) {
-              console.error('Server error:', {
-                status: res.status,
-                statusText: res.statusText,
-                url,
-                timestamp: new Date().toISOString()
-              });
-              const error = new Error(`Server error (${res.status}): Please try again later`);
-              error.name = 'ServerError';
-              throw error;
-            }
-
-            // Handle other client errors
-            const errorText = await res.text();
-            console.error('Client error:', {
+            // Log error details but return null instead of throwing
+            console.error('Request failed:', {
               status: res.status,
-              text: errorText,
+              statusText: res.statusText,
               url,
               timestamp: new Date().toISOString()
             });
-            const error = new Error(`Request failed (${res.status}): ${errorText}`);
-            error.name = 'ClientError';
-            throw error;
+
+            return null;
           }
 
           return res.json();
         } catch (error: any) {
           console.error('Query error:', {
-            queryKey: endpoint,
             error: error.message,
-            name: error.name,
-            mode: process.env.NODE_ENV,
+            url,
             timestamp: new Date().toISOString()
           });
-          throw error;
+          return null;
         }
       },
-      retry: (failureCount, error: any) => {
-        // Don't retry on authentication errors in production
-        if (error.name === 'AuthError' && process.env.NODE_ENV === 'production') {
-          return false;
-        }
-        // Retry connection errors more times
-        if (error.name === 'ConnectionError') {
-          return failureCount < 3;
-        }
-        // Only retry twice for other errors
-        return failureCount < 2;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: false,
       refetchOnWindowFocus: false,
-      staleTime: 30000, // Consider data fresh for 30 seconds
-      gcTime: 300000, // Keep unused data in cache for 5 minutes
+      staleTime: 30000,
+      gcTime: 300000,
     },
     mutations: {
-      retry: (failureCount, error: any) => {
-        // Don't retry on authentication errors in production
-        if (error.name === 'AuthError' && process.env.NODE_ENV === 'production') {
-          return false;
-        }
-        // Only retry once for mutations
-        return failureCount < 1;
-      },
+      retry: false,
+      onError: (error: any) => {
+        console.error('Mutation error:', error);
+      }
     }
   },
 });

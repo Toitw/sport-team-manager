@@ -26,7 +26,6 @@ async function handleRequest(
     });
 
     if (!response.ok) {
-      // Handle server errors with detailed logging
       if (response.status >= 500) {
         console.error('Server error:', {
           status: response.status,
@@ -35,15 +34,6 @@ async function handleRequest(
           timestamp: new Date().toISOString()
         });
         return { ok: false, message: "Server error. Please try again later." };
-      }
-
-      // Handle connection errors
-      if (response.status === 0 || !response.status) {
-        console.error('Connection error:', {
-          url,
-          timestamp: new Date().toISOString()
-        });
-        return { ok: false, message: "Connection failed. Please check your connection and try again." };
       }
 
       const message = await response.text();
@@ -57,13 +47,12 @@ async function handleRequest(
       error: e.message,
       timestamp: new Date().toISOString()
     });
-    return { ok: false, message: "Network error. Please check your connection." };
+    return { ok: false, message: e.message };
   }
 }
 
 async function fetchUser(): Promise<User | null> {
   try {
-    // Add a random query parameter to prevent caching
     const response = await fetch(`/api/user?_=${Date.now()}`, {
       credentials: 'include',
       headers: {
@@ -76,15 +65,6 @@ async function fetchUser(): Promise<User | null> {
       if (response.status === 401) {
         return null;
       }
-
-      if (response.status >= 500) {
-        console.error('Server error while fetching user:', {
-          status: response.status,
-          statusText: response.statusText,
-          timestamp: new Date().toISOString()
-        });
-      }
-
       throw new Error(await response.text());
     }
 
@@ -128,8 +108,13 @@ export function useUser() {
   const logoutMutation = useMutation({
     mutationFn: () => handleRequest('/api/logout', 'POST'),
     onSuccess: () => {
+      // Clear user data from cache
+      queryClient.setQueryData(['user'], null);
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
+    onError: (error) => {
+      console.error('Logout error:', error);
+    }
   });
 
   const registerMutation = useMutation({
