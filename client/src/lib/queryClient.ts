@@ -4,13 +4,25 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
+        const baseUrl = '/api';  // Always use /api prefix
+        let endpoint: string;
+
+        // Properly type and extract the endpoint
+        if (Array.isArray(queryKey[0])) {
+          endpoint = queryKey[0][0] as string;
+        } else {
+          endpoint = queryKey[0] as string;
+        }
+
+        const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+        console.log('Sending Request:', {
+          url,
+          queryKey,
+          timestamp: new Date().toISOString()
+        });
+
         try {
-          const baseUrl = '/api';  // Always use /api prefix
-          const endpoint = Array.isArray(queryKey[0]) ? queryKey[0][0] : queryKey[0];
-          const url = `${baseUrl}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-
-          console.log('Sending Request:', url);
-
           const res = await fetch(url, {
             credentials: "include",
             headers: {
@@ -19,7 +31,11 @@ export const queryClient = new QueryClient({
             },
           });
 
-          console.log('Received Response:', res.status, url);
+          console.log('Received Response:', {
+            status: res.status,
+            url,
+            timestamp: new Date().toISOString()
+          });
 
           if (!res.ok) {
             // Handle authentication errors
@@ -47,7 +63,8 @@ export const queryClient = new QueryClient({
               console.error('Server error:', {
                 status: res.status,
                 statusText: res.statusText,
-                url
+                url,
+                timestamp: new Date().toISOString()
               });
               const error = new Error(`Server error (${res.status}): Please try again later`);
               error.name = 'ServerError';
@@ -66,7 +83,8 @@ export const queryClient = new QueryClient({
           console.error('Query error:', {
             queryKey: endpoint,
             error: error.message,
-            name: error.name
+            name: error.name,
+            timestamp: new Date().toISOString()
           });
           throw error;
         }
