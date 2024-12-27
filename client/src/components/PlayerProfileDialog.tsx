@@ -21,7 +21,7 @@ export function PlayerProfileDialog({ player, open, onOpenChange }: PlayerProfil
           <div className="space-y-4">
             {player.photoUrl ? (
               <img 
-                src={player.photoUrl} 
+                src={`${import.meta.env.VITE_API_URL || ''}${player.photoUrl}`}
                 alt={player.name}
                 className="w-full h-64 object-cover rounded-lg"
               />
