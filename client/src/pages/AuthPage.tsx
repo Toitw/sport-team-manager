@@ -50,6 +50,9 @@ export default function AuthPage() {
         title: "Success",
         description: isLogin ? "Logged in successfully" : "Registered successfully. Please check your email to verify your account."
       });
+      if (isLogin) {
+        window.location.href = '/';
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
