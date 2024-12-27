@@ -69,8 +69,28 @@ export default function TeamPage() {
   // Route params
   const { teamId = "", section = "news" } = useParams();
 
-  // Parse and memoize team ID
-  const parsedTeamId = React.useMemo(() => (teamId ? parseInt(teamId, 10) : 0), [teamId]);
+  // Parse and memoize team ID with validation
+  const parsedTeamId = React.useMemo(() => {
+    const parsed = teamId ? parseInt(teamId, 10) : 0;
+    if (isNaN(parsed) || parsed <= 0) {
+      console.warn('Invalid teamId:', teamId);
+      return 0;
+    }
+    return parsed;
+  }, [teamId]);
+
+  // Early return if no valid teamId
+  if (!parsedTeamId) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <div className="text-center text-muted-foreground">
+            Invalid team ID. Please select a valid team.
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   // State hooks
   const [selectedPlayerId, setSelectedPlayerId] = React.useState<number | null>(null);
