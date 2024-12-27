@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Users, Calendar, Trophy, Home, Newspaper } from "lucide-react";
+import { Users, Calendar, Trophy, Home, Newspaper, LogOut } from "lucide-react";
 import { useUser } from "../hooks/use-user";
 import {
   Sidebar,
@@ -13,6 +13,7 @@ import {
   SidebarGroupLabel,
   SidebarGroup
 } from "@/components/ui/sidebar";
+import { useToast } from "@/hooks/use-toast";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,15 +21,13 @@ interface LayoutProps {
 }
 
 export function Layout({ children, teamId }: LayoutProps) {
-  const [location] = useLocation();
-  const { user } = useUser();
-  console.log("Layout props:", { teamId, location });
+  const [location, setLocation] = useLocation();
+  const { user, logout } = useUser();
+  const { toast } = useToast();
 
   if (!teamId) {
     console.log("No teamId provided to Layout");
   }
-
-  console.log("Layout props:", { teamId, location });
 
   const isActiveRoute = (route: string) => {
     // For team routes, check if the current location starts with the route
@@ -37,6 +36,27 @@ export function Layout({ children, teamId }: LayoutProps) {
     }
     // For exact matches (like home page)
     return location === route;
+  };
+
+  const handleLogout = async () => {
+    try {
+      const result = await logout();
+      if (!result.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.message || "Failed to logout"
+        });
+        return;
+      }
+      setLocation("/auth");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "An error occurred during logout"
+      });
+    }
   };
 
   return (
@@ -85,6 +105,16 @@ export function Layout({ children, teamId }: LayoutProps) {
                   </Link>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleLogout}
+                  tooltip="Logout"
+                  size="lg"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
 
@@ -128,7 +158,7 @@ export function Layout({ children, teamId }: LayoutProps) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-                
+
                 <SidebarMenuItem>
                   <Link href={`/team/${teamId}/events`}>
                     <SidebarMenuButton 
