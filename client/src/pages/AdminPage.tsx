@@ -138,12 +138,14 @@ export default function AdminPage() {
                                   data-user={currentUser.id}
                                   value={currentUser.role}
                                   onChange={(e) => {
-                                    const newRole = e.target.value;
-                                    if (newRole !== currentUser.role) {
-                                      const dialog = document.getElementById(`role-trigger-${currentUser.id}`);
-                                      if (dialog) {
-                                        (dialog as HTMLButtonElement).click();
-                                      }
+                                    e.target.setAttribute('data-selected-role', e.target.value);
+                                    if (e.target.value !== currentUser.role) {
+                                      setTimeout(() => {
+                                        const dialog = document.getElementById(`role-trigger-${currentUser.id}`);
+                                        if (dialog) {
+                                          (dialog as HTMLButtonElement).click();
+                                        }
+                                      }, 100);
                                     }
                                   }}
                                 >
@@ -165,10 +167,13 @@ export default function AdminPage() {
                                   <AlertDialogAction onClick={() => {
                                     const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
                                     if (select) {
-                                      updateRole.mutate({
-                                        userId: currentUser.id,
-                                        newRole: select.value
-                                      });
+                                      const newRole = select.getAttribute('data-selected-role');
+                                      if (newRole) {
+                                        updateRole.mutate({
+                                          userId: currentUser.id,
+                                          newRole: newRole
+                                        });
+                                      }
                                     }
                                   }}>Continue</AlertDialogAction>
                                 </AlertDialogFooter>
