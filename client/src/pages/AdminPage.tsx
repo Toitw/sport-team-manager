@@ -1,6 +1,8 @@
 
 import { Layout } from "../components/Layout";
+import { useUser } from "../hooks/use-user";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -9,15 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useUser } from "../hooks/use-user";
+import { Button } from "@/components/ui/button";
 
 type User = {
   id: number;
@@ -72,16 +66,12 @@ export default function AdminPage() {
     },
   });
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   if (!user || user.role !== "admin") {
     return (
       <Layout>
         <div className="container py-8">
           <h1 className="text-3xl font-bold mb-8">Access Denied</h1>
-          <p>You don't have permission to access this page.</p>
+          <p>You need to be an admin to access this page.</p>
         </div>
       </Layout>
     );
@@ -128,22 +118,18 @@ export default function AdminPage() {
                       {currentUser.id === user.id ? (
                         <span className="text-sm text-muted-foreground">Cannot modify own role</span>
                       ) : (
-                        <Select
-                          value={currentUser.role}
-                          onValueChange={(newRole) =>
-                            updateRole.mutate({ userId: currentUser.id, newRole })
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            updateRole.mutate({
+                              userId: currentUser.id,
+                              newRole: currentUser.role === "admin" ? "user" : "admin",
+                            })
                           }
-                          disabled={updateRole.isPending}
                         >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Change role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="reader">Reader</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          Make {currentUser.role === "admin" ? "User" : "Admin"}
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>
