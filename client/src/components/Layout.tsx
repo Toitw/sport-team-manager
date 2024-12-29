@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "wouter";
 import { Users, Calendar, Trophy, Home, Newspaper, LogOut } from "lucide-react";
 import { useUser } from "../hooks/use-user";
@@ -30,11 +31,9 @@ export function Layout({ children, teamId }: LayoutProps) {
   }
 
   const isActiveRoute = (route: string) => {
-    // For team routes, check if the current location starts with the route
     if (route.startsWith("/team/")) {
       return location.startsWith(route);
     }
-    // For exact matches (like home page)
     return location === route;
   };
 
@@ -104,18 +103,19 @@ export function Layout({ children, teamId }: LayoutProps) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={handleLogout}
-                  tooltip="Logout"
-                  size="lg"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={handleLogout}
+                    tooltip="Logout"
+                    size="lg"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
 
           {teamId && (
             <SidebarGroup>
@@ -157,7 +157,6 @@ export function Layout({ children, teamId }: LayoutProps) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-
                 <SidebarMenuItem>
                   <Link href={`/team/${teamId}/events`}>
                     <SidebarMenuButton 
