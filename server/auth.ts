@@ -384,18 +384,6 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    // In development mode, always return the test user
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Returning test user');
-      return res.json({
-        id: 1,
-        email: "test@example.com",
-        role: "admin",
-        emailVerified: true,
-        createdAt: new Date().toISOString()
-      });
-    }
-
     if (req.isAuthenticated()) {
       console.log('User authenticated:', req.user.email);
       return res.json(req.user);
