@@ -62,6 +62,7 @@ export default function AdminPage() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.refetchQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
         description: `User role updated to ${variables.newRole} successfully`,
