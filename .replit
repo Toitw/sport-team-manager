@@ -28,13 +28,13 @@ language = "nodejs"
 requiredFiles = [".replit", "replit.nix", ".config"]
 
 [[ports]]
-localPort = 3000
-externalPort = 3000
-
-[[ports]]
 localPort = 5173
 externalPort = 5173
 condition = { env = { NODE_ENV = "development" } }
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
 
 [workflows]
 
