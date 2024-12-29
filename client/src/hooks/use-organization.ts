@@ -1,20 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Organization, InsertOrganization, OrganizationMember } from "@db/schema";
+import type { Organization, InsertOrganization } from "@db/schema";
 import { useToast } from './use-toast';
 
-type RequestResult = {
+export type OrganizationMember = {
+  id: number;
+  userId: number;
+  organizationId: number;
+  role: string;
+  createdAt: string;
+  userEmail: string;
+};
+
+type RequestResult<T = any> = {
   ok: true;
-  data?: Organization | OrganizationMember[];
+  data: T;
 } | {
   ok: false;
   message: string;
 };
 
-async function handleRequest(
+async function handleRequest<T>(
   url: string,
   method: string,
   body?: InsertOrganization | { userId: number; role: string }
-): Promise<RequestResult> {
+): Promise<RequestResult<T>> {
   try {
     const response = await fetch(url, {
       method,
@@ -63,9 +72,9 @@ export function useOrganization(organizationId?: number) {
     queryKey: ['organization', organizationId],
     queryFn: async () => {
       if (!organizationId) return null;
-      const result = await handleRequest(`/api/organizations/${organizationId}`, 'GET');
+      const result = await handleRequest<Organization>(`/api/organizations/${organizationId}`, 'GET');
       if (!result.ok) throw new Error(result.message);
-      return result.data as Organization;
+      return result.data;
     },
     enabled: !!organizationId
   });
@@ -75,19 +84,19 @@ export function useOrganization(organizationId?: number) {
     queryKey: ['organization-members', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
-      const result = await handleRequest(`/api/organizations/${organizationId}/members`, 'GET');
+      const result = await handleRequest<OrganizationMember[]>(`/api/organizations/${organizationId}/members`, 'GET');
       if (!result.ok) throw new Error(result.message);
-      return result.data as OrganizationMember[];
+      return result.data;
     },
     enabled: !!organizationId
   });
 
   // Create organization mutation
-  const createOrganization = useMutation({
+  const createOrganizationMutation = useMutation({
     mutationFn: async (data: InsertOrganization) => {
-      const result = await handleRequest('/api/organizations', 'POST', data);
+      const result = await handleRequest<Organization>('/api/organizations', 'POST', data);
       if (!result.ok) throw new Error(result.message);
-      return result.data as Organization;
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
@@ -106,10 +115,10 @@ export function useOrganization(organizationId?: number) {
   });
 
   // Add member mutation
-  const addMember = useMutation({
+  const addMemberMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
       if (!organizationId) throw new Error("Organization ID is required");
-      const result = await handleRequest(`/api/organizations/${organizationId}/members`, 'POST', { userId, role });
+      const result = await handleRequest<OrganizationMember>(`/api/organizations/${organizationId}/members`, 'POST', { userId, role });
       if (!result.ok) throw new Error(result.message);
       return result.data;
     },
@@ -130,10 +139,14 @@ export function useOrganization(organizationId?: number) {
   });
 
   // Update member role mutation
-  const updateMemberRole = useMutation({
+  const updateMemberRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
       if (!organizationId) throw new Error("Organization ID is required");
-      const result = await handleRequest(`/api/organizations/${organizationId}/members/${userId}`, 'PATCH', { role });
+      const result = await handleRequest<OrganizationMember>(
+        `/api/organizations/${organizationId}/members/${userId}`,
+        'PATCH',
+        { userId, role }
+      );
       if (!result.ok) throw new Error(result.message);
       return result.data;
     },
@@ -157,9 +170,9 @@ export function useOrganization(organizationId?: number) {
     organization,
     members,
     isLoading,
-    createOrganization: createOrganization.mutateAsync,
-    addMember: addMember.mutateAsync,
-    updateMemberRole: updateMemberRole.mutateAsync,
+    createOrganization: createOrganizationMutation.mutateAsync,
+    addMember: addMemberMutation.mutateAsync,
+    updateMemberRole: updateMemberRoleMutation.mutateAsync,
   };
 }
 
@@ -167,9 +180,9 @@ export function useOrganizations() {
   const { data: organizations, isLoading } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
-      const result = await handleRequest('/api/organizations', 'GET');
+      const result = await handleRequest<Organization[]>('/api/organizations', 'GET');
       if (!result.ok) throw new Error(result.message);
-      return result.data as Organization[];
+      return result.data;
     }
   });
 

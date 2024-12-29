@@ -14,7 +14,7 @@ import { z } from "zod";
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional().nullable(),
-  type: z.enum(["match", "training", "meeting"]),
+  type: z.enum(["match", "training", "other"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required")
 });
@@ -80,7 +80,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString()
       });
-      
+
       toast({
         title: "Success",
         description: "Event created successfully"
@@ -155,7 +155,7 @@ export function CreateEventDialog({ teamId }: { teamId: number }) {
                     <SelectContent>
                       <SelectItem value="match">Match</SelectItem>
                       <SelectItem value="training">Training</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

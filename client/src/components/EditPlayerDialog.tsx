@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil } from "lucide-react";
+import { useOrganization } from "@/hooks/use-organization";
 
 export function EditPlayerDialog({ player, teamId }: { player: any; teamId: number }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { organization } = useOrganization();
 
   const form = useForm<InsertPlayer>({
     resolver: zodResolver(insertPlayerSchema),
@@ -30,19 +32,28 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
 
   const onSubmit = async (data: InsertPlayer) => {
     try {
+      if (!organization) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Organization context not found"
+        });
+        return;
+      }
+
       const photoInput = document.querySelector<HTMLInputElement>('input[type="file"]');
       const photo = photoInput?.files?.[0];
-      
+
       if (photo) {
         const formData = new FormData();
         formData.append('photo', photo);
-        
+
         const uploadResponse = await fetch(`/api/upload`, {
           method: 'POST',
           body: formData,
           credentials: 'include'
         });
-        
+
         if (!uploadResponse.ok) throw new Error('Failed to upload photo');
         const { photoUrl } = await uploadResponse.json();
         data.photoUrl = photoUrl;
@@ -105,10 +116,10 @@ export function EditPlayerDialog({ player, teamId }: { player: any; teamId: numb
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="GK">Goalkeeper</SelectItem>
-                      <SelectItem value="DEF">Defender</SelectItem>
-                      <SelectItem value="MID">Midfielder</SelectItem>
-                      <SelectItem value="FWD">Forward</SelectItem>
+                      <SelectItem value="goalie">Goalkeeper</SelectItem>
+                      <SelectItem value="defender">Defender</SelectItem>
+                      <SelectItem value="midfielder">Midfielder</SelectItem>
+                      <SelectItem value="forward">Forward</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -35,11 +34,13 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://0.0.0.0:3000',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false
       },
       '/uploads': {
         target: 'http://0.0.0.0:3000',
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false
       }
     }
   }

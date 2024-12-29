@@ -38,7 +38,7 @@ export default function OrganizationsPage() {
   const { user } = useUser();
   const { organizations, isLoading: orgsLoading } = useOrganizations();
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
-  const { organization, members, addMember, updateMemberRole } = useOrganization(selectedOrgId ?? undefined);
+  const { organization, members, isLoading: orgLoading, createOrganization, updateMemberRole } = useOrganization(selectedOrgId ?? undefined);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -51,26 +51,9 @@ export default function OrganizationsPage() {
 
   const handleCreateOrganization = async (data: InsertOrganization) => {
     try {
-      await form.handleSubmit(async (data) => {
-        const result = await fetch("/api/organizations", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
-
-        if (!result.ok) {
-          throw new Error(await result.text());
-        }
-
-        toast({
-          title: "Success",
-          description: "Organization created successfully",
-        });
-        setCreateDialogOpen(false);
-        form.reset();
-      })(data);
+      await createOrganization(data);
+      setCreateDialogOpen(false);
+      form.reset();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -91,7 +74,7 @@ export default function OrganizationsPage() {
     );
   }
 
-  if (orgsLoading) {
+  if (orgsLoading || orgLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
@@ -100,6 +83,11 @@ export default function OrganizationsPage() {
       </Layout>
     );
   }
+
+  const formatDate = (date: string | null) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString();
+  };
 
   return (
     <Layout>
@@ -162,9 +150,7 @@ export default function OrganizationsPage() {
                     organizations.map((org) => (
                       <TableRow key={org.id}>
                         <TableCell>{org.name}</TableCell>
-                        <TableCell>
-                          {new Date(org.createdAt).toLocaleDateString()}
-                        </TableCell>
+                        <TableCell>{formatDate(org.createdAt)}</TableCell>
                         <TableCell>
                           {members?.find((m) => m.userId === user.id)?.role || "-"}
                         </TableCell>
@@ -208,9 +194,7 @@ export default function OrganizationsPage() {
                           <TableRow key={member.id}>
                             <TableCell>{member.userEmail}</TableCell>
                             <TableCell>{member.role}</TableCell>
-                            <TableCell>
-                              {new Date(member.createdAt).toLocaleDateString()}
-                            </TableCell>
+                            <TableCell>{formatDate(member.createdAt)}</TableCell>
                             <TableCell>
                               {user.id === member.userId ? (
                                 <span className="text-sm text-muted-foreground">

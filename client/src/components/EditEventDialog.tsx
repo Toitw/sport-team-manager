@@ -15,7 +15,7 @@ import type { Event } from "@db/schema";
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  type: z.enum(["match", "training", "meeting"]),
+  type: z.enum(["match", "training", "other"]),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   homeScore: z.union([z.coerce.number().int().min(0), z.null()]).optional(),
@@ -83,7 +83,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
       };
 
       await updateEvent(updateData);
-      
+
       toast({
         title: "Success",
         description: "Event updated successfully"
@@ -177,7 +177,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
                     <SelectContent>
                       <SelectItem value="match">Match</SelectItem>
                       <SelectItem value="training">Training</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
