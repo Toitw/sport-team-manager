@@ -491,7 +491,7 @@ export default function TeamPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>News</CardTitle>
-            {canManageNews && <CreateNewsDialog teamId={parsedTeamId} />}
+            {user?.role !== "reader" && <CreateNewsDialog teamId={parsedTeamId} />}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -535,7 +535,7 @@ export default function TeamPage() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Events</CardTitle>
-        {canManageTeam && <CreateEventDialog teamId={parsedTeamId} />}
+        {user?.role !== "reader" && <CreateEventDialog teamId={parsedTeamId} />}
       </CardHeader>
       <CardContent>
         <div className="space-y-2">

@@ -88,10 +88,10 @@ export function Layout({ children, teamId }: LayoutProps) {
             </SidebarMenu>
           </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
-            <SidebarMenu>
-              {user?.role === "admin" && (
+          {user?.role === "admin" && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Administration</SidebarGroupLabel>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/admin">
                     <SidebarMenuButton
@@ -104,7 +104,6 @@ export function Layout({ children, teamId }: LayoutProps) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-              )}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogout}
