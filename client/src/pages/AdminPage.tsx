@@ -140,8 +140,8 @@ export default function AdminPage() {
                                 }
                               }}
                             >
-                              <option value="user">User</option>
-                              <option value="editor">Editor</option>
+                              <option value="reader">Reader</option>
+                              <option value="manager">Manager</option>
                               <option value="admin">Admin</option>
                             </select>
                             <AlertDialogTrigger id={`confirm-role-${currentUser.id}`} className="hidden" />
