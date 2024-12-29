@@ -128,42 +128,45 @@ export default function AdminPage() {
                       {currentUser.id === user.id ? (
                         <span className="text-sm text-muted-foreground">Cannot modify own role</span>
                       ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                        <>
+                          <AlertDialog>
                             <select
                               className="w-[180px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
                               value={currentUser.role}
                               onChange={(e) => {
-                                const dialog = document.querySelector(`#confirm-role-${currentUser.id}`) as HTMLButtonElement;
-                                if (dialog) dialog.click();
+                                if (e.target.value !== currentUser.role) {
+                                  const dialog = document.querySelector(`#confirm-role-${currentUser.id}`) as HTMLButtonElement;
+                                  if (dialog) dialog.click();
+                                }
                               }}
                             >
                               <option value="user">User</option>
                               <option value="editor">Editor</option>
                               <option value="admin">Admin</option>
                             </select>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Change User Role</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to change this user's role? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => {
-                                const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
-                                if (select) select.value = currentUser.role;
-                              }}>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => 
-                                updateRole.mutate({
-                                  userId: currentUser.id,
-                                  newRole: (document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement).value,
-                                })
-                              }>Continue</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                            <AlertDialogTrigger id={`confirm-role-${currentUser.id}`} className="hidden" />
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Change User Role</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to change this user's role? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => {
+                                  const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
+                                  if (select) select.value = currentUser.role;
+                                }}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => 
+                                  updateRole.mutate({
+                                    userId: currentUser.id,
+                                    newRole: (document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement).value,
+                                  })
+                                }>Continue</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
