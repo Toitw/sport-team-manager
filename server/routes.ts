@@ -897,6 +897,27 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.patch("/api/users/:userId/role", requireRole(["admin"]), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+
+      if (!["admin", "manager", "reader"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const db = await getDb();
+      await db.execute(
+        sql`UPDATE users SET role = ${role} WHERE id = ${parseInt(userId)}`
+      );
+
+      res.json({ message: "Role updated successfully" });
+    } catch (error: any) {
+      console.error('Error updating user role:', error);
+      res.status(500).json({ message: error.message || "Failed to update user role" });
+    }
+  });
+
   // Organizations
   app.get("/api/organizations", requireAuth, async (req, res) => {
     try {
