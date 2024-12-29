@@ -25,6 +25,7 @@ async function handleRequest<T>(
   body?: InsertOrganization | { userId: number; role: string }
 ): Promise<RequestResult<T>> {
   try {
+    console.log(`Making ${method} request to ${url}`);
     const response = await fetch(url, {
       method,
       headers: {
@@ -37,13 +38,15 @@ async function handleRequest<T>(
     });
 
     if (!response.ok) {
+      console.error('Request failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        url,
+        method,
+        timestamp: new Date().toISOString()
+      });
+
       if (response.status >= 500) {
-        console.error('Server error:', {
-          status: response.status,
-          statusText: response.statusText,
-          url,
-          timestamp: new Date().toISOString()
-        });
         return { ok: false, message: "Server error. Please try again later." };
       }
 
@@ -56,6 +59,7 @@ async function handleRequest<T>(
   } catch (e: any) {
     console.error('Network error:', {
       url,
+      method,
       error: e.message,
       timestamp: new Date().toISOString()
     });
@@ -68,7 +72,7 @@ export function useOrganization(organizationId?: number) {
   const { toast } = useToast();
 
   // Fetch organization details
-  const { data: organization, isLoading } = useQuery({
+  const { data: organization, isLoading, error } = useQuery({
     queryKey: ['organization', organizationId],
     queryFn: async () => {
       if (!organizationId) return null;
@@ -76,7 +80,8 @@ export function useOrganization(organizationId?: number) {
       if (!result.ok) throw new Error(result.message);
       return result.data;
     },
-    enabled: !!organizationId
+    enabled: !!organizationId,
+    retry: 2,
   });
 
   // Fetch organization members
@@ -88,12 +93,14 @@ export function useOrganization(organizationId?: number) {
       if (!result.ok) throw new Error(result.message);
       return result.data;
     },
-    enabled: !!organizationId
+    enabled: !!organizationId,
+    retry: 2,
   });
 
   // Create organization mutation
   const createOrganizationMutation = useMutation({
     mutationFn: async (data: InsertOrganization) => {
+      console.log('Creating organization:', data);
       const result = await handleRequest<Organization>('/api/organizations', 'POST', data);
       if (!result.ok) throw new Error(result.message);
       return result.data;
@@ -106,6 +113,7 @@ export function useOrganization(organizationId?: number) {
       });
     },
     onError: (error: Error) => {
+      console.error('Create organization error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -130,6 +138,7 @@ export function useOrganization(organizationId?: number) {
       });
     },
     onError: (error: Error) => {
+      console.error('Add member error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -170,6 +179,7 @@ export function useOrganization(organizationId?: number) {
     organization,
     members,
     isLoading,
+    error,
     createOrganization: createOrganizationMutation.mutateAsync,
     addMember: addMemberMutation.mutateAsync,
     updateMemberRole: updateMemberRoleMutation.mutateAsync,
@@ -177,17 +187,21 @@ export function useOrganization(organizationId?: number) {
 }
 
 export function useOrganizations() {
-  const { data: organizations, isLoading } = useQuery({
+  const { data: organizations, isLoading, error } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
+      console.log('Fetching organizations');
       const result = await handleRequest<Organization[]>('/api/organizations', 'GET');
       if (!result.ok) throw new Error(result.message);
+      console.log('Fetched organizations:', result.data);
       return result.data;
-    }
+    },
+    retry: 2,
   });
 
   return {
     organizations: organizations || [],
-    isLoading
+    isLoading,
+    error
   };
 }

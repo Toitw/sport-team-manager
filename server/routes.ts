@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import { setupAuth } from "./auth";
 import { getDb } from "../db";
-import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards, matchSubstitutions, matchCommentary } from "@db/schema";
+import { teams, players, events, news, matchLineups, matchReserves, matchScorers, matchCards, matchSubstitutions, matchCommentary, organizations, organizationMembers } from "@db/schema";
 import { eq, sql, and, or } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -249,11 +249,11 @@ export async function registerRoutes(app: Express) {
 
       let totalMinutes = 0;
       const uniqueMatchIds = new Set();
-      
+
 
       matchesPlayed.forEach(match => {
         uniqueMatchIds.add(match.matchId);
-        
+
 
         if (match.subInMinute !== null) {
           // Player came on as a substitute
@@ -330,12 +330,12 @@ export async function registerRoutes(app: Express) {
       // Validate dates
       const startDateObj = new Date(startDate);
       const endDateObj = new Date(endDate);
-      
+
 
       if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         return res.status(400).json({ message: "Invalid date format" });
       }
-      
+
 
       const newEvent = await db.insert(events).values({
         ...rest,
@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express) {
         endDate: endDateObj.toISOString(),
         type: rest.type
       }).returning();
-      
+
 
       res.json(newEvent[0]);
     } catch (error: any) {
@@ -361,12 +361,12 @@ export async function registerRoutes(app: Express) {
       // Validate dates
       const startDateObj = new Date(startDate);
       const endDateObj = new Date(endDate);
-      
+
 
       if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
         return res.status(400).json({ message: "Invalid date format" });
       }
-      
+
 
       const updatedEvent = await db.update(events)
         .set({
@@ -381,12 +381,12 @@ export async function registerRoutes(app: Express) {
         })
         .where(eq(events.id, parseInt(req.params.eventId)))
         .returning();
-      
+
 
       if (!updatedEvent.length) {
         return res.status(404).json({ message: "Event not found" });
       }
-      
+
 
       res.json(updatedEvent[0]);
     } catch (error: any) {
@@ -438,7 +438,7 @@ export async function registerRoutes(app: Express) {
         teamId: parseInt(req.params.teamId),
         createdById: req.user.id
       }).returning();
-      
+
 
       res.json(newNews[0]);
     } catch (error: any) {
@@ -603,12 +603,12 @@ export async function registerRoutes(app: Express) {
       const matchId = parseInt(req.params.matchId);
       const db = await getDb();
       const { players } = req.body; // Array of { playerId, position }
-      
+
 
       // First, remove existing lineup
       await db.delete(matchLineups)
         .where(eq(matchLineups.matchId, matchId));
-      
+
 
       // Then insert new lineup
       const lineup = await db.insert(matchLineups)
@@ -618,7 +618,7 @@ export async function registerRoutes(app: Express) {
           position: p.position
         })))
         .returning();
-      
+
 
       res.json(lineup);
     } catch (error: any) {
@@ -633,12 +633,12 @@ export async function registerRoutes(app: Express) {
       const matchId = parseInt(req.params.matchId);
       const db = await getDb();
       const { players } = req.body; // Array of playerIds
-      
+
 
       // First, remove existing reserves
       await db.delete(matchReserves)
         .where(eq(matchReserves.matchId, matchId));
-      
+
 
       // Then insert new reserves
       const reserves = await db.insert(matchReserves)
@@ -647,7 +647,7 @@ export async function registerRoutes(app: Express) {
           playerId
         })))
         .returning();
-      
+
 
       res.json(reserves);
     } catch (error: any) {
@@ -662,7 +662,7 @@ export async function registerRoutes(app: Express) {
       const matchId = parseInt(req.params.matchId);
       const db = await getDb();
       const { playerId, minute, eventType = 'goal' } = req.body;
-      
+
 
       const scorer = await db.insert(matchScorers)
         .values({
@@ -672,7 +672,7 @@ export async function registerRoutes(app: Express) {
           eventType
         })
         .returning();
-      
+
 
       res.json(scorer[0]);
     } catch (error: any) {
@@ -688,7 +688,7 @@ export async function registerRoutes(app: Express) {
       const db = await getDb();
       await db.delete(matchScorers)
         .where(eq(matchScorers.matchId, matchId));
-      
+
 
       res.json({ message: "Scorers deleted successfully" });
     } catch (error: any) {
@@ -711,7 +711,7 @@ export async function registerRoutes(app: Express) {
         )
         .orderBy(events.startDate)
         .limit(1);
-      
+
 
       res.json(nextMatch[0] || null);
     } catch (error: any) {
@@ -726,12 +726,12 @@ export async function registerRoutes(app: Express) {
       const matchId = parseInt(req.params.matchId);
       const db = await getDb();
       const { cards } = req.body; // Array of { playerId, minute, cardType, reason? }
-      
+
 
       // First, remove existing cards
       await db.delete(matchCards)
         .where(eq(matchCards.matchId, matchId));
-      
+
 
       // Then insert new cards
       if (cards.length > 0) {
@@ -744,7 +744,7 @@ export async function registerRoutes(app: Express) {
             reason: card.reason
           })))
           .returning();
-        
+
 
         res.json(newCards);
       } else {
@@ -762,19 +762,19 @@ export async function registerRoutes(app: Express) {
       const matchId = parseInt(req.params.matchId);
       const db = await getDb();
       const { substitutions } = req.body; // Array of { playerOutId, playerInId, minute, half }
-      
+
 
       if (!substitutions || !Array.isArray(substitutions)) {
         return res.status(400).json({ message: "Invalid substitutions data format" });
       }
-      
+
 
       // Validate substitutions data
       const invalidSubs = substitutions.filter(
         sub => !sub.playerOutId || !sub.playerInId || sub.minute < 0 || 
                sub.minute > 120 || ![1, 2].includes(sub.half)
       );
-      
+
 
       if (invalidSubs.length > 0) {
         return res.status(400).json({ 
@@ -782,13 +782,13 @@ export async function registerRoutes(app: Express) {
           details: "All substitutions must have valid player IDs, minute (0-120), and half (1 or 2)"
         });
       }
-      
+
 
       console.log('Removing existing substitutions for match:', matchId);
       // First, remove existing substitutions
       await db.delete(matchSubstitutions)
         .where(eq(matchSubstitutions.matchId, matchId));
-      
+
 
       console.log('Adding new substitutions:', substitutions);
       // Then insert new substitutions
@@ -802,7 +802,7 @@ export async function registerRoutes(app: Express) {
             half: sub.half
           })))
           .returning();
-        
+
 
         console.log('Successfully added substitutions:', newSubstitutions);
         res.json(newSubstitutions);
@@ -884,5 +884,177 @@ export async function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message || "Failed to fetch event" });
     }
   });
+
+  // Organizations
+  app.get("/api/organizations", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+
+      const db = await getDb();
+      const userOrgs = await db
+        .select({
+          id: organizations.id,
+          name: organizations.name,
+          createdAt: organizations.createdAt,
+          createdById: organizations.createdById
+                })
+        .from(organizations)
+        .innerJoin(
+          organizationMembers,
+          eq(organizations.id, organizationMembers.organizationId)
+        )
+        .where(eq(organizationMembers.userId, req.user.id));
+
+      res.json(userOrgs);
+    } catch (error: any) {
+      console.error('Error fetching organizations:', error);      res.status(500).json({ message: error.message || "Failed to fetch organizations" });
+    }
+  });
+
+  app.get("/api/organizations/:id", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+
+      const db = await getDb();
+      const [organization] = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, parseInt(req.params.id)))
+        .limit(1);
+
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+
+      // Check if user is a member of the organization
+      const [membership] = await db
+        .select()
+        .from(organizationMembers)
+        .where(
+          and(
+            eq(organizationMembers.organizationId, organization.id),
+            eq(organizationMembers.userId, req.user.id)
+          )
+        )
+        .limit(1);
+
+      if (!membership) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json(organization);
+    } catch (error: any) {
+      console.error('Error fetching organization:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch organization" });
+    }
+  });
+
+  app.get("/api/organizations/:id/members", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+
+      const db = await getDb();
+      const members = await db
+        .select({
+          id: organizationMembers.id,
+          userId: organizationMembers.userId,
+          organizationId: organizationMembers.organizationId,
+          role: organizationMembers.role,
+          createdAt: organizationMembers.createdAt,
+          userEmail: sql<string>`(SELECT email FROM users WHERE id = ${organizationMembers.userId})`
+        })
+        .from(organizationMembers)
+        .where(eq(organizationMembers.organizationId, parseInt(req.params.id)));
+
+      res.json(members);
+    } catch (error: any) {
+      console.error('Error fetching organization members:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch organization members" });
+    }
+  });
+
+  app.post("/api/organizations", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+
+      const db = await getDb();
+      const [organization] = await db.insert(organizations)
+        .values({
+          name: req.body.name,
+          createdById: req.user.id
+        })
+        .returning();
+
+      // Add creator as administrator
+      await db.insert(organizationMembers)
+        .values({
+          organizationId: organization.id,
+          userId: req.user.id,
+          role: 'administrator'
+        });
+
+      res.json(organization);
+    } catch (error: any) {
+      console.error('Error creating organization:', error);
+      res.status(500).json({ message: error.message || "Failed to create organization" });
+    }
+  });
+
+  app.patch("/api/organizations/:id/members/:userId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).send("User not authenticated");
+      }
+
+      const db = await getDb();
+
+      // Check if the current user is an administrator
+      const [currentUserMember] = await db
+        .select()
+        .from(organizationMembers)
+        .where(
+          and(
+            eq(organizationMembers.organizationId, parseInt(req.params.id)),
+            eq(organizationMembers.userId, req.user.id),
+            eq(organizationMembers.role, 'administrator')
+          )
+        )
+        .limit(1);
+
+      if (!currentUserMember) {
+        return res.status(403).json({ message: "Only administrators can update member roles" });
+      }
+
+      const [updatedMember] = await db.update(organizationMembers)
+        .set({
+          role: req.body.role
+        })
+        .where(
+          and(
+            eq(organizationMembers.organizationId, parseInt(req.params.id)),
+            eq(organizationMembers.userId, parseInt(req.params.userId))
+          )
+        )
+        .returning();
+
+      if (!updatedMember) {
+        return res.status(404).json({ message: "Member not found" });
+      }
+
+      res.json(updatedMember);
+    } catch (error: any) {
+      console.error('Error updating member role:', error);
+      res.status(500).json({ message: error.message || "Failed to update member role" });
+    }
+  });
+
   return app;
 }

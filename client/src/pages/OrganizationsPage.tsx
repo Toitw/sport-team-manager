@@ -31,14 +31,15 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertOrganizationSchema, type InsertOrganization } from "@db/schema";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function OrganizationsPage() {
   const { user } = useUser();
-  const { organizations, isLoading: orgsLoading } = useOrganizations();
+  const { organizations, isLoading: orgsLoading, error: orgsError } = useOrganizations();
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
-  const { organization, members, isLoading: orgLoading, createOrganization, updateMemberRole } = useOrganization(selectedOrgId ?? undefined);
+  const { organization, members, isLoading: orgLoading, error: orgError, createOrganization, updateMemberRole } = useOrganization(selectedOrgId ?? undefined);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -54,11 +55,15 @@ export default function OrganizationsPage() {
       await createOrganization(data);
       setCreateDialogOpen(false);
       form.reset();
+      toast({
+        title: "Success",
+        description: "Organization created successfully"
+      });
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to create organization"
       });
     }
   };
@@ -78,7 +83,22 @@ export default function OrganizationsPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-border" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (orgsError || orgError) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {orgsError?.message || orgError?.message || "Failed to load organizations"}
+            </AlertDescription>
+          </Alert>
         </div>
       </Layout>
     );
@@ -140,7 +160,7 @@ export default function OrganizationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {organizations.length === 0 ? (
+                  {(!organizations || organizations.length === 0) ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground">
                         No organizations found
