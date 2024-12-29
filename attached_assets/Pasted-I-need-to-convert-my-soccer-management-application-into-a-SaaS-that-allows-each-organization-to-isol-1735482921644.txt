@@ -1,0 +1,37 @@
+I need to convert my soccer management application into a SaaS that allows each organization to isolate its data and have the following role structure:
+
+Roles:
+
+Administrator: Can create the organization and fully manage it, including creating teams and inviting users.
+Manager: Can manage (create, edit, delete) the data of the teams they have access to, but cannot create organizations or invite users to the entire organization.
+Reader: Read-only access to the teams assigned to them.
+Currently:
+
+There are three roles: Administrator, Manager, and Reader.
+The Administrator creates teams, but there is no concept of organizations, which means that any Manager or Reader with an account can access all teams.
+Objective:
+
+Implement the notion of organizations (multi-tenant) so that each Administrator only manages their teams and users, without overlapping with others.
+Allow the Administrator to invite new users as Manager or Reader, and for these new users to only see the teams of that organization.
+Adapt the database and the authentication/authorization layer to support this multi-tenant model.
+Request:
+
+The best practices for structuring the database (it can be with tables such as Organization, Team, User, Role, Membership, etc.).
+Examples of how to add the column/relationship for the organization in existing models.
+Modifications in the backend so that, when creating a team, it is automatically associated with the organization of the Administrator who is creating it.
+Changes in the authentication layer and middleware to verify that each operation belongs to the correct organization.
+A proposal for endpoints (REST or GraphQL) to manage organizations, teams, and role assignments.
+A sample unit or integration test to verify that a Manager user of organization A cannot see the teams of organization B.
+Expected Response:
+
+A plan for migrating the database.
+The code for the new models or classes, with the relationship between Organization and Team, and between Organization and User.
+Middleware / guards for permissions that check the roles and the user’s membership in the organization.
+An example of an endpoint or route that illustrates how to restrict access by organization and role.
+If you need additional information about the business logic, assume the basics about soccer team management (creating teams, adding players, editing data, etc.). Please provide a detailed and organized answer so that I can easily implement your solution.
+
+Instructions:
+
+Read carefully the current structure and the new one I need.
+Justify the decisions regarding the database design and the authorization layer to avoid confusion and enable future scalability.
+Thank you.
