@@ -133,6 +133,7 @@ export default function AdminPage() {
                             <select
                               className="w-[180px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
                               value={currentUser.role}
+                              data-user={currentUser.id}
                               onChange={(e) => {
                                 if (e.target.value !== currentUser.role) {
                                   const dialog = document.querySelector(`#confirm-role-${currentUser.id}`) as HTMLButtonElement;
