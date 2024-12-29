@@ -114,6 +114,14 @@ export function Layout({ children, teamId }: LayoutProps) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
+
+          <div className="mt-auto">
+            <SidebarGroup>
+              <SidebarGroupLabel>Account</SidebarGroupLabel>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={handleLogout}
@@ -126,7 +134,7 @@ export function Layout({ children, teamId }: LayoutProps) {
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroup>
-          )}
+          </div>
 
           {teamId && (
             <SidebarGroup>
