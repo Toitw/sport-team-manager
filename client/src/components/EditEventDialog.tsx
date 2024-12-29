@@ -27,9 +27,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface EditEventDialogProps {
   event: Event;
   teamId: number;
+  organizationId: number;
 }
 
-export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
+export function EditEventDialog({ event, teamId, organizationId }: EditEventDialogProps) {
   const [open, setOpen] = useState(false);
   const { updateEvent } = useEvents(teamId);
   const { toast } = useToast();
@@ -39,7 +40,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
     defaultValues: {
       title: event.title,
       description: event.description || "",
-      type: event.type,
+      type: event.type === "meeting" ? "other" : event.type, // Convert legacy "meeting" type to "other"
       startDate: new Date(event.startDate).toISOString().slice(0, 16),
       endDate: new Date(event.endDate).toISOString().slice(0, 16),
       homeScore: event.homeScore,
@@ -76,6 +77,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
         description: data.description || "",
         type: data.type,
         teamId,
+        organizationId,
         startDate: startDateObj.toISOString(),
         endDate: endDateObj.toISOString(),
         homeScore: data.type === "match" ? data.homeScore ?? null : null,
@@ -103,7 +105,7 @@ export function EditEventDialog({ event, teamId }: EditEventDialogProps) {
     form.reset({
       title: event.title,
       description: event.description || "",
-      type: event.type,
+      type: event.type === "meeting" ? "other" : event.type,
       startDate: new Date(event.startDate).toISOString().slice(0, 16),
       endDate: new Date(event.endDate).toISOString().slice(0, 16),
       homeScore: event.homeScore,
