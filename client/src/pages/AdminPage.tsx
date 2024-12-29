@@ -134,6 +134,7 @@ export default function AdminPage() {
                               <div className="flex items-center gap-2">
                                 <select
                                   className="w-[180px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
+                                  data-user={currentUser.id}
                                   value={currentUser.role}
                                   onChange={(e) => {
                                     const newRole = e.target.value;
@@ -159,15 +160,15 @@ export default function AdminPage() {
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel onClick={() => {
-                                    const select = document.querySelector(`select[value="${currentUser.role}"]`) as HTMLSelectElement;
-                                    if (select) select.value = currentUser.role;
-                                  }}>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction onClick={() => {
-                                    updateRole.mutate({
-                                      userId: currentUser.id,
-                                      newRole: document.querySelector(`select[value="${currentUser.role}"]`)?.value || currentUser.role
-                                    });
+                                    const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
+                                    if (select) {
+                                      updateRole.mutate({
+                                        userId: currentUser.id,
+                                        newRole: select.value
+                                      });
+                                    }
                                   }}>Continue</AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
