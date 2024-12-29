@@ -17,9 +17,8 @@ export default function HomePage() {
   return (
     <Layout>
       <div className="container py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold">Welcome, {user?.email}</h1>
-          <Button variant="outline" onClick={() => logout()}>Logout</Button>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
