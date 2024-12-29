@@ -14,9 +14,25 @@ export const users = pgTable("users", {
   passwordResetExpires: timestamp("password_reset_expires", { mode: 'string' })
 });
 
+export const organizations = pgTable("organizations", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  name: text("name").unique().notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  createdById: integer("created_by_id").notNull().references(() => users.id)
+});
+
+export const organizationMembers = pgTable("organization_members", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text("role").notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).defaultNow()
+});
+
 export const teams = pgTable("teams", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: text("name").notNull(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
   createdById: integer("created_by_id").notNull().references(() => users.id)
 });
@@ -119,6 +135,18 @@ export const insertUserSchema = createInsertSchema(users, {
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = z.infer<typeof selectUserSchema>;
+
+export const insertOrganizationSchema = createInsertSchema(organizations);
+export const selectOrganizationSchema = createSelectSchema(organizations);
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type Organization = z.infer<typeof selectOrganizationSchema>;
+
+export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers, {
+  role: z.enum(["administrator", "manager", "reader"])
+});
+export const selectOrganizationMemberSchema = createSelectSchema(organizationMembers);
+export type InsertOrganizationMember = z.infer<typeof insertOrganizationMemberSchema>;
+export type OrganizationMember = z.infer<typeof selectOrganizationMemberSchema>;
 
 export const insertTeamSchema = createInsertSchema(teams);
 export const selectTeamSchema = createSelectSchema(teams);

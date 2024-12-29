@@ -1,6 +1,5 @@
-
 import { Link, useLocation } from "wouter";
-import { Users, Calendar, Trophy, Home, Newspaper, LogOut } from "lucide-react";
+import { Users, Calendar, Trophy, Home, Newspaper, LogOut, Building2 } from "lucide-react";
 import { useUser } from "../hooks/use-user";
 import {
   Sidebar,
@@ -81,6 +80,18 @@ export function Layout({ children, teamId }: LayoutProps) {
                   >
                     <Home className="h-4 w-4" />
                     <span>Home</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/organizations">
+                  <SidebarMenuButton 
+                    isActive={isActiveRoute("/organizations")} 
+                    tooltip="Organizations"
+                    size="lg"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>Organizations</span>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>

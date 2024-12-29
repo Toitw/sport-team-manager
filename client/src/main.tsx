@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import TeamPage from "./pages/TeamPage";
 import AdminPage from "./pages/AdminPage";
+import OrganizationsPage from "./pages/OrganizationsPage";
 import MatchDetailsPage from "./pages/MatchDetailsPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -62,6 +63,7 @@ function AppRouter() {
           <Route path="/admin">
             {user?.role === "admin" ? <AdminPage /> : <HomePage />}
           </Route>
+          <Route path="/organizations" component={OrganizationsPage} />
           <Route path="/team/:teamId/matches/:matchId" component={MatchDetailsPage} />
           <Route path="/team/:teamId/:section?" component={TeamPage} />
           <Route>
