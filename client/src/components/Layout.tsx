@@ -118,24 +118,6 @@ export function Layout({ children, teamId }: LayoutProps) {
             </SidebarGroup>
           )}
 
-          <div className="mt-auto">
-            <SidebarGroup>
-              <SidebarGroupLabel>Account</SidebarGroupLabel>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={handleLogout}
-                    tooltip="Logout"
-                    size="lg"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroup>
-          </div>
-
           {teamId && (
             <SidebarGroup>
               <SidebarGroupLabel>Team Management</SidebarGroupLabel>
@@ -191,6 +173,21 @@ export function Layout({ children, teamId }: LayoutProps) {
               </SidebarMenu>
             </SidebarGroup>
           )}
+
+          <div className="mt-8">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleLogout}
+                  tooltip="Logout"
+                  size="lg"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
