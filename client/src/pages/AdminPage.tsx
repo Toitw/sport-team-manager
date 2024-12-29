@@ -117,18 +117,21 @@ export default function AdminPage() {
                       {currentUser.id === user.id ? (
                         <span className="text-sm text-muted-foreground">Cannot modify own role</span>
                       ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            updateRole.mutate({
-                              userId: currentUser.id,
-                              newRole: currentUser.role === "admin" ? "user" : "admin",
-                            })
-                          }
-                        >
-                          Make {currentUser.role === "admin" ? "User" : "Admin"}
-                        </Button>
+                        <select
+                            className="w-[180px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
+                            value={currentUser.role}
+                            onChange={(e) =>
+                              updateRole.mutate({
+                                userId: currentUser.id,
+                                newRole: e.target.value,
+                              })
+                            }
+                            disabled={updateRole.isPending}
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="editor">Editor</option>
+                            <option value="user">User</option>
+                          </select>
                       )}
                     </TableCell>
                   </TableRow>
