@@ -135,8 +135,9 @@ export default function AdminPage() {
                               value={currentUser.role}
                               data-user={currentUser.id}
                               onChange={(e) => {
-                                if (e.target.value !== currentUser.role) {
-                                  const dialog = document.querySelector(`#confirm-role-${currentUser.id}`) as HTMLButtonElement;
+                                const newRole = e.target.value;
+                                if (newRole !== currentUser.role) {
+                                  const dialog = document.querySelector(`[data-dialog-trigger="${currentUser.id}"]`) as HTMLButtonElement;
                                   if (dialog) dialog.click();
                                 }
                               }}
@@ -145,7 +146,7 @@ export default function AdminPage() {
                               <option value="manager">Manager</option>
                               <option value="admin">Admin</option>
                             </select>
-                            <AlertDialogTrigger id={`confirm-role-${currentUser.id}`} className="hidden" />
+                            <AlertDialogTrigger className="hidden" data-dialog-trigger={currentUser.id} />
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Change User Role</AlertDialogTitle>
@@ -158,12 +159,15 @@ export default function AdminPage() {
                                   const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
                                   if (select) select.value = currentUser.role;
                                 }}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => 
-                                  updateRole.mutate({
-                                    userId: currentUser.id,
-                                    newRole: (document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement).value,
-                                  })
-                                }>Continue</AlertDialogAction>
+                                <AlertDialogAction onClick={() => {
+                                  const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
+                                  if (select) {
+                                    updateRole.mutate({
+                                      userId: currentUser.id,
+                                      newRole: select.value
+                                    });
+                                  }
+                                }}>Continue</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
