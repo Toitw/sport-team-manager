@@ -885,6 +885,18 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Users
+  app.get("/api/users", requireRole(["admin"]), async (req, res) => {
+    try {
+      const db = await getDb();
+      const users = await db.execute(sql`SELECT id, email, role FROM users`);
+      res.json(users.rows);
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: error.message || "Failed to fetch users" });
+    }
+  });
+
   // Organizations
   app.get("/api/organizations", requireAuth, async (req, res) => {
     try {
