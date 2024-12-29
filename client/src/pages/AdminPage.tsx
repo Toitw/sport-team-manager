@@ -1,6 +1,17 @@
 import { Layout } from "../components/Layout";
 import { useUser } from "../hooks/use-user";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -117,21 +128,42 @@ export default function AdminPage() {
                       {currentUser.id === user.id ? (
                         <span className="text-sm text-muted-foreground">Cannot modify own role</span>
                       ) : (
-                        <select
-                            className="w-[180px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
-                            value={currentUser.role}
-                            onChange={(e) =>
-                              updateRole.mutate({
-                                userId: currentUser.id,
-                                newRole: e.target.value,
-                              })
-                            }
-                            disabled={updateRole.isPending}
-                          >
-                            <option value="admin">Admin</option>
-                            <option value="editor">Editor</option>
-                            <option value="user">User</option>
-                          </select>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <select
+                              className="w-[180px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background"
+                              value={currentUser.role}
+                              onChange={(e) => {
+                                const dialog = document.querySelector(`#confirm-role-${currentUser.id}`) as HTMLButtonElement;
+                                if (dialog) dialog.click();
+                              }}
+                            >
+                              <option value="user">User</option>
+                              <option value="editor">Editor</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Change User Role</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to change this user's role? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => {
+                                const select = document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement;
+                                if (select) select.value = currentUser.role;
+                              }}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => 
+                                updateRole.mutate({
+                                  userId: currentUser.id,
+                                  newRole: (document.querySelector(`select[data-user="${currentUser.id}"]`) as HTMLSelectElement).value,
+                                })
+                              }>Continue</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </TableCell>
                   </TableRow>
