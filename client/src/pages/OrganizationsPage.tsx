@@ -216,27 +216,9 @@ export default function OrganizationsPage() {
                             <TableCell>{member.role}</TableCell>
                             <TableCell>{formatDate(member.createdAt)}</TableCell>
                             <TableCell>
-                              {user.id === member.userId ? (
-                                <span className="text-sm text-muted-foreground">
-                                  Cannot modify own role
-                                </span>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    updateMemberRole({
-                                      userId: member.userId,
-                                      role:
-                                        member.role === "administrator"
-                                          ? "manager"
-                                          : "administrator",
-                                    })
-                                  }
-                                >
-                                  Toggle Role
-                                </Button>
-                              )}
+                              <span className="text-sm text-muted-foreground">
+                                {member.role}
+                              </span>
                             </TableCell>
                           </TableRow>
                         ))}
